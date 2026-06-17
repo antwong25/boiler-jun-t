@@ -36,6 +36,7 @@ curl -X POST "$BASE_URL/user/register" \
     "email": "seller003@example.com",
     "userType": "SELLER",
     "shopName": "Alpha Boiler Shop 3",
+    "shopAddress": "Guangzhou Tianhe District",
     "businessLicense": "BL-003",
     "legalPersonId": "440100199901011237"
   }'
@@ -45,7 +46,8 @@ curl -X POST "$BASE_URL/user/register" \
 
 - `userType` 目前只支持 `BUYER` 和 `SELLER`
 - 卖家注册时，`shopName` 必填
-- `shippingAddress` 和 `shopAddress` 虽然 DTO 中有字段，但当前数据库表结构未支持持久化，测试时可先不传
+- `shippingAddress` 字段当前仍不会落库
+- `shopAddress` 现已支持持久化
 
 ## 2. 用户登录
 
@@ -103,6 +105,7 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
   -d '{
     "userId": "请替换为卖家userId",
     "shopName": "Alpha Boiler Shop 3 Updated",
+    "shopAddress": "Guangzhou Pazhou",
     "businessLicense": "BL-003-NEW",
     "legalPersonId": "440100199901011238"
   }'
@@ -110,8 +113,40 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
 
 说明：
 
-- 当前接口实际会更新 `shopName`、`businessLicense`、`legalPersonId`
-- `shopAddress` 字段当前不会落库
+- 当前接口实际会更新 `shopName`、`shopAddress`、`businessLicense`、`legalPersonId`
+- 如卖家资质已经审核，通过或驳回后再次修改这些资料，资质状态会自动回到 `PENDING`
+
+## 6.1 上传卖家资质文件
+
+支持通过 `multipart/form-data` 上传卖家资质文件，文件类型仅支持：
+
+- `BUSINESS_LICENSE`
+- `LEGAL_PERSON_ID`
+
+```bash
+SELLER_USER_ID="请替换为卖家userId"
+
+curl -X POST "$BASE_URL/user/seller-profile/files" \
+  -F "userId=$SELLER_USER_ID" \
+  -F "fileType=BUSINESS_LICENSE" \
+  -F "file=@/绝对路径/营业执照.png"
+```
+
+上传法人身份证示例：
+
+```bash
+curl -X POST "$BASE_URL/user/seller-profile/files" \
+  -F "userId=$SELLER_USER_ID" \
+  -F "fileType=LEGAL_PERSON_ID" \
+  -F "file=@/绝对路径/法人身份证.jpg"
+```
+
+上传说明：
+
+- 成功后返回 `fileUrl`，可通过 `$BASE_URL$fileUrl` 直接访问
+- 文件会保存到项目本地 `uploads/seller-qualification/<userId>/`
+- 目前仅支持 `png`、`jpg`、`jpeg`、`pdf`
+- 若卖家当前资质状态不是 `PENDING`，上传新文件后会自动重置为 `PENDING`
 
 ## 7. 一组可直接测试的顺序
 
@@ -123,6 +158,8 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
 4. 调用“查询用户个人信息”
 5. 如是买家，调用“更新用户个人信息”
 6. 如是卖家，调用“查询卖家资料”和“更新卖家资料”
+7. 上传卖家资质文件
+8. 用管理员身份查询待审核卖家并执行审核
 
 ## 8. 返回格式说明
 
@@ -424,8 +461,9 @@ curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
   -H "Content-Type: application/json" \
   $ADMIN_HEADER \
   -d '{
-    "sellerId": "请替换为真实卖家sellerId",
-    "targetStatus": "APPROVED"
+    "sellerId": "请替换为真实卖家userId",
+    "targetStatus": "APPROVED",
+    "auditRemark": "资料齐全，审核通过"
   }'
 ```
 
@@ -434,6 +472,20 @@ curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
 - 只允许对 `PENDING` 状态卖家执行审核
 - 审核结果仅支持 `APPROVED` 或 `REJECTED`
 - 卖家资质审核通过后，信用分会按初始化规则提升到不低于 `80`
+- 会记录审核备注、审核管理员 ID、审核时间
+
+驳回示例：
+
+```bash
+curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
+  -H "Content-Type: application/json" \
+  $ADMIN_HEADER \
+  -d '{
+    "sellerId": "请替换为真实卖家userId",
+    "targetStatus": "REJECTED",
+    "auditRemark": "营业执照照片不清晰，请重新上传"
+  }'
+```
 
 ## 11. 信用分规则
 
@@ -441,3 +493,4 @@ curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
 - 信用分允许管理员在 `0-100` 范围内调整
 - 卖家资质审核通过后，信用分会提升到不低于 `80`
 - 已审核卖家更新资质资料后，资质状态会重新回到 `PENDING`
+- 已审核卖家重新上传资质文件后，资质状态也会重新回到 `PENDING`

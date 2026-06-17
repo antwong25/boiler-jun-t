@@ -6,7 +6,9 @@ import lombok.Data;
 public class SellerProfileDTO {
     private String userId;
     private String shopName;
+    private String shopAddress;
     private String businessLicense;
     private String legalPersonId;
-    private String shopAddress;
+    private String businessLicenseFileUrl;
+    private String legalPersonIdFileUrl;
 }

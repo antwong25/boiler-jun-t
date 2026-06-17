@@ -11,3 +11,7 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
+app:
+  file-storage:
+    seller-qualification-dir: uploads/seller-qualification

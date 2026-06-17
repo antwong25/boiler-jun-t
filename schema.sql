@@ -24,9 +24,15 @@ CREATE TABLE `user` (
 CREATE TABLE `seller` (
   sellerId VARCHAR(255) PRIMARY KEY,
   shopName VARCHAR(255),
+  shopAddress VARCHAR(255),
   businessLicense VARCHAR(255),
   legalPersonId VARCHAR(255),
+  businessLicenseFileUrl VARCHAR(255),
+  legalPersonIdFileUrl VARCHAR(255),
   qualificationStatus VARCHAR(50),
+  qualificationAuditRemark VARCHAR(255),
+  qualificationAuditedBy VARCHAR(255),
+  qualificationAuditTime DATETIME,
   guaranteeDeposit DECIMAL(10,2),
   completedTransactionCount INT,
   positiveRatingRate DECIMAL(10,2)

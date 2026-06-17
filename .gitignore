@@ -43,3 +43,6 @@ build/
 ### Generated project files ###
 **/cp.txt
 **/effective-pom.xml
+uploads/
+
+

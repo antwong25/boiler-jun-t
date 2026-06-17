@@ -124,6 +124,10 @@
                 <input id="registerShopName" name="shopName" type="text">
               </div>
               <div class="field-row">
+                <label for="registerShopAddress">店铺地址</label>
+                <input id="registerShopAddress" name="shopAddress" type="text">
+              </div>
+              <div class="field-row">
                 <label for="registerBusinessLicense">营业执照</label>
                 <input id="registerBusinessLicense" name="businessLicense" type="text">
               </div>
@@ -315,7 +319,45 @@
 
       <section class="module-card">
         <div class="module-form">
-          <h2>7. 管理员查看用户列表</h2>
+          <h2>7. 上传卖家资质文件</h2>
+          <form id="sellerFileUploadForm">
+            <div class="field-row">
+              <label for="sellerFileUserId">卖家用户 ID</label>
+              <input id="sellerFileUserId" name="userId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sellerFileType">文件类型</label>
+              <select id="sellerFileType" name="fileType">
+                <option value="BUSINESS_LICENSE">BUSINESS_LICENSE</option>
+                <option value="LEGAL_PERSON_ID">LEGAL_PERSON_ID</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="sellerFileInput">选择文件</label>
+              <input id="sellerFileInput" name="file" type="file">
+            </div>
+            <p class="hint">仅支持上传 <code>png/jpg/jpeg/pdf</code>；上传成功后会返回静态访问 URL，已审核卖家再次上传会自动回到 <code>PENDING</code>。</p>
+            <div class="button-row">
+              <button type="submit">上传资质文件</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="sellerFileUploadMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="sellerFileUploadRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>8. 管理员查看用户列表</h2>
           <form id="adminUserListForm">
             <div class="field-row">
               <label for="adminListUsername">用户名关键字</label>
@@ -368,7 +410,7 @@
 
       <section class="module-card">
         <div class="module-form">
-          <h2>8. 管理员查看用户详情</h2>
+          <h2>9. 管理员查看用户详情</h2>
           <form id="adminUserDetailForm">
             <div class="field-row">
               <label for="adminDetailUserId">用户 ID</label>
@@ -394,7 +436,7 @@
 
       <section class="module-card">
         <div class="module-form">
-          <h2>9. 管理员更新用户信息</h2>
+          <h2>10. 管理员更新用户信息</h2>
           <form id="adminUserUpdateForm">
             <div class="field-row">
               <label for="adminUpdateUserId">用户 ID</label>
@@ -451,7 +493,7 @@
 
       <section class="module-card">
         <div class="module-form">
-          <h2>10. 管理员审核卖家资质</h2>
+          <h2>11. 管理员审核卖家资质</h2>
           <form id="sellerAuditForm">
             <div class="field-row">
               <label for="auditSellerId">卖家 ID</label>
@@ -463,6 +505,10 @@
                 <option value="APPROVED">APPROVED</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
+            </div>
+            <div class="field-row">
+              <label for="auditRemark">审核备注</label>
+              <input id="auditRemark" name="auditRemark" type="text" placeholder="选填">
             </div>
             <p class="hint">仅允许审核当前为 <code>PENDING</code> 的卖家，审核通过后信用分会提升到不低于 <code>80</code>。</p>
             <div class="button-row">
@@ -484,12 +530,13 @@
       </section>
 
       <section class="rule-card">
-        <h2>11. 信用分规则</h2>
+        <h2>12. 信用分与资质规则</h2>
         <ul>
           <li>新注册用户默认信用分为 <code>60</code>。</li>
           <li>管理员可将信用分调整到 <code>0-100</code> 范围。</li>
           <li>卖家资质审核通过后，信用分会自动提升到不低于 <code>80</code>。</li>
           <li>已审核卖家更新资质资料后，资质状态会自动回到 <code>PENDING</code>。</li>
+          <li>资质文件支持 <code>BUSINESS_LICENSE</code> 和 <code>LEGAL_PERSON_ID</code> 两类上传。</li>
         </ul>
       </section>
     </div>
@@ -561,6 +608,7 @@
       document.getElementById("updateUserId").value = userId;
       document.getElementById("sellerQueryUserId").value = userId;
       document.getElementById("sellerUpdateUserId").value = userId;
+      document.getElementById("sellerFileUserId").value = userId;
       document.getElementById("adminDetailUserId").value = userId;
       document.getElementById("adminUpdateUserId").value = userId;
       document.getElementById("auditSellerId").value = userId;
@@ -578,6 +626,35 @@
       if (data && data.data && data.data.userId) {
         fillUserId(data.data.userId);
       }
+      return data;
+    }
+
+    async function uploadQualificationFile(form) {
+      const formData = new FormData(form);
+      const userId = String(formData.get("userId") || "").trim();
+      const fileType = String(formData.get("fileType") || "").trim();
+      const file = formData.get("file");
+      if (!userId) {
+        throw new Error("请填写卖家用户 ID");
+      }
+      if (!fileType) {
+        throw new Error("请选择文件类型");
+      }
+      if (!(file instanceof File) || !file.name) {
+        throw new Error("请选择要上传的文件");
+      }
+
+      const payload = new FormData();
+      payload.set("userId", userId);
+      payload.set("fileType", fileType);
+      payload.set("file", file);
+
+      const response = await fetch(getBaseUrl() + "/user/seller-profile/files", {
+        method: "POST",
+        body: payload
+      });
+      const data = await response.json();
+      fillUserId(userId);
       return data;
     }
 
@@ -651,6 +728,16 @@
         showResult("sellerUpdate", "更新卖家资料结果", data);
       } catch (error) {
         showResult("sellerUpdate", "更新失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("sellerFileUploadForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await uploadQualificationFile(event.target);
+        showResult("sellerFileUpload", "卖家资质文件上传结果", data);
+      } catch (error) {
+        showResult("sellerFileUpload", "上传失败", { error: String(error) });
       }
     });
 

@@ -3,6 +3,7 @@ package org.example.boilerserver.controller;
 import org.example.boilercommon.Result;
 import org.example.boilerpojo.AdminUserQueryDTO;
 import org.example.boilerpojo.AdminUserUpdateDTO;
+import org.example.boilerpojo.SellerQualificationFileUploadDTO;
 import org.example.boilerpojo.SellerProfileDTO;
 import org.example.boilerpojo.SellerQualificationAuditDTO;
 import org.example.boilerpojo.UserDTO;
@@ -11,12 +12,15 @@ import org.example.boilerpojo.UserRegisterDTO;
 import org.example.boilerpojo.UserVO;
 import org.example.boilerserver.service.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -59,6 +63,15 @@ public class UserController {
         return Result.success(userService.upsertSellerProfile(dto));
     }
 
+    @PostMapping("/seller-profile/files")
+    public Result<SellerQualificationFileUploadDTO> uploadSellerQualificationFile(
+            @RequestParam String userId,
+            @RequestParam String fileType,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return Result.success(userService.uploadSellerQualificationFile(userId, fileType, file));
+    }
+
     @GetMapping("/admin/users")
     public Result<List<UserVO>> adminListUsers(AdminUserQueryDTO dto) {
         return Result.success(userService.adminListUsers(dto));
@@ -75,7 +88,11 @@ public class UserController {
     }
 
     @PutMapping("/admin/sellers/qualification")
-    public Result<UserVO> auditSellerQualification(@RequestBody SellerQualificationAuditDTO dto) {
+    public Result<UserVO> auditSellerQualification(
+            @RequestBody SellerQualificationAuditDTO dto,
+            @RequestHeader("X-Admin-User-Id") String adminUserId
+    ) {
+        dto.setAdminUserId(adminUserId);
         return Result.success(userService.auditSellerQualification(dto));
     }
 }
