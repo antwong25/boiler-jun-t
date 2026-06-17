@@ -1,0 +1,9 @@
+Updated Requirements
+
+1. 整个项目模仿苍穹外卖，用JDK17 + MySQL
+
+2. 可以通过把drawio文件当成xml来解析，然后生成DDL、创建数据库。
+
+3. Result用msg, code, data，和苍穹外卖一样
+
+4. 最新修改：买家不能发帖

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.UserMapper">
+    <resultMap id="UserResultMap" type="org.example.boilerpojo.UserEntity">
+        <id property="userId" column="userId"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="userType" column="userType"/>
+        <result property="creditScore" column="creditScore"/>
+        <result property="registrationDate" column="registrationDate"/>
+        <result property="verificationStatus" column="verificationStatus"/>
+    </resultMap>
+
+    <select id="getByUserId" resultMap="UserResultMap">
+        select * from user where userId = #{userId}
+    </select>
+
+    <select id="getByUsername" resultMap="UserResultMap">
+        select * from user where username = #{username}
+    </select>
+
+    <select id="countByUsername" resultType="java.lang.Integer">
+        select count(*) from user where username = #{username}
+    </select>
+
+    <select id="listUsers" resultMap="UserResultMap">
+        select u.*
+        from user u
+        <where>
+            <if test="username != null and username != ''">
+                and u.username like concat('%', #{username}, '%')
+            </if>
+            <if test="userType != null and userType != ''">
+                <choose>
+                    <when test="userType == 'ADMIN'">
+                        and exists (
+                            select 1
+                            from administrator a
+                            where a.adminId = u.userId
+                        )
+                    </when>
+                    <otherwise>
+                        and u.userType = #{userType}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="verificationStatus != null and verificationStatus != ''">
+                and u.verificationStatus = #{verificationStatus}
+            </if>
+            <if test="qualificationStatus != null and qualificationStatus != ''">
+                and exists (
+                    select 1
+                    from seller s
+                    where s.sellerId = u.userId
+                      and s.qualificationStatus = #{qualificationStatus}
+                )
+            </if>
+        </where>
+        order by u.registrationDate desc, u.userId desc
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.UserEntity">
+        insert into user (
+            userId,
+            password,
+            username,
+            phone,
+            email,
+            userType,
+            creditScore,
+            registrationDate,
+            verificationStatus
+        )
+        values (
+            #{userId},
+            #{password},
+            #{username},
+            #{phone},
+            #{email},
+            #{userType},
+            #{creditScore},
+            #{registrationDate},
+            #{verificationStatus}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.UserEntity">
+        update user
+        <set>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="creditScore != null">creditScore = #{creditScore},</if>
+            <if test="verificationStatus != null and verificationStatus != ''">verificationStatus = #{verificationStatus},</if>
+        </set>
+        where userId = #{userId}
+    </update>
+
+    <select id="countAdministratorByUserId" resultType="java.lang.Integer">
+        select count(*) from administrator where adminId = #{userId}
+    </select>
+</mapper>

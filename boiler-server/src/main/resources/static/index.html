@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户管理前端</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .module-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .module-card {
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+      gap: 20px;
+    }
+
+    .module-result {
+      padding-left: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      margin-top: 16px;
+    }
+
+    .hint {
+      font-size: 14px;
+    }
+
+    pre {
+      min-height: 96px;
+      max-height: 320px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @media (max-width: 960px) {
+      .module-card {
+        grid-template-columns: 1fr;
+      }
+
+      .module-result {
+        padding-left: 0;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="config-card">
+      <h1>用户管理测试页</h1>
+      <p class="hint">左侧填写请求参数，右侧保留当前模块的主要结果和原始响应，便于多接口并行测试。</p>
+      <div class="config-grid">
+        <div>
+          <label for="baseUrl"><strong>后端地址</strong></label>
+          <input id="baseUrl" type="text" value="http://127.0.0.1:8080">
+        </div>
+        <div>
+          <label for="adminUserId"><strong>管理员用户 ID</strong></label>
+          <input id="adminUserId" type="text" placeholder="调用 /user/admin/** 时必填">
+        </div>
+      </div>
+      <p class="hint">管理员接口会自动携带请求头 <code>X-Admin-User-Id</code>。</p>
+    </section>
+
+    <div class="module-list">
+      <section class="module-card">
+        <div class="module-form">
+          <h2>1. 注册</h2>
+          <form id="registerForm">
+            <div class="field-row">
+              <label for="registerUsername">用户名</label>
+              <input id="registerUsername" name="username" type="text">
+            </div>
+            <div class="field-row">
+              <label for="registerPassword">密码</label>
+              <input id="registerPassword" name="password" type="password">
+            </div>
+            <div class="field-row">
+              <label for="registerPhone">手机号</label>
+              <input id="registerPhone" name="phone" type="text">
+            </div>
+            <div class="field-row">
+              <label for="registerEmail">邮箱</label>
+              <input id="registerEmail" name="email" type="text">
+            </div>
+            <div class="field-row">
+              <label for="registerUserType">用户类型</label>
+              <select name="userType" id="registerUserType">
+                <option value="BUYER">BUYER</option>
+                <option value="SELLER">SELLER</option>
+              </select>
+            </div>
+            <div id="sellerRegisterFields" hidden>
+              <div class="field-row">
+                <label for="registerShopName">店铺名称</label>
+                <input id="registerShopName" name="shopName" type="text">
+              </div>
+              <div class="field-row">
+                <label for="registerBusinessLicense">营业执照</label>
+                <input id="registerBusinessLicense" name="businessLicense" type="text">
+              </div>
+              <div class="field-row">
+                <label for="registerLegalPersonId">法人身份证</label>
+                <input id="registerLegalPersonId" name="legalPersonId" type="text">
+              </div>
+            </div>
+            <div class="button-row">
+              <button type="submit">注册</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="registerMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="registerRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>2. 登录</h2>
+          <form id="loginForm">
+            <div class="field-row">
+              <label for="loginUsername">用户名</label>
+              <input id="loginUsername" name="username" type="text">
+            </div>
+            <div class="field-row">
+              <label for="loginPassword">密码</label>
+              <input id="loginPassword" name="password" type="password">
+            </div>
+            <div class="button-row">
+              <button type="submit">登录</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="loginMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="loginRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>3. 查询用户资料</h2>
+          <form id="profileQueryForm">
+            <div class="field-row">
+              <label for="profileUserId">用户 ID</label>
+              <input id="profileUserId" name="userId" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询用户资料</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="profileQueryMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="profileQueryRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>4. 更新用户资料</h2>
+          <form id="profileUpdateForm">
+            <div class="field-row">
+              <label for="updateUserId">用户 ID</label>
+              <input id="updateUserId" name="userId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updatePhone">手机号</label>
+              <input id="updatePhone" name="phone" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateEmail">邮箱</label>
+              <input id="updateEmail" name="email" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateShippingAddress">收货地址</label>
+              <input id="updateShippingAddress" name="shippingAddress" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">更新用户资料</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="profileUpdateMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="profileUpdateRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>5. 查询卖家资料</h2>
+          <form id="sellerQueryForm">
+            <div class="field-row">
+              <label for="sellerQueryUserId">卖家用户 ID</label>
+              <input id="sellerQueryUserId" name="userId" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询卖家资料</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="sellerQueryMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="sellerQueryRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>6. 更新卖家资料</h2>
+          <form id="sellerUpdateForm">
+            <div class="field-row">
+              <label for="sellerUpdateUserId">卖家用户 ID</label>
+              <input id="sellerUpdateUserId" name="userId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sellerUpdateShopName">店铺名称</label>
+              <input id="sellerUpdateShopName" name="shopName" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sellerUpdateBusinessLicense">营业执照</label>
+              <input id="sellerUpdateBusinessLicense" name="businessLicense" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sellerUpdateLegalPersonId">法人身份证</label>
+              <input id="sellerUpdateLegalPersonId" name="legalPersonId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sellerUpdateShopAddress">店铺地址</label>
+              <input id="sellerUpdateShopAddress" name="shopAddress" type="text">
+            </div>
+            <p class="hint">已审核卖家更新资质资料后，资质状态会自动回到 <code>PENDING</code>。</p>
+            <div class="button-row">
+              <button type="submit">更新卖家资料</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="sellerUpdateMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="sellerUpdateRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>7. 管理员查看用户列表</h2>
+          <form id="adminUserListForm">
+            <div class="field-row">
+              <label for="adminListUsername">用户名关键字</label>
+              <input id="adminListUsername" name="username" type="text">
+            </div>
+            <div class="field-row">
+              <label for="adminListUserType">用户类型</label>
+              <select id="adminListUserType" name="userType">
+                <option value="">全部</option>
+                <option value="BUYER">BUYER</option>
+                <option value="SELLER">SELLER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="adminListVerificationStatus">认证状态</label>
+              <select id="adminListVerificationStatus" name="verificationStatus">
+                <option value="">全部</option>
+                <option value="UNVERIFIED">UNVERIFIED</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="adminListQualificationStatus">卖家资质状态</label>
+              <select id="adminListQualificationStatus" name="qualificationStatus">
+                <option value="">全部</option>
+                <option value="PENDING">PENDING</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询用户列表</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="adminUserListMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="adminUserListRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>8. 管理员查看用户详情</h2>
+          <form id="adminUserDetailForm">
+            <div class="field-row">
+              <label for="adminDetailUserId">用户 ID</label>
+              <input id="adminDetailUserId" name="userId" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询用户详情</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="adminUserDetailMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="adminUserDetailRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>9. 管理员更新用户信息</h2>
+          <form id="adminUserUpdateForm">
+            <div class="field-row">
+              <label for="adminUpdateUserId">用户 ID</label>
+              <input id="adminUpdateUserId" name="userId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="adminUpdatePhone">手机号</label>
+              <input id="adminUpdatePhone" name="phone" type="text">
+            </div>
+            <div class="field-row">
+              <label for="adminUpdateEmail">邮箱</label>
+              <input id="adminUpdateEmail" name="email" type="text">
+            </div>
+            <div class="field-row">
+              <label for="adminUpdateCreditScore">信用分</label>
+              <input id="adminUpdateCreditScore" name="creditScore" type="number" min="0" max="100">
+            </div>
+            <div class="field-row">
+              <label for="adminUpdateVerificationStatus">认证状态</label>
+              <select id="adminUpdateVerificationStatus" name="verificationStatus">
+                <option value="">不修改</option>
+                <option value="UNVERIFIED">UNVERIFIED</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="adminUpdateQualificationStatus">卖家资质状态</label>
+              <select id="adminUpdateQualificationStatus" name="qualificationStatus">
+                <option value="">不修改</option>
+                <option value="PENDING">PENDING</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <p class="hint">信用分允许管理员在 <code>0-100</code> 范围内调整。</p>
+            <div class="button-row">
+              <button type="submit">管理员更新用户</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="adminUserUpdateMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="adminUserUpdateRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>10. 管理员审核卖家资质</h2>
+          <form id="sellerAuditForm">
+            <div class="field-row">
+              <label for="auditSellerId">卖家 ID</label>
+              <input id="auditSellerId" name="sellerId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="auditTargetStatus">审核结果</label>
+              <select id="auditTargetStatus" name="targetStatus">
+                <option value="APPROVED">APPROVED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <p class="hint">仅允许审核当前为 <code>PENDING</code> 的卖家，审核通过后信用分会提升到不低于 <code>80</code>。</p>
+            <div class="button-row">
+              <button type="submit">提交审核</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="sellerAuditMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="sellerAuditRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="rule-card">
+        <h2>11. 信用分规则</h2>
+        <ul>
+          <li>新注册用户默认信用分为 <code>60</code>。</li>
+          <li>管理员可将信用分调整到 <code>0-100</code> 范围。</li>
+          <li>卖家资质审核通过后，信用分会自动提升到不低于 <code>80</code>。</li>
+          <li>已审核卖家更新资质资料后，资质状态会自动回到 <code>PENDING</code>。</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const baseUrlEl = document.getElementById("baseUrl");
+    const adminUserIdEl = document.getElementById("adminUserId");
+    const registerUserTypeEl = document.getElementById("registerUserType");
+    const sellerRegisterFieldsEl = document.getElementById("sellerRegisterFields");
+
+    function getBaseUrl() {
+      return baseUrlEl.value.trim().replace(/\/$/, "");
+    }
+
+    function formToObject(form) {
+      const formData = new FormData(form);
+      const data = {};
+      for (const [key, value] of formData.entries()) {
+        const trimmed = String(value).trim();
+        if (trimmed !== "") {
+          data[key] = trimmed;
+        }
+      }
+      return data;
+    }
+
+    function buildQueryString(params) {
+      const searchParams = new URLSearchParams();
+      Object.keys(params).forEach(function (key) {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
+          searchParams.set(key, params[key]);
+        }
+      });
+      const queryString = searchParams.toString();
+      return queryString ? "?" + queryString : "";
+    }
+
+    function getAdminHeaders() {
+      const adminUserId = adminUserIdEl.value.trim();
+      if (!adminUserId) {
+        throw new Error("请先填写管理员用户 ID");
+      }
+      return { "X-Admin-User-Id": adminUserId };
+    }
+
+    function getDisplayResult(data) {
+      if (!data) {
+        return "无返回内容";
+      }
+      if (data.code === 1) {
+        return data.data ? JSON.stringify(data.data, null, 2) : "操作成功";
+      }
+      return data.msg || data.error || "操作失败";
+    }
+
+    function showResult(moduleKey, title, data) {
+      const mainResultEl = document.getElementById(moduleKey + "MainResult");
+      const rawResultEl = document.getElementById(moduleKey + "RawResult");
+      mainResultEl.textContent = getDisplayResult(data);
+      rawResultEl.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
+    }
+
+    function fillUserId(userId) {
+      if (!userId) {
+        return;
+      }
+      document.getElementById("profileUserId").value = userId;
+      document.getElementById("updateUserId").value = userId;
+      document.getElementById("sellerQueryUserId").value = userId;
+      document.getElementById("sellerUpdateUserId").value = userId;
+      document.getElementById("adminDetailUserId").value = userId;
+      document.getElementById("adminUpdateUserId").value = userId;
+      document.getElementById("auditSellerId").value = userId;
+    }
+
+    async function request(path, method, body, extraHeaders) {
+      const options = { method: method, headers: extraHeaders ? { ...extraHeaders } : {} };
+      if (body) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(getBaseUrl() + path, options);
+      const data = await response.json();
+      if (data && data.data && data.data.userId) {
+        fillUserId(data.data.userId);
+      }
+      return data;
+    }
+
+    function normalizeAdminUpdatePayload(payload) {
+      if (payload.creditScore !== undefined) {
+        payload.creditScore = Number(payload.creditScore);
+      }
+      return payload;
+    }
+
+    registerUserTypeEl.addEventListener("change", function () {
+      sellerRegisterFieldsEl.hidden = registerUserTypeEl.value !== "SELLER";
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/user/register", "POST", formToObject(event.target));
+        showResult("register", "注册结果", data);
+      } catch (error) {
+        showResult("register", "注册失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/user/login", "POST", formToObject(event.target));
+        showResult("login", "登录结果", data);
+      } catch (error) {
+        showResult("login", "登录失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("profileQueryForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const formData = formToObject(event.target);
+        const data = await request("/user/profile/" + encodeURIComponent(formData.userId || ""), "GET");
+        showResult("profileQuery", "用户资料", data);
+      } catch (error) {
+        showResult("profileQuery", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("profileUpdateForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/user/profile", "PUT", formToObject(event.target));
+        showResult("profileUpdate", "更新用户资料结果", data);
+      } catch (error) {
+        showResult("profileUpdate", "更新失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("sellerQueryForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const formData = formToObject(event.target);
+        const data = await request("/user/seller-profile/" + encodeURIComponent(formData.userId || ""), "GET");
+        showResult("sellerQuery", "卖家资料", data);
+      } catch (error) {
+        showResult("sellerQuery", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("sellerUpdateForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/user/seller-profile", "PUT", formToObject(event.target));
+        showResult("sellerUpdate", "更新卖家资料结果", data);
+      } catch (error) {
+        showResult("sellerUpdate", "更新失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("adminUserListForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const query = buildQueryString(formToObject(event.target));
+        const data = await request("/user/admin/users" + query, "GET", null, getAdminHeaders());
+        showResult("adminUserList", "管理员用户列表", data);
+      } catch (error) {
+        showResult("adminUserList", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("adminUserDetailForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const formData = formToObject(event.target);
+        const data = await request(
+          "/user/admin/users/" + encodeURIComponent(formData.userId || ""),
+          "GET",
+          null,
+          getAdminHeaders()
+        );
+        showResult("adminUserDetail", "管理员用户详情", data);
+      } catch (error) {
+        showResult("adminUserDetail", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("adminUserUpdateForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const payload = normalizeAdminUpdatePayload(formToObject(event.target));
+        const data = await request("/user/admin/users", "PUT", payload, getAdminHeaders());
+        showResult("adminUserUpdate", "管理员更新用户结果", data);
+      } catch (error) {
+        showResult("adminUserUpdate", "更新失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("sellerAuditForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request(
+          "/user/admin/sellers/qualification",
+          "PUT",
+          formToObject(event.target),
+          getAdminHeaders()
+        );
+        showResult("sellerAudit", "卖家资质审核结果", data);
+      } catch (error) {
+        showResult("sellerAudit", "审核失败", { error: String(error) });
+      }
+    });
+  </script>
+</body>
+</html>

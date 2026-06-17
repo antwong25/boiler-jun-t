@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: boiler-server
+  datasource:
+    url: jdbc:mysql://localhost:3306/boiler-jun?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true

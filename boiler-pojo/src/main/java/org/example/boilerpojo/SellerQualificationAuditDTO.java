@@ -1,0 +1,9 @@
+package org.example.boilerpojo;
+
+import lombok.Data;
+
+@Data
+public class SellerQualificationAuditDTO {
+    private String sellerId;
+    private String targetStatus;
+}
