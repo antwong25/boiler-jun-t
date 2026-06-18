@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.SellerMapper">
+    <resultMap id="SellerResultMap" type="org.example.boilerpojo.SellerEntity">
+        <id property="sellerId" column="sellerId"/>
+        <result property="shopName" column="shopName"/>
+        <result property="businessLicense" column="businessLicense"/>
+        <result property="legalPersonId" column="legalPersonId"/>
+        <result property="qualificationStatus" column="qualificationStatus"/>
+        <result property="guaranteeDeposit" column="guaranteeDeposit"/>
+        <result property="completedTransactionCount" column="completedTransactionCount"/>
+        <result property="positiveRatingRate" column="positiveRatingRate"/>
+    </resultMap>
+
+    <select id="getByUserId" resultMap="SellerResultMap">
+        select * from seller where sellerId = #{userId}
+    </select>
+
+    <select id="getBySellerId" resultMap="SellerResultMap">
+        select * from seller where sellerId = #{sellerId}
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.SellerEntity">
+        insert into seller (
+            sellerId,
+            shopName,
+            businessLicense,
+            legalPersonId,
+            qualificationStatus,
+            guaranteeDeposit,
+            completedTransactionCount,
+            positiveRatingRate
+        )
+        values (
+            #{sellerId},
+            #{shopName},
+            #{businessLicense},
+            #{legalPersonId},
+            #{qualificationStatus},
+            #{guaranteeDeposit},
+            #{completedTransactionCount},
+            #{positiveRatingRate}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.SellerEntity">
+        update seller
+        <set>
+            <if test="shopName != null and shopName != ''">shopName = #{shopName},</if>
+            <if test="businessLicense != null">businessLicense = #{businessLicense},</if>
+            <if test="legalPersonId != null">legalPersonId = #{legalPersonId},</if>
+            <if test="qualificationStatus != null and qualificationStatus != ''">qualificationStatus = #{qualificationStatus},</if>
+            <if test="guaranteeDeposit != null">guaranteeDeposit = #{guaranteeDeposit},</if>
+            <if test="completedTransactionCount != null">completedTransactionCount = #{completedTransactionCount},</if>
+            <if test="positiveRatingRate != null">positiveRatingRate = #{positiveRatingRate},</if>
+        </set>
+        where sellerId = #{sellerId}
+    </update>
+</mapper>

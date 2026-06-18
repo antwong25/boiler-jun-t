@@ -1,0 +1,261 @@
+=== /Users/wangchi/Documents/trae_projects/boiler-alpha/Detailed_Requirements.pdf ===
+总页数: 32
+
+
+================================================================================
+第 1 页
+================================================================================
+  6 
+2. Business Problems The existing boiler seller have the following problems: Weak customer management and market competitiveness: Facing the homogenized competition in industrial product trade and the upgrading of customer demands, companies have obvious shortcomings in customer service and market expansion. Low customer response efficiency: Customer demand records rely on manual registration, and customized equipment inquiries require repeated information transmission, with a long processing cycle, far exceeding the response speed of digital enterprises. The lack of digital marketing: Against the backdrop of e-commerce platforms and self-media marketing becoming mainstream, the company still relies on traditional offline promotion, making it difficult to reach the younger generation of equipment purchasing decision-makers. 3. Objectives Build an AI-enabled vertical trading platform for second-hand boilers to fill the gap in digital transactions in this niche field. Address the core pain points of information asymmetry, inefficient matching, and difficulty in ensuring credit between buyers and sellers of second-hand boilers. Verify the commercial feasibility of "AI technology + vertical industry" and form a replicable trading model for second-hand bulk commodities. Complete the full process of platform from design, development to testing on time to meet the requirements of the course project milestones. 4. Justification This project is worthwhile because it addresses an important problem in precision demand-supply matching for second-hand boiler transactions. (see subsection 8.1, 8.2) It is innovative as it is the first AI-integrated platform in large-machine trading in China. (see subsection 8.3, 8.4) 4.1 Addressing Market Gaps in Second-hand Boiler Trading The second-hand boiler market currently suffers from a major gap: buyers and sellers 
+
+================================================================================
+第 2 页
+================================================================================
+  40 
+10.2 Transaction Process The transaction process is as follows. 
+ Figure 11 Transaction Process 
+
+
+================================================================================
+第 3 页
+================================================================================
+  41 
+Seller Scenario 1. Register and log in 2. Complete qualification certification 3. Publish / edit / delete / manage sales posts 4. View buyer inquiries 5. Communicate with buyers via AI customer service or chat function 6. Receive reviews after offline transactions Buyer Scenario 1. Register and log in 2. Browse / filter posts 3. Precisely search for needs via AI search (natural language description supported) 4. View post details and seller credit information 5. Contact sellers for communication 6. Review sellers after offline transactions Detailed Process Seller Operation: After completing a transaction, the seller can click the "Complete Transaction" button to take the corresponding post off the shelf; if the seller needs to put the post on the shelf again, they must pay the information fee again. Purpose: To prevent sellers from posting posts at zero cost, making malicious spam comments, standardize the order of content release on the platform, and ensure the authenticity of the transaction environment. Buyer Operation: The buyer’s page is equipped with "Book" and "Cancel Booking" functions for buyers to operate according to their own needs. Purpose: Through the buyer’s "Book" operation, the system can clarify the time node when the buyer has the intention to complete a transaction, facilitating the tracking of subsequent transaction communication details; after booking, only the buyer has the right to cancel the booking. On the one hand, this setting can prevent sellers from retaining posts to avoid paying the information fee after successfully completing a transaction (reusing posts without additional payment in a disguised form); on the other 
+
+================================================================================
+第 4 页
+================================================================================
+  43 
+platform will impose a fine on the seller, which will be deducted directly from the guarantee deposit. The fine will be provided to the buyer as goodwill payment. 4. Rights Protection Support Upon presentation of a valid data access document issued by a judicial authority, the platform will disclose the relevant party’s information and fully cooperate with users in rights protection. 10.3 Project Requirements 10.3.1 User Management Module Function Description: Implement the whole process of user registration, login and profile management, serving as the basic support for all user operations on the platform. Interaction Logic: Registration requires filling in basic information (mobile phone number, password, etc.). Login supports account and password login. Users can view personal information on the personal information page. Sellers need to upload additional qualification documents on the personal information page. 10.3.2 Post Management Module Function Description: Support buyers and sellers to publish, view, edit and delete posts, including two types: sales posts and purchase posts. Interaction Logic: Post publishing requires filling in core information (boiler specifications, condition, price, etc.; sellers need to additionally upload actual product photos). All content can be modified when editing posts, and deleted posts cannot be restored. The platform reviews posts, which will be displayed only after approval. The details are as follow: - Only one boiler model is allowed per link. - Required fields include: boiler model, brand, fuel type, nitrogen oxide emission, working pressure, floor area, production date (date range can be selected for multiple units), price, rated thermal power (if Hot Water Boiler is selected), evaporation capacity (if Steam Boiler is selected). - Optional fields include: thermal efficiency, application scenario, rated outlet water temperature. - AI Valuation: Automatically generate a reasonable valuation range based on the boiler information entered by the user (brand, specifications, service life, etc.). 
+
+================================================================================
+第 5 页
+================================================================================
+  44 
+10.3.3 AI Module AI Search: Support users to search for second-hand boiler related posts in natural language, solving the pain point of inaccurate user demand description; Interaction Logic: Users input natural language needs (e.g., "Purchasing a 10-ton second-hand steam boiler used for less than 3 years"), the system parses through AI, accurately matches relevant posts and returns search results, supporting further filtering by users; AI Customer Service: Provide 24/7 intelligent consulting services for users, answer common questions related to platform usage and transactions, and can transfer to manual consulting according to user needs. 10.3.4 Chat Module Function Description: Realize real-time chat communication between buyers and sellers, provide support for the preliminary docking of offline transactions, and assist AI customer service in completing consulting services. Interaction Logic: After users click the "Contact Seller" button, they will automatically enter the chat interface, where they can send text and pictures (such as actual boiler photos) and view historical chat records; AI customer service can access the current chat session to answer common questions for users. 10.3.5 Credit Module Objective: Establish a user credit evaluation system, evaluate user credit based on multi-dimensional parameters, and ensure the authenticity of platform information and transaction security. Function Description: Users can view the credit score and credit details of other users on their personal information pages Evaluation Mechanism: Following the completion of offline transactions, buyers and sellers may rate each other. These ratings will directly impact both parties’ credit scores. The system uses a 100-point credit score calculated via fixed rules, with no machine learning involved. Credit Scoring Criteria (Full mark: 100) Deposit Payment: 20 points - Full points granted upon successful guarantee deposit payment. 
+
+================================================================================
+第 6 页
+================================================================================
+  45 
+Information Completeness: 20 points - Full points granted for complete and valid user information. Mutual Rating: 30 points - Initial score: 15 points - Gain 3 points for each positive rating - Lose 5 points for each negative rating Transaction Behavior: 20 points - Initial score: 10 points - Gain 2 points per successfully completed transaction Community Conduct: 10 points - Points may be deducted for violations including inappropriate language, off-topic posts, and inflammatory content.   
+
+================================================================================
+第 7 页
+================================================================================
+  46 
+11. Boiler Product Selection Manual 11.1 Core Parameter Overview Parameter Name Definition/Unit Core Selection Significance Mainstream Standard Range 
+Product Model Boiler Industry Standardization Number 
+Quickly identify boiler structure, fuel type, core output/pressure parameters 
+Compiled according to 'Structure + Output + Pressure + Fuel', slight adjustments by manufacturers Fuel Type Natural Gas / Oil / Biomass / Electric Heating 
+Determines boiler environmental performance and operating costs; must match local fuel supply conditions 
+Natural Gas (Q), Oil (Y), Biomass Pellets (T), Electric Heating 
+Rated Thermal Power / Evaporation Rate 
+Hot Water Boiler: kW Core output indicator, directly matching customer's actual heat/steam load demand 
+Hot Water Boiler 300-1200kW Steam Boiler: t/h Steam Boiler 0.5-10t/h 
+Thermal Efficiency % (Percentage) Measures boiler energy saving, directly affecting long-term fuel costs 
+Electric Heating 99%, Natural Gas 91%-94%, Biomass 88%-89% NOx Emissions mg/m³ (mg/cubic meter) Mandatory environmental acceptance indicator, determines boiler regional adaptability 
+Strict Environmental Control Areas ≤20, General Areas ≤30, Biomass ≤50, Electric Heating 0 Working Pressure MPa (Megapascal) Matches process pressure requirements for steam/heat use, relates to safety 
+Hot Water Boiler 0.6-0.8MPa Steam Boiler 0.7-1.6MPa 
+
+================================================================================
+第 8 页
+================================================================================
+  47 
+Application Scenarios Industrial / Commercial / Civil Segments 
+Precise scenario matching, fitting usage characteristics and needs of different scenarios 
+Factory / Hotel / Hospital / Office Building / Residential Area / Campus / Small Processing Plant Rated Outlet Water Temperature 
+℃ (Celsius) Only for hot water boilers, matches heating and domestic hot water temperature needs 
+85℃, 90℃ (Mainstream market values) 
+Footprint ㎡ (Square Meters) Includes boiler body + auxiliary equipment, matches on-site installation space conditions 
+4-35 ㎡ (Increases with boiler output size) 
+Production Date YYYY-MM-DD (Year-Month-Day) Reference for product production batch, used for equipment tracing, warranty calculation, inventory management 
+Arranged by production batch, interval 15-30 days (fits conventional boiler production cycle) 
+   
+
+================================================================================
+第 9 页
+================================================================================
+  48 
+11.2 Mainstream Product Parameter No. Product Model Fuel Type Rated Thermal Power/ Evaporation Rate 
+Thermal Efficiency 
+NOx Emissions Working Pressure Footprint (㎡) Production Date 
+1 WNS2-1.25-Q Natural Gas 2t/h Steam 92% ≤30mg/m³ 1.25MPa 8 2020-01-10 
+2 CWNS80-85/60-Q Natural Gas 800kW Hot Water 94% ≤20mg/m³ 0.7MPa 12 2022-01-15 
+3 LSS0.5-0.7-Y(Q) Oil/Gas Dual Use 
+0.5t/h Steam 89% ≤30mg/m³ 0.7MPa 4 2021-01-20 
+4 DZL4-1.25-T Biomass Pellets 4t/h Steam 88% ≤50mg/m³ 1.25MPa 20 2022-01-25 
+5 CWDR300-90/70 Electric Heating 300kW Hot Water 99% 0mg/m³ 0.6MPa 6 2016-02-01 
+6 WNS6-1.6-Q Natural Gas 6t/h Steam 93% ≤30mg/m³ 1.6MPa 15 2022-02-05 
+7 CWNS120-85/60-Q Natural Gas 1200kW Hot Water 94% ≤20mg/m³ 0.8MPa 18 2016-02-10 
+8 SZL10-1.25-T Biomass Pellets 10t/h Steam 89% ≤50mg/m³ 1.25MPa 35 2006-02-15 
+9 CWDR600-85/60 Electric Heating 600kW Hot Water 99% 0mg/m³ 0.7MPa 10 2016-02-20 
+10 WNS1-0.7-Q Natural Gas 1t/h Steam 91% ≤30mg/m³ 0.7MPa 6 2021-02-25 
+   
+
+================================================================================
+第 10 页
+================================================================================
+  49 
+11.3 Core Selection Principles 1. Compliance First, Mandatory Standards NOx emissions and energy efficiency indicators must comply with local environmental protection and special equipment policies. Failure to meet standards will result in rejection during environmental impact assessment and acceptance, excluding them from selection. 2. Precise Matching, Avoiding Waste Output (thermal power/evaporation rate), working pressure, and outlet water temperature must strictly match actual heat/steam demand to prevent energy and cost waste caused by 'oversized equipment'.   
+
+================================================================================
+第 11 页
+================================================================================
+  50 
+12. System Design 12.1 Module Overview 
+ Figure 12 
+ Figure 13 
+
+
+================================================================================
+第 12 页
+================================================================================
+  51 
+ Figure 14   
+
+
+================================================================================
+第 13 页
+================================================================================
+  52 
+12.2 Use Case Intermediate Description The use case diagram of our proposed system is as follow. 
+ Figure 15 Verify Seller Qualification 1. Sellers must submit business licenses or relevant qualification documents. 2. The platform uses AI-based document recognition combined with manual review for verification. 3. Once approved, sellers can get a verified badge near the avatar. Exception: 2a. If the application is rejected, the seller will not get the badge and will get a notification Create/Update a Post 1. The seller clicks Post/Edit Post to enter the editing page. 
+
+
+================================================================================
+第 14 页
+================================================================================
+  53 
+2. The seller edits the detailed post information on the editing page. 3. The seller clicks Post. 4. The post content is updated immediately after automatic AI content review. Exception: 4a. If the post fails the review, an error prompt will pop up with specific violation details. Search Post via LLM 1. There are two tabs on the left side of the home page: AI Search and Search. AI Search is selected by default, and a chat box is displayed with a system message: “Hello, I am your AI search assistant. What do you need?” On the right side of the page are recommended posts, advertisements, etc. 2. The user enters their requirement in natural language and clicks Send. The chat history is updated immediately. The left side of the page is the AI chat window, and the right side displays the search results provided by the AI based on the current conversation. 3. The user can continue chatting with the AI to obtain search results that better match their needs. The right page is updated in real time along with the chat messages. Exception 1a. If the user clicks Search, the page switches to the normal search state.  Search Post 1. The user enters keywords 2. The user clicks Search 3. The system displays the search results page, along with filter and sort buttons. 4. The user filters and sorts the results; the system updates the results page accordingly. Exception 1a. If the user clicks AI Search, the page switches to the AI search state. Manage User 1. The administrator selects a user on the user management interface. 
+
+================================================================================
+第 15 页
+================================================================================
+  54 
+2. The administrator modifies the specific attributes of the user and saves the changes. Send / Receive Messages 1. The sender selects a recipient (could be AI customer service); the page displays the chat history and message input box. 2. The sender enters a message and clicks Send. 3. The system delivers the message to the recipient. Browse Post 1. The user enters a page on the platform that can display posts (homepage recommendation area / search results page / seller's published posts page).  2. The system loads the list of equipment posts that meet the default conditions (displayed by pagination).  3. The list displays core post information: equipment name, brand/tonnage, place of origin, service life, price, release time, post status (visible only to administrator/seller).  4. The user can scroll the page or click pagination controls to browse more posts.  5. The user clicks the "View Details" link of any post to enter the post detail page and view complete information.  6. During browsing, the system automatically counts post views (increment by 1 each time the detail page is opened). Exception 2a. No available posts: The system displays: No relevant equipment posts. Please adjust filter conditions or view purchase information. 5a. Post has been banned/delisted: The post is hidden in the list. If the user accesses the detail page via a historical link, the system prompts: This post has been delisted/banned and cannot be viewed. Filter Post 1. The user selects or enters filter conditions in the filter interface, which can be combined in the following dimensions: a. Basic attributes (equipment type, tonnage, fuel type) 
+
+================================================================================
+第 16 页
+================================================================================
+  55 
+b. Region and service life (place of origin, service life) c. Transaction information (price range, negotiable or not) d. Text keywords (equipment name, seller name) 2. The user clicks the "Filter" or "AI Matching" button to submit the request. 3. The system executes the query according to the combined conditions. 4. The system refreshes the page and displays the filtered posts in a paginated list. 5. The top of the page updates to show "Filter conditions" and "Total number of matching results". Exception 1a. Invalid input: If non-numeric characters (such as letters) are entered in the price range, the system prompts "Please enter a valid price number" when filtering is clicked, and no query is executed. 3a. Conflicting conditions: If "Within 1 year" service life is selected but no equipment type is selected, the system still executes the query and does not treat it as an exception. 4a. No matching results: The system does not display the list, but shows the prompt "No equipment matching the conditions found. It is recommended to relax the filter conditions" and recommends 3 popular posts. Contact Seller 1. The buyer triggers the "Chat with Seller" operation on the corresponding page of the platform. 2. The system verifies the buyer's login status. If logged in, it directly jumps to the chat page with the corresponding seller. 3. The chat page loads the seller's basic information sidebar and historical chat records with the seller. 4. The buyer edits consultation content in the input box, and can optionally click "Send File/Image" to upload materials. 5. The buyer clicks the "Send" button, and the message is displayed in the chat history area in real time. 6. The system automatically saves chat records, which are also used as transaction vouchers on the platform. 
+
+================================================================================
+第 17 页
+================================================================================
+  56 
+Exception 1a. The seller's account is abnormal (banned/cancelled): After triggering the operation, the system prompts "The seller's account status is abnormal and cannot initiate a private chat". 2a. The buyer is not logged in: After triggering the operation, the system jumps to the platform login page and prompts "Please log in first to initiate a private chat". Write Review 1. The buyer enters the equipment post detail page.  2. The buyer enters the content to be consulted or evaluated in the comment input box.  3. The buyer clicks the "Submit Comment" button.  4. The system performs a compliance check on the comment content.  5. The system adds the comment to the comment list of the equipment.  6. The page refreshes and displays the newly published comment content. Exception 1a. The post has been delisted or banned: The system prompts "Comments are not available for this post". 3a. The buyer is not logged in: The system prompts "Please log in first to post a comment". 3a-1. Empty comment content: The system prompts "Please enter comment content". 4a. The comment contains violating information: The system prompts "Content does not meet the specifications, please modify and resubmit". Manage Post 1. The administrator enters the backend post management list page.  2. The system displays all equipment post information.  3. The administrator views the post title, status, release time and seller information.  4. The administrator can perform view, edit, review, list, delist or delete operations on a single post.  5. The administrator can check multiple posts for batch operations.  
+
+================================================================================
+第 18 页
+================================================================================
+  57 
+6. The system executes the operation and updates the post status.  7. The page refreshes to display the latest post list. Exception 1a. Accessing the backend without logging in to an administrator account: Automatically jump to the login page. 4a. The post has been deleted or does not exist: The operation fails and prompts "Post does not exist". 5a. Performing batch operations without selecting any posts: The system prompts "Please select the posts to operate first". View Seller’s Profile 1. The buyer enters the seller's profile page.  2. The system displays the seller's basic information, enterprise qualifications, certification status and credit rating.  3. The system displays the list of all equipment on sale by the seller.  4. The system displays historical transaction reviews of the seller from other buyers.  5. The system displays the platform's transaction guarantee and credit description for the seller.  6. The buyer can view the seller's complete credit score and review details. Exception 1a. The seller's account has been banned: The system prompts "The seller's information cannot be viewed". 3a. The seller has no equipment on sale: The page displays "The seller has no equipment on sale at present".   
+
+================================================================================
+第 19 页
+================================================================================
+  72 
+13. System Implementation 13.1 Technical Architecture 
+ Figure 39 This project adopts a front-end and back-end separated architecture, which is designed to be scalable, maintainable and practical, fully meeting the needs of long-term iteration and production application. The overall architecture follows a clear layered design, with the user layer, gateway layer, application layer and data layer closely connected, and the technical selection is strictly based on the finalized technology stack without any redundant components. The user layer of the project is built with Node.js as the running environment and Vue.js as the core front-end framework, which is lightweight and easy to maintain, and can quickly respond to user operations while ensuring good interactivity. The gateway layer is implemented by Nginx, which serves as the unified entry point for all requests, undertaking functions such as request forwarding, load balancing and static resource management, effectively hiding the internal service details and ensuring the security and stability of the system. The application layer is developed based on Spring Boot and Spring MVC, which provides a mature and stable development environment. It uses JWT for stateless authentication to ensure the security of user access, and realizes real-time communication between buyers through WebSocket, while abandoning all unnecessary components that are not related to the core business. The data layer takes MySQL as the main relational database to store core business data such as user information, post content and transaction records, and uses Redis for high-performance caching to improve the response speed of the system. At the same time, it relies on MyBatis for ORM mapping and PageHelper for efficient paging query, which 
+
+
+================================================================================
+第 20 页
+================================================================================
+  73 
+simplifies the development process and improves the maintainability of the system. In terms of tool support, the project uses Git for version control to ensure efficient team collaboration, and uses JUnit for unit testing to guarantee the quality of the code. It also relies on APIFox for API management and debugging, which replaces the traditional Postman to achieve more comprehensive API lifecycle management. All technical selections are practical and mature, avoiding any unnecessary components, and the overall design is concise and focused, which not only meets the current business needs, but also lays a solid foundation for long-term iterative optimization. The entire system is deployed on an Ubuntu server, which has strong stability and scalability, and can adapt to the long-term operation and expansion of the platform. 13.2 System Prototypes This part presents our system prototypes. We adopt both evolutionary prototyping and throwaway prototyping to illustrate our concept. We will continue working on our system after intermediate report. Edit Posts 
+ Figure 40  Seller Verification 
+
+
+================================================================================
+第 21 页
+================================================================================
+  74 
+ Figure 41  User Management 
+ Figure 42 
+
+
+================================================================================
+第 22 页
+================================================================================
+  75 
+Log in 
+ Figure 43 Sign up 
+ Figure 44 Home Page Default: AI Search is selected 
+ Figure 45 
+
+
+================================================================================
+第 23 页
+================================================================================
+  76 
+If Search (instead of AI Search) is selected 
+ Figure 46  Search Result Page 
+ Figure 47   
+
+
+================================================================================
+第 24 页
+================================================================================
+  77 
+Search Result Page(Detailed) 
+ Figure 48   
+
+
+================================================================================
+第 25 页
+================================================================================
+  78 
+Home Page 
+ Figure 49   
+
+
+================================================================================
+第 26 页
+================================================================================
+  79 
+Post Detail Page && Comment Writing Page 
+
+================================================================================
+第 27 页
+================================================================================
+  80 
+ Figure 50 
+
+
+================================================================================
+第 28 页
+================================================================================
+  81 
+User Detail Page 
+ Figure 51 
+
+
+================================================================================
+第 29 页
+================================================================================
+  82 
+Manage Post Page 
+ Figure 52 Chat Page 
+ Figure 53 
+
+
+================================================================================
+第 30 页
+================================================================================
+  83 
+14. Future Plan Our future plan is as follows. Date Task Description Apr 15 (Week 14, Sem B) – Jul 10 (Week 5, ST) Software Development Coding (Backend + Frontend + Env) Debug Testing Jul 13 (Week 5, ST) –  Jul 20 (Week 7, ST) Prepare for Report Report writing Jul 21 (Week 7, ST) Final Report Submission Jul 21 (Week 7, ST) Project Demo Video Submission Jul 23 (Week 7, ST) Project Presentation Video Submission      
+
+================================================================================
+第 31 页
+================================================================================
+  84 
+15. Reference [1]  An Zhang, Yang Deng, Yankai Lin, Xu Chen, Ji-Rong Wen, and Tat-Seng Chua. 2024. Large Language Model Powered Agents for Information Retrieval. In Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '24). Association for Computing Machinery, New York, NY , USA, 2989–2992. [2]  M. Al-Mekhlal, M. Al-Buraik and M. Al-Lubli, "Digital Transformation: AI-Powered Bot Solutions and Automation for Customer Services," 2023 International Conference on Digital Applications, Transformation & Economy (ICDATE), Miri, Sarawak, Malaysia, 2023, pp. 1-7 [3]  https://www.51chuli.com/about/huiyuan.html [4]  https://b2b.baidu.com/help/enter?fid=494144023,1770373062470&pi=b2b.s....2544512411440886 [5]  https://e.baidu.com/case/159.html?refer=1296 [6]  https://e.baidu.com/case/151.html?refer=1296 [7]  Helms M M, Nixon J. Exploring SWOT analysis–where are we now? A review of academic research from the last decade[J]. Journal of strategy and management, 2010, 3(3): 215-251. [8]  Grundy T. Rethinking and reinventing Michael Porter's five forces model[J]. Strategic change, 2006, 15(5): 213-229. [9]  C. Zhai and H. Liu, "Factors affecting SMEs adoption decision of B2B e-marketplace: A case study in China," 2013 10th International Conference on Service Systems and Service Management [10]  Fang, E., Li, X., Huang, M., & Palmatier, R. W. (2015). Direct and Indirect Effects of Buyers and Sellers on Search Advertising Revenues in Business-to-Business Electronic Platforms. Journal of Marketing Research, 52(3), 407-422. [11]  Oklander, Mikhaylo & Karandin, Oleksandr & Olena, Ptashchenko & Dybach, Inna. (2025). LinkedIn as a key tool for targeted advertising in industrial B2B marketing. Economics of Development. 24. 113-121. 10.63341/econ/2.2025.113. [12]  Yuru Liu & Yan Wan, 2023. "Consumer Satisfaction with the Online Dispute Resolution on a Second-Hand Goods-Trading Platform," Sustainability, MDPI, 
+
+================================================================================
+第 32 页
+================================================================================
+  85 
+vol. 15(4), pages 1-15, February. 

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.PostMapper">
+    <resultMap id="PostResultMap" type="org.example.boilerpojo.PostEntity">
+        <id property="postId" column="postId"/>
+        <result property="sellerId" column="sellerId"/>
+        <result property="title" column="title"/>
+        <result property="price" column="price"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="publishTime" column="publishTime"/>
+        <result property="updateTime" column="updateTime"/>
+        <result property="viewCount" column="viewCount"/>
+        <result property="mediaFiles" column="mediaFiles"/>
+        <result property="aiValuationRange" column="aiValuationRange"/>
+        <result property="city" column="city"/>
+        <result property="boilerId" column="boilerId"/>
+    </resultMap>
+
+    <select id="getByPostId" resultMap="PostResultMap">
+        select * from post where postId = #{postId}
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.PostEntity">
+        insert into post (
+            postId,
+            sellerId,
+            title,
+            price,
+            description,
+            status,
+            publishTime,
+            updateTime,
+            viewCount,
+            mediaFiles,
+            aiValuationRange,
+            city,
+            boilerId
+        )
+        values (
+            #{postId},
+            #{sellerId},
+            #{title},
+            #{price},
+            #{description},
+            #{status},
+            #{publishTime},
+            #{updateTime},
+            #{viewCount},
+            #{mediaFiles},
+            #{aiValuationRange},
+            #{city},
+            #{boilerId}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.PostEntity">
+        update post
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="publishTime != null">publishTime = #{publishTime},</if>
+            <if test="updateTime != null">updateTime = #{updateTime},</if>
+            <if test="viewCount != null">viewCount = #{viewCount},</if>
+            <if test="mediaFiles != null">mediaFiles = #{mediaFiles},</if>
+            <if test="aiValuationRange != null">aiValuationRange = #{aiValuationRange},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="boilerId != null and boilerId != ''">boilerId = #{boilerId},</if>
+        </set>
+        where postId = #{postId}
+    </update>
+
+    <update id="incrementViewCount">
+        update post
+        set viewCount = ifnull(viewCount, 0) + 1
+        where postId = #{postId}
+    </update>
+
+    <delete id="deleteByPostId">
+        delete from post where postId = #{postId}
+    </delete>
+</mapper>
