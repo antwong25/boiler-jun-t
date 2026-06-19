@@ -20,13 +20,13 @@ public interface UserService {
 
     UserVO getProfile(String userId);
 
-    UserVO updateProfile(UserProfileUpdateDTO dto);
+    UserVO updateProfile(String currentUserId, UserProfileUpdateDTO dto);
 
     UserVO getSellerProfile(String userId);
 
-    UserVO upsertSellerProfile(SellerProfileDTO dto);
+    UserVO upsertSellerProfile(String currentUserId, SellerProfileDTO dto);
 
-    SellerQualificationFileUploadDTO uploadSellerQualificationFile(String userId, String fileType, MultipartFile file);
+    SellerQualificationFileUploadDTO uploadSellerQualificationFile(String currentUserId, String fileType, MultipartFile file);
 
     List<UserVO> adminListUsers(AdminUserQueryDTO dto);
 
@@ -34,7 +34,7 @@ public interface UserService {
 
     UserVO adminUpdateUser(AdminUserUpdateDTO dto);
 
-    UserVO auditSellerQualification(SellerQualificationAuditDTO dto);
+    UserVO auditSellerQualification(String adminUserId, SellerQualificationAuditDTO dto);
 
     boolean isAdmin(String userId);
 }

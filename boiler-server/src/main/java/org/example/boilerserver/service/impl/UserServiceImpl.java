@@ -125,10 +125,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO updateProfile(UserProfileUpdateDTO dto) {
-        if (dto == null || !StringUtils.hasText(dto.getUserId())) {
+    public UserVO updateProfile(String currentUserId, UserProfileUpdateDTO dto) {
+        if (!StringUtils.hasText(currentUserId)) {
             throw new IllegalArgumentException("用户ID不能为空");
         }
+        if (dto == null) {
+            throw new IllegalArgumentException("用户资料不能为空");
+        }
+        dto.setUserId(currentUserId.trim());
 
         UserEntity userEntity = getExistingUser(dto.getUserId());
         userEntity.setPhone(trimToNull(dto.getPhone()));
@@ -149,10 +153,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO upsertSellerProfile(SellerProfileDTO dto) {
-        if (dto == null || !StringUtils.hasText(dto.getUserId())) {
+    public UserVO upsertSellerProfile(String currentUserId, SellerProfileDTO dto) {
+        if (!StringUtils.hasText(currentUserId)) {
             throw new IllegalArgumentException("用户ID不能为空");
         }
+        if (dto == null) {
+            throw new IllegalArgumentException("卖家资料不能为空");
+        }
+        dto.setUserId(currentUserId.trim());
         UserEntity userEntity = getExistingUser(dto.getUserId());
         if (!UserConstant.USER_TYPE_SELLER.equalsIgnoreCase(userEntity.getUserType())) {
             throw new IllegalArgumentException("当前用户不是卖家");
@@ -281,10 +289,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO auditSellerQualification(SellerQualificationAuditDTO dto) {
+    public UserVO auditSellerQualification(String adminUserId, SellerQualificationAuditDTO dto) {
+        if (!StringUtils.hasText(adminUserId)) {
+            throw new IllegalArgumentException("管理员ID不能为空");
+        }
         if (dto == null || !StringUtils.hasText(dto.getSellerId())) {
             throw new IllegalArgumentException("卖家ID不能为空");
         }
+        dto.setAdminUserId(adminUserId.trim());
 
         String targetStatus = normalizeQualificationStatus(dto.getTargetStatus());
         if (UserConstant.QUALIFICATION_STATUS_PENDING.equals(targetStatus)) {

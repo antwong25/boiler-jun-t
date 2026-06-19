@@ -83,11 +83,15 @@
           <input id="baseUrl" type="text" value="http://127.0.0.1:8080">
         </div>
         <div>
-          <label for="adminUserId"><strong>管理员用户 ID</strong></label>
-          <input id="adminUserId" type="text" placeholder="调用 /user/admin/** 时必填">
+          <label for="userToken"><strong>当前用户 Token</strong></label>
+          <input id="userToken" type="text" placeholder="调用 /user/profile、/user/seller-profile 等接口时必填">
+        </div>
+        <div>
+          <label for="adminToken"><strong>管理员 Token</strong></label>
+          <input id="adminToken" type="text" placeholder="调用 /user/admin/** 时必填">
         </div>
       </div>
-      <p class="hint">管理员接口会自动携带请求头 <code>X-Admin-User-Id</code>。</p>
+      <p class="hint">登录成功后会返回 JWT。需要鉴权的接口会自动携带 <code>Authorization: Bearer &lt;token&gt;</code>。</p>
     </section>
 
     <div class="module-list">
@@ -215,10 +219,6 @@
           <h2>4. 更新用户资料</h2>
           <form id="profileUpdateForm">
             <div class="field-row">
-              <label for="updateUserId">用户 ID</label>
-              <input id="updateUserId" name="userId" type="text">
-            </div>
-            <div class="field-row">
               <label for="updatePhone">手机号</label>
               <input id="updatePhone" name="phone" type="text">
             </div>
@@ -230,6 +230,7 @@
               <label for="updateShippingAddress">收货地址</label>
               <input id="updateShippingAddress" name="shippingAddress" type="text">
             </div>
+            <p class="hint">当前接口会从 JWT 中识别当前登录用户，无需再手动填写 <code>userId</code>。</p>
             <div class="button-row">
               <button type="submit">更新用户资料</button>
             </div>
@@ -279,10 +280,6 @@
           <h2>6. 更新卖家资料</h2>
           <form id="sellerUpdateForm">
             <div class="field-row">
-              <label for="sellerUpdateUserId">卖家用户 ID</label>
-              <input id="sellerUpdateUserId" name="userId" type="text">
-            </div>
-            <div class="field-row">
               <label for="sellerUpdateShopName">店铺名称</label>
               <input id="sellerUpdateShopName" name="shopName" type="text">
             </div>
@@ -298,7 +295,7 @@
               <label for="sellerUpdateShopAddress">店铺地址</label>
               <input id="sellerUpdateShopAddress" name="shopAddress" type="text">
             </div>
-            <p class="hint">已审核卖家更新资质资料后，资质状态会自动回到 <code>PENDING</code>。</p>
+            <p class="hint">当前接口会从 JWT 中识别当前卖家，无需传 <code>userId</code>；已审核卖家更新资质资料后，资质状态会自动回到 <code>PENDING</code>。</p>
             <div class="button-row">
               <button type="submit">更新卖家资料</button>
             </div>
@@ -322,10 +319,6 @@
           <h2>7. 上传卖家资质文件</h2>
           <form id="sellerFileUploadForm">
             <div class="field-row">
-              <label for="sellerFileUserId">卖家用户 ID</label>
-              <input id="sellerFileUserId" name="userId" type="text">
-            </div>
-            <div class="field-row">
               <label for="sellerFileType">文件类型</label>
               <select id="sellerFileType" name="fileType">
                 <option value="BUSINESS_LICENSE">BUSINESS_LICENSE</option>
@@ -336,7 +329,7 @@
               <label for="sellerFileInput">选择文件</label>
               <input id="sellerFileInput" name="file" type="file">
             </div>
-            <p class="hint">仅支持上传 <code>png/jpg/jpeg/pdf</code>；上传成功后会返回静态访问 URL，已审核卖家再次上传会自动回到 <code>PENDING</code>。</p>
+            <p class="hint">当前接口会从 JWT 中识别当前卖家，无需传 <code>userId</code>；仅支持上传 <code>png/jpg/jpeg/pdf</code>，已审核卖家再次上传会自动回到 <code>PENDING</code>。</p>
             <div class="button-row">
               <button type="submit">上传资质文件</button>
             </div>
@@ -544,7 +537,8 @@
 
   <script>
     const baseUrlEl = document.getElementById("baseUrl");
-    const adminUserIdEl = document.getElementById("adminUserId");
+    const userTokenEl = document.getElementById("userToken");
+    const adminTokenEl = document.getElementById("adminToken");
     const registerUserTypeEl = document.getElementById("registerUserType");
     const sellerRegisterFieldsEl = document.getElementById("sellerRegisterFields");
 
@@ -575,12 +569,20 @@
       return queryString ? "?" + queryString : "";
     }
 
-    function getAdminHeaders() {
-      const adminUserId = adminUserIdEl.value.trim();
-      if (!adminUserId) {
-        throw new Error("请先填写管理员用户 ID");
+    function getBearerHeaders(token, emptyMessage) {
+      const trimmedToken = token.trim();
+      if (!trimmedToken) {
+        throw new Error(emptyMessage);
       }
-      return { "X-Admin-User-Id": adminUserId };
+      return { Authorization: "Bearer " + trimmedToken };
+    }
+
+    function getUserHeaders() {
+      return getBearerHeaders(userTokenEl.value, "请先填写当前用户 Token");
+    }
+
+    function getAdminHeaders() {
+      return getBearerHeaders(adminTokenEl.value, "请先填写管理员 Token");
     }
 
     function getDisplayResult(data) {
@@ -605,13 +607,31 @@
         return;
       }
       document.getElementById("profileUserId").value = userId;
-      document.getElementById("updateUserId").value = userId;
       document.getElementById("sellerQueryUserId").value = userId;
-      document.getElementById("sellerUpdateUserId").value = userId;
-      document.getElementById("sellerFileUserId").value = userId;
       document.getElementById("adminDetailUserId").value = userId;
       document.getElementById("adminUpdateUserId").value = userId;
       document.getElementById("auditSellerId").value = userId;
+    }
+
+    function handleAuthData(data) {
+      if (!data || !data.data) {
+        return;
+      }
+
+      if (data.data.userId) {
+        fillUserId(data.data.userId);
+      }
+
+      if (data.data.userInfo && data.data.userInfo.userId) {
+        fillUserId(data.data.userInfo.userId);
+      }
+
+      if (data.data.token) {
+        userTokenEl.value = data.data.token;
+        if (data.data.userInfo && data.data.userInfo.userType === "ADMIN") {
+          adminTokenEl.value = data.data.token;
+        }
+      }
     }
 
     async function request(path, method, body, extraHeaders) {
@@ -623,20 +643,14 @@
 
       const response = await fetch(getBaseUrl() + path, options);
       const data = await response.json();
-      if (data && data.data && data.data.userId) {
-        fillUserId(data.data.userId);
-      }
+      handleAuthData(data);
       return data;
     }
 
     async function uploadQualificationFile(form) {
       const formData = new FormData(form);
-      const userId = String(formData.get("userId") || "").trim();
       const fileType = String(formData.get("fileType") || "").trim();
       const file = formData.get("file");
-      if (!userId) {
-        throw new Error("请填写卖家用户 ID");
-      }
       if (!fileType) {
         throw new Error("请选择文件类型");
       }
@@ -645,16 +659,16 @@
       }
 
       const payload = new FormData();
-      payload.set("userId", userId);
       payload.set("fileType", fileType);
       payload.set("file", file);
 
       const response = await fetch(getBaseUrl() + "/user/seller-profile/files", {
         method: "POST",
+        headers: getUserHeaders(),
         body: payload
       });
       const data = await response.json();
-      fillUserId(userId);
+      handleAuthData(data);
       return data;
     }
 
@@ -703,7 +717,7 @@
     document.getElementById("profileUpdateForm").addEventListener("submit", async function (event) {
       event.preventDefault();
       try {
-        const data = await request("/user/profile", "PUT", formToObject(event.target));
+        const data = await request("/user/profile", "PUT", formToObject(event.target), getUserHeaders());
         showResult("profileUpdate", "更新用户资料结果", data);
       } catch (error) {
         showResult("profileUpdate", "更新失败", { error: String(error) });
@@ -724,7 +738,7 @@
     document.getElementById("sellerUpdateForm").addEventListener("submit", async function (event) {
       event.preventDefault();
       try {
-        const data = await request("/user/seller-profile", "PUT", formToObject(event.target));
+        const data = await request("/user/seller-profile", "PUT", formToObject(event.target), getUserHeaders());
         showResult("sellerUpdate", "更新卖家资料结果", data);
       } catch (error) {
         showResult("sellerUpdate", "更新失败", { error: String(error) });
