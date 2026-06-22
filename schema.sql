@@ -54,14 +54,16 @@ CREATE TABLE `boiler` (
   workingPressure DECIMAL(10,2),
   noxEmissions DECIMAL(10,2),
   footprintArea DECIMAL(10,2),
-  manufactureYear DATE,
+  manufactureStartDate DATE,
+  manufactureEndDate DATE,
   evaporationCapacity DECIMAL(10,2),
   ratedThermalPower DECIMAL(10,2),
   thermalEfficiency DECIMAL(10,2),
   equipmentCondition VARCHAR(50),
   usageHours DECIMAL(10,2),
   testReport VARCHAR(255),
-  ratedOutletWaterTemperature DECIMAL(10,2)
+  ratedOutletWaterTemperature DECIMAL(10,2),
+  applicationScenario VARCHAR(255)
 );
 
 -- 管理员表
