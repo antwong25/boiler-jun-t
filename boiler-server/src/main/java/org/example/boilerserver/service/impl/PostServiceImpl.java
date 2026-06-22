@@ -252,8 +252,8 @@ public class PostServiceImpl implements PostService {
         boilerEntity.setWorkingPressure(dto.getWorkingPressure());
         boilerEntity.setNoxEmissions(dto.getNoxEmissions());
         boilerEntity.setFootprintArea(dto.getFootprintArea());
-        boilerEntity.setManufactureStartDate(dto.getManufactureStartDate());
-        boilerEntity.setManufactureEndDate(dto.getManufactureEndDate());
+        // `schema.sql` 仅保留单个 manufactureYear 字段，优先存储结束日期以兼容现有估值逻辑。
+        boilerEntity.setManufactureYear(resolveManufactureYear(dto));
         boilerEntity.setEvaporationCapacity(dto.getEvaporationCapacity());
         boilerEntity.setRatedThermalPower(dto.getRatedThermalPower());
         boilerEntity.setThermalEfficiency(dto.getThermalEfficiency());
@@ -261,7 +261,6 @@ public class PostServiceImpl implements PostService {
         boilerEntity.setUsageHours(dto.getUsageHours());
         boilerEntity.setTestReport(trimToNull(dto.getTestReport()));
         boilerEntity.setRatedOutletWaterTemperature(dto.getRatedOutletWaterTemperature());
-        boilerEntity.setApplicationScenario(trimToNull(dto.getApplicationScenario()));
         return boilerEntity;
     }
 
@@ -294,8 +293,8 @@ public class PostServiceImpl implements PostService {
         boilerDetailVO.setWorkingPressure(boilerEntity.getWorkingPressure());
         boilerDetailVO.setNoxEmissions(boilerEntity.getNoxEmissions());
         boilerDetailVO.setFootprintArea(boilerEntity.getFootprintArea());
-        boilerDetailVO.setManufactureStartDate(boilerEntity.getManufactureStartDate());
-        boilerDetailVO.setManufactureEndDate(boilerEntity.getManufactureEndDate());
+        boilerDetailVO.setManufactureStartDate(boilerEntity.getManufactureYear());
+        boilerDetailVO.setManufactureEndDate(boilerEntity.getManufactureYear());
         boilerDetailVO.setEvaporationCapacity(boilerEntity.getEvaporationCapacity());
         boilerDetailVO.setRatedThermalPower(boilerEntity.getRatedThermalPower());
         boilerDetailVO.setThermalEfficiency(boilerEntity.getThermalEfficiency());
@@ -303,7 +302,6 @@ public class PostServiceImpl implements PostService {
         boilerDetailVO.setUsageHours(boilerEntity.getUsageHours());
         boilerDetailVO.setTestReport(boilerEntity.getTestReport());
         boilerDetailVO.setRatedOutletWaterTemperature(boilerEntity.getRatedOutletWaterTemperature());
-        boilerDetailVO.setApplicationScenario(boilerEntity.getApplicationScenario());
         return boilerDetailVO;
     }
 
@@ -324,7 +322,7 @@ public class PostServiceImpl implements PostService {
         }
 
         long serviceYears = ChronoUnit.YEARS.between(
-                boilerEntity.getManufactureEndDate(),
+                boilerEntity.getManufactureYear(),
                 LocalDate.now()
         );
         if (serviceYears > 0) {
@@ -379,6 +377,13 @@ public class PostServiceImpl implements PostService {
             return null;
         }
         return value.trim();
+    }
+
+    private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {
+        if (dto.getManufactureEndDate() != null) {
+            return dto.getManufactureEndDate();
+        }
+        return dto.getManufactureStartDate();
     }
 
     private String generateId() {

@@ -16,8 +16,7 @@ public class BoilerEntity {
     private BigDecimal workingPressure;
     private BigDecimal noxEmissions;
     private BigDecimal footprintArea;
-    private LocalDate manufactureStartDate;
-    private LocalDate manufactureEndDate;
+    private LocalDate manufactureYear;
     private BigDecimal evaporationCapacity;
     private BigDecimal ratedThermalPower;
     private BigDecimal thermalEfficiency;
@@ -25,5 +24,4 @@ public class BoilerEntity {
     private BigDecimal usageHours;
     private String testReport;
     private BigDecimal ratedOutletWaterTemperature;
-    private String applicationScenario;
 }

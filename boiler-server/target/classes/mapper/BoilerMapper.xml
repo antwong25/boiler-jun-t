@@ -13,8 +13,7 @@
         <result property="workingPressure" column="workingPressure"/>
         <result property="noxEmissions" column="noxEmissions"/>
         <result property="footprintArea" column="footprintArea"/>
-        <result property="manufactureStartDate" column="manufactureStartDate"/>
-        <result property="manufactureEndDate" column="manufactureEndDate"/>
+        <result property="manufactureYear" column="manufactureYear"/>
         <result property="evaporationCapacity" column="evaporationCapacity"/>
         <result property="ratedThermalPower" column="ratedThermalPower"/>
         <result property="thermalEfficiency" column="thermalEfficiency"/>
@@ -22,7 +21,6 @@
         <result property="usageHours" column="usageHours"/>
         <result property="testReport" column="testReport"/>
         <result property="ratedOutletWaterTemperature" column="ratedOutletWaterTemperature"/>
-        <result property="applicationScenario" column="applicationScenario"/>
     </resultMap>
 
     <select id="getByBoilerId" resultMap="BoilerResultMap">
@@ -40,16 +38,14 @@
             workingPressure,
             noxEmissions,
             footprintArea,
-            manufactureStartDate,
-            manufactureEndDate,
+            manufactureYear,
             evaporationCapacity,
             ratedThermalPower,
             thermalEfficiency,
             equipmentCondition,
             usageHours,
             testReport,
-            ratedOutletWaterTemperature,
-            applicationScenario
+            ratedOutletWaterTemperature
         )
         values (
             #{boilerId},
@@ -61,16 +57,14 @@
             #{workingPressure},
             #{noxEmissions},
             #{footprintArea},
-            #{manufactureStartDate},
-            #{manufactureEndDate},
+            #{manufactureYear},
             #{evaporationCapacity},
             #{ratedThermalPower},
             #{thermalEfficiency},
             #{equipmentCondition},
             #{usageHours},
             #{testReport},
-            #{ratedOutletWaterTemperature},
-            #{applicationScenario}
+            #{ratedOutletWaterTemperature}
         )
     </insert>
 
@@ -85,8 +79,7 @@
             <if test="workingPressure != null">workingPressure = #{workingPressure},</if>
             <if test="noxEmissions != null">noxEmissions = #{noxEmissions},</if>
             <if test="footprintArea != null">footprintArea = #{footprintArea},</if>
-            <if test="manufactureStartDate != null">manufactureStartDate = #{manufactureStartDate},</if>
-            <if test="manufactureEndDate != null">manufactureEndDate = #{manufactureEndDate},</if>
+            <if test="manufactureYear != null">manufactureYear = #{manufactureYear},</if>
             <if test="evaporationCapacity != null">evaporationCapacity = #{evaporationCapacity},</if>
             <if test="ratedThermalPower != null">ratedThermalPower = #{ratedThermalPower},</if>
             <if test="thermalEfficiency != null">thermalEfficiency = #{thermalEfficiency},</if>
@@ -94,7 +87,6 @@
             <if test="usageHours != null">usageHours = #{usageHours},</if>
             <if test="testReport != null">testReport = #{testReport},</if>
             <if test="ratedOutletWaterTemperature != null">ratedOutletWaterTemperature = #{ratedOutletWaterTemperature},</if>
-            <if test="applicationScenario != null">applicationScenario = #{applicationScenario},</if>
         </set>
         where boilerId = #{boilerId}
     </update>
