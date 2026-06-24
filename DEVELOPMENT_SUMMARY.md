@@ -100,6 +100,117 @@ DROP DATABASE IF EXISTS `boiler-jun`;
 | transaction | postId（多余字段） | 已移除，postId 存于 logisticsInfo |
 | review | reviewerId / revieweeId / reviewerType | **buyerId**（单向评论：买家评卖家） |
 
+### 2.5 表结构修改详细记录（并发订单重复修复）
+
+> 本节记录为修复「并发订单重复」严重问题而对数据库表结构进行的增量修改。该修改已同步至 `schema_0624.sql` 基准文件及实际运行数据库 `boiler-jun`。
+
+#### 2.5.1 修改概览
+
+| 项目 | 内容 |
+|------|------|
+| 修改对象 | `order` 表（订单表） |
+| 修改类型 | 新增约束（唯一索引） |
+| 修改时间 | 2026-06-25 00:04（schema 文件）/ 2026-06-25 00:03（数据库执行） |
+| 操作人员 | RenYi |
+| Git Commit | `7ab4e73` |
+| 变更目的 | 防止同一交易并发创建多条订单记录 |
+
+#### 2.5.2 修改的表名
+
+- **表名**：`order`（订单表）
+- **表说明**：存储交易订单信息，一个交易（transaction）对应一个订单（order）
+
+#### 2.5.3 字段增删改操作
+
+**本次修改未涉及任何字段的增删改操作**。`order` 表的字段结构保持不变：
+
+| 字段名 | 类型 | 是否可空 | 说明 |
+|--------|------|:--------:|------|
+| orderId | VARCHAR(255) | NOT NULL | 主键，订单ID |
+| transactionId | VARCHAR(255) | NOT NULL | 交易ID（外键） |
+| orderStatus | VARCHAR(50) | NULL | 订单状态 |
+| createTime | DATE | NULL | 创建时间 |
+| updateTime | DATE | NULL | 更新时间 |
+
+#### 2.5.4 字段类型变更
+
+**无字段类型变更**。所有字段类型保持原样。
+
+#### 2.5.5 约束条件调整（核心修改）
+
+**新增约束**：为 `order` 表的 `transactionId` 字段添加唯一索引。
+
+**修改前**：
+```sql
+CREATE TABLE `order` (
+  orderId VARCHAR(255) PRIMARY KEY,
+  transactionId VARCHAR(255) NOT NULL,
+  orderStatus VARCHAR(50),
+  createTime DATE,
+  updateTime DATE
+);
+```
+
+**修改后**：
+```sql
+CREATE TABLE `order` (
+  orderId VARCHAR(255) PRIMARY KEY,
+  transactionId VARCHAR(255) NOT NULL,
+  orderStatus VARCHAR(50),
+  createTime DATE,
+  updateTime DATE,
+  UNIQUE KEY uk_transaction_id (transactionId)  -- 新增唯一约束
+);
+```
+
+**约束详情**：
+
+| 约束名 | 约束类型 | 作用字段 | 约束说明 |
+|--------|----------|----------|----------|
+| `uk_transaction_id` | UNIQUE KEY | `transactionId` | 保证一个交易只能对应一个订单，数据库层面防止并发重复插入 |
+
+**约束验证（数据库实际状态）**：
+```
+Table: order
+Key_name: uk_transaction_id
+Column_name: transactionId
+Non_unique: 0（唯一）
+Index_type: BTREE
+```
+
+#### 2.5.6 修改原因与背景
+
+**问题现象**：同一交易在并发请求下，可能创建多条订单记录，导致业务数据重复。
+
+**根因分析**：原 `order` 表的 `transactionId` 字段仅有外键约束，无唯一性约束，无法在数据库层面阻止并发重复插入。
+
+**修复方案**：
+1. **数据库层**：为 `transactionId` 字段添加唯一索引 `uk_transaction_id`，从根源阻止重复数据写入。
+2. **应用层**：在 [OrderServiceImpl.createOrder](boiler-server/src/main/java/org/example/boilerserver/service/impl/OrderServiceImpl.java) 中捕获 `DuplicateKeyException`，返回友好提示"该交易已存在订单，请勿重复创建"。
+
+#### 2.5.7 修改影响评估
+
+| 影响范围 | 评估结果 |
+|----------|----------|
+| 现有数据兼容性 | ✅ 兼容（现有数据中 transactionId 无重复值） |
+| 现有业务逻辑 | ✅ 兼容（业务规则本就要求一对一关系） |
+| 性能影响 | ✅ 正向（唯一索引可加速按 transactionId 查询订单） |
+| 外键约束 | ✅ 不冲突（与 fk_order_transaction 外键共存） |
+| 单元测试 | ✅ 62/62 全部通过 |
+| 接口测试 | ✅ 51/51 全部通过 |
+
+#### 2.5.8 回滚方案
+
+如需回滚此修改，可执行以下 SQL：
+
+```sql
+ALTER TABLE `order` DROP INDEX `uk_transaction_id`;
+```
+
+并同时从 `schema_0624.sql` 文件中移除 `UNIQUE KEY uk_transaction_id (transactionId)` 行。
+
+> ⚠️ **注意**：回滚后并发订单重复问题将仅依赖应用层校验，无法在数据库层面提供强一致性保障。
+
 ## 三、接口开发清单
 
 ### 3.1 Transaction 模块（4 个接口）
