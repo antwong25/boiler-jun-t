@@ -25,34 +25,34 @@
 
     <insert id="insert" parameterType="org.example.boilerpojo.PostEntity">
         insert into post (
-            postId,
-            sellerId,
-            title,
-            price,
-            description,
-            status,
-            publishTime,
-            updateTime,
-            viewCount,
-            mediaFiles,
-            aiValuationRange,
-            city,
-            boilerId
+        postId,
+        sellerId,
+        title,
+        price,
+        description,
+        status,
+        publishTime,
+        updateTime,
+        viewCount,
+        mediaFiles,
+        aiValuationRange,
+        city,
+        boilerId
         )
         values (
-            #{postId},
-            #{sellerId},
-            #{title},
-            #{price},
-            #{description},
-            #{status},
-            #{publishTime},
-            #{updateTime},
-            #{viewCount},
-            #{mediaFiles},
-            #{aiValuationRange},
-            #{city},
-            #{boilerId}
+        #{postId},
+        #{sellerId},
+        #{title},
+        #{price},
+        #{description},
+        #{status},
+        #{publishTime},
+        #{updateTime},
+        #{viewCount},
+        #{mediaFiles},
+        #{aiValuationRange},
+        #{city},
+        #{boilerId}
         )
     </insert>
 
@@ -83,4 +83,25 @@
     <delete id="deleteByPostId">
         delete from post where postId = #{postId}
     </delete>
+
+    <select id="listAiValuationTrainingRows" resultType="map">
+        select
+        p.price as price,
+        b.ratedThermalPower as ratedThermalPower,
+        b.evaporationCapacity as evaporationCapacity,
+        b.tonnage as tonnage,
+        b.thermalEfficiency as thermalEfficiency,
+        b.manufactureEndDate as manufactureEndDate,
+        b.boilerType as boilerType,
+        b.fuelType as fuelType,
+        b.noxEmissions as noxEmissions,
+        b.workingPressure as workingPressure,
+        b.footprintArea as footprintArea
+        from post p
+        join boiler b on p.boilerId = b.boilerId
+        where p.status = 'APPROVED'
+        and p.price is not null
+        order by p.updateTime desc, p.postId desc
+        limit #{limit}
+    </select>
 </mapper>

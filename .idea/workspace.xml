@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1d8953ad-448c-42cb-ac06-bc8132539633" name="更改" comment="覆盖了当前 Post Module 已实现的 4 个接口：&#10;创建帖子：POST /post&#10;查询详情：GET /post/{postId}&#10;更新帖子：PUT /post&#10;删除帖子：DELETE /post/{postId}?sellerId=..." />
+    <list default="true" id="1d8953ad-448c-42cb-ac06-bc8132539633" name="更改" comment="覆盖了当前 Post Module 已实现的 4 个接口：&#10;创建帖子：POST /post&#10;查询详情：GET /post/{postId}&#10;更新帖子：PUT /post&#10;删除帖子：DELETE /post/{postId}?sellerId=...">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/boiler-server/src/main/java/org/example/boilerserver/mapper/PostMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/boiler-server/src/main/java/org/example/boilerserver/mapper/PostMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/boiler-server/src/main/java/org/example/boilerserver/service/impl/PostServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/boiler-server/src/main/java/org/example/boilerserver/service/impl/PostServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/boiler-server/src/main/resources/mapper/PostMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/boiler-server/src/main/resources/mapper/PostMapper.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -24,6 +29,17 @@
         </map>
       </branch-storage>
     </favorite-branches>
+    <option name="PUSH_TAGS">
+      <GitPushTagMode>
+        <option name="argument" value="--tags" />
+        <option name="title" value="All" />
+      </GitPushTagMode>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -35,12 +51,12 @@
   <component name="GithubDefaultAccount">
     <option name="defaultAccountId" value="beac15c2-1b2b-48b6-91ef-cc78c9e69703" />
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/antwong25/boiler-jun-t",
-    "accountId": "beac15c2-1b2b-48b6-91ef-cc78c9e69703"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/antwong25/boiler-jun-t.git&quot;,
+    &quot;accountId&quot;: &quot;beac15c2-1b2b-48b6-91ef-cc78c9e69703&quot;
   }
-}]]></component>
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -56,28 +72,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.BoilerServerApplication.executor": "Run",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/boiler-jun-t-main",
-    "project.structure.last.edited": "全局库",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.BoilerServerApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;huangdehao-boiler&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/boiler-jun-t-main&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;全局库&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="boiler-jun-t-main" />
@@ -109,12 +125,34 @@
       <option name="presentableId" value="Default" />
       <updated>1781777242654</updated>
     </task>
+    <task id="LOCAL-00001" summary="覆盖了当前 Post Module 已实现的 4 个接口：&#10;创建帖子：POST /post&#10;查询详情：GET /post/{postId}&#10;更新帖子：PUT /post&#10;删除帖子：DELETE /post/{postId}?sellerId=...">
+      <option name="closed" value="true" />
+      <created>1781787143527</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1781787143527</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
+    <MESSAGE value="覆盖了当前 Post Module 已实现的 4 个接口：&#10;创建帖子：POST /post&#10;查询详情：GET /post/{postId}&#10;更新帖子：PUT /post&#10;删除帖子：DELETE /post/{postId}?sellerId=..." />
+    <option name="LAST_COMMIT_MESSAGE" value="覆盖了当前 Post Module 已实现的 4 个接口：&#10;创建帖子：POST /post&#10;查询详情：GET /post/{postId}&#10;更新帖子：PUT /post&#10;删除帖子：DELETE /post/{postId}?sellerId=..." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

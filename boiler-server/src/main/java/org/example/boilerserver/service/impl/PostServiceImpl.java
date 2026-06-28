@@ -21,7 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -117,6 +119,13 @@ public class PostServiceImpl implements PostService {
         validatePostOwnership(postEntity, sellerId);
         postMapper.deleteByPostId(postEntity.getPostId());
         boilerMapper.deleteByBoilerId(postEntity.getBoilerId());
+    }
+
+
+    public String evaluateAiValuationRange(BoilerDetailDTO boilerDetail) {
+        validateBoilerDetail(boilerDetail);
+        BoilerEntity boilerEntity = buildBoilerEntity(generateId(), boilerDetail);
+        return calculateAiValuationRange(boilerEntity);
     }
 
     private void validateCreateRequest(PostCreateDTO dto) {
@@ -308,7 +317,11 @@ public class PostServiceImpl implements PostService {
     }
 
     private String calculateAiValuationRange(BoilerEntity boilerEntity) {
-        // 先给一个基础估值，再按规格、年限和成色做简单加减权重
+        String fittedRange = calculateAiValuationRangeByLinearFit(boilerEntity);
+        if (fittedRange != null) {
+            return fittedRange;
+        }
+
         BigDecimal estimate = BigDecimal.valueOf(80000);
         if (boilerEntity.getRatedThermalPower() != null) {
             estimate = estimate.add(boilerEntity.getRatedThermalPower().multiply(BigDecimal.valueOf(40)));
@@ -344,6 +357,344 @@ public class PostServiceImpl implements PostService {
             minimum = BigDecimal.ZERO;
         }
         return "CNY " + minimum.toPlainString() + " - " + maximum.toPlainString();
+    }
+
+    private String calculateAiValuationRangeByLinearFit(BoilerEntity boilerEntity) {
+        List<Map<String, Object>> rows = postMapper.listAiValuationTrainingRows(300);
+        if (rows == null || rows.size() < 12) {
+            return null;
+        }
+
+        int featureCount = 11;
+        int sampleCount = 0;
+        double[][] x = new double[rows.size()][featureCount];
+        double[] y = new double[rows.size()];
+        for (Map<String, Object> row : rows) {
+            Double price = toDouble(row.get("price"));
+            if (price == null || price <= 0) {
+                continue;
+            }
+            double[] features = buildTrainingFeatures(
+                    row.get("ratedThermalPower"),
+                    row.get("evaporationCapacity"),
+                    row.get("tonnage"),
+                    row.get("thermalEfficiency"),
+                    row.get("manufactureEndDate"),
+                    row.get("boilerType"),
+                    row.get("fuelType"),
+                    row.get("noxEmissions"),
+                    row.get("workingPressure"),
+                    row.get("footprintArea")
+            );
+            if (features == null) {
+                continue;
+            }
+            x[sampleCount] = features;
+            y[sampleCount] = price;
+            sampleCount++;
+        }
+
+        if (sampleCount < 12) {
+            return null;
+        }
+
+        double[] beta = ridgeFit(x, y, sampleCount, featureCount, 1.0);
+        if (beta == null) {
+            return null;
+        }
+
+        double predicted = dot(beta, buildInputFeatures(boilerEntity));
+        if (!Double.isFinite(predicted) || predicted <= 0) {
+            return null;
+        }
+
+        double residualStd = computeResidualStd(x, y, beta, sampleCount);
+        double delta = Math.max(predicted * 0.12, residualStd);
+
+        BigDecimal minimum = BigDecimal.valueOf(Math.max(0, predicted - delta)).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal maximum = BigDecimal.valueOf(predicted + delta).setScale(0, RoundingMode.HALF_UP);
+        return "CNY " + minimum.toPlainString() + " - " + maximum.toPlainString();
+    }
+
+    private double[] buildInputFeatures(BoilerEntity boilerEntity) {
+        String fuelType = boilerEntity.getFuelType();
+        String boilerType = boilerEntity.getBoilerType();
+        return buildFeatures(
+                boilerEntity.getRatedThermalPower(),
+                boilerEntity.getEvaporationCapacity(),
+                boilerEntity.getTonnage(),
+                boilerEntity.getThermalEfficiency(),
+                boilerEntity.getManufactureEndDate(),
+                boilerType,
+                fuelType,
+                boilerEntity.getNoxEmissions(),
+                boilerEntity.getWorkingPressure(),
+                boilerEntity.getFootprintArea()
+        );
+    }
+
+    private double[] buildTrainingFeatures(Object ratedThermalPower,
+                                           Object evaporationCapacity,
+                                           Object tonnage,
+                                           Object thermalEfficiency,
+                                           Object manufactureEndDate,
+                                           Object boilerType,
+                                           Object fuelType,
+                                           Object noxEmissions,
+                                           Object workingPressure,
+                                           Object footprintArea) {
+        return buildFeatures(
+                toBigDecimal(ratedThermalPower),
+                toBigDecimal(evaporationCapacity),
+                toBigDecimal(tonnage),
+                toBigDecimal(thermalEfficiency),
+                toLocalDate(manufactureEndDate),
+                boilerType == null ? null : boilerType.toString(),
+                fuelType == null ? null : fuelType.toString(),
+                toBigDecimal(noxEmissions),
+                toBigDecimal(workingPressure),
+                toBigDecimal(footprintArea)
+        );
+    }
+
+    private double[] buildFeatures(BigDecimal ratedThermalPower,
+                                   BigDecimal evaporationCapacity,
+                                   BigDecimal tonnage,
+                                   BigDecimal thermalEfficiency,
+                                   LocalDate manufactureEndDate,
+                                   String boilerType,
+                                   String fuelType,
+                                   BigDecimal noxEmissions,
+                                   BigDecimal workingPressure,
+                                   BigDecimal footprintArea) {
+        if (manufactureEndDate == null) {
+            return null;
+        }
+
+        double serviceYears = ChronoUnit.DAYS.between(manufactureEndDate, LocalDate.now()) / 365.25;
+        if (!Double.isFinite(serviceYears) || serviceYears < 0) {
+            serviceYears = 0;
+        }
+
+        FuelCategory fuelCategory = categorizeFuel(fuelType);
+        double isSteam = "STEAM".equalsIgnoreCase(normalizeText(boilerType)) ? 1.0 : 0.0;
+
+        return new double[]{
+                1.0,
+                toDoubleOrZero(ratedThermalPower),
+                toDoubleOrZero(evaporationCapacity),
+                toDoubleOrZero(tonnage),
+                toDoubleOrZero(thermalEfficiency),
+                serviceYears,
+                isSteam,
+                fuelCategory == FuelCategory.GAS ? 1.0 : 0.0,
+                fuelCategory == FuelCategory.OIL ? 1.0 : 0.0,
+                fuelCategory == FuelCategory.BIOMASS ? 1.0 : 0.0,
+                fuelCategory == FuelCategory.ELECTRIC ? 1.0 : 0.0
+        };
+    }
+
+    private enum FuelCategory {
+        GAS,
+        OIL,
+        BIOMASS,
+        ELECTRIC,
+        OTHER
+    }
+
+    private FuelCategory categorizeFuel(String fuelType) {
+        String normalized = normalizeText(fuelType);
+        if (normalized == null) {
+            return FuelCategory.OTHER;
+        }
+        if (normalized.contains("ELECTRIC") || normalized.contains("电")) {
+            return FuelCategory.ELECTRIC;
+        }
+        if (normalized.contains("BIOMASS") || normalized.contains("生物质")) {
+            return FuelCategory.BIOMASS;
+        }
+        if (normalized.contains("OIL") || normalized.contains("柴油") || normalized.contains("燃油")) {
+            return FuelCategory.OIL;
+        }
+        if (normalized.contains("GAS") || normalized.contains("NATURAL") || normalized.contains("天然气")) {
+            return FuelCategory.GAS;
+        }
+        return FuelCategory.OTHER;
+    }
+
+    private String normalizeText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private double toDoubleOrZero(BigDecimal value) {
+        if (value == null) {
+            return 0.0;
+        }
+        return value.doubleValue();
+    }
+
+    private BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal) {
+            return (BigDecimal) value;
+        }
+        if (value instanceof Number) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        }
+        String text = value.toString().trim();
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(text);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private Double toDouble(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        String text = value.toString().trim();
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(text);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private LocalDate toLocalDate(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate) {
+            return (LocalDate) value;
+        }
+        if (value instanceof java.sql.Date) {
+            return ((java.sql.Date) value).toLocalDate();
+        }
+        if (value instanceof java.util.Date) {
+            return new java.sql.Date(((java.util.Date) value).getTime()).toLocalDate();
+        }
+        String text = value.toString().trim();
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(text);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private double[] ridgeFit(double[][] x, double[] y, int n, int m, double lambda) {
+        double[][] xtx = new double[m][m];
+        double[] xty = new double[m];
+        for (int i = 0; i < n; i++) {
+            double[] row = x[i];
+            for (int j = 0; j < m; j++) {
+                xty[j] += row[j] * y[i];
+                for (int k = 0; k < m; k++) {
+                    xtx[j][k] += row[j] * row[k];
+                }
+            }
+        }
+        for (int i = 0; i < m; i++) {
+            xtx[i][i] += lambda;
+        }
+        return solveLinearSystem(xtx, xty);
+    }
+
+    private double computeResidualStd(double[][] x, double[] y, double[] beta, int n) {
+        double sumSq = 0.0;
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            double predicted = dot(beta, x[i]);
+            if (!Double.isFinite(predicted)) {
+                continue;
+            }
+            double r = y[i] - predicted;
+            sumSq += r * r;
+            count++;
+        }
+        if (count <= 2) {
+            return 0.0;
+        }
+        return Math.sqrt(sumSq / (count - 1));
+    }
+
+    private double dot(double[] a, double[] b) {
+        double sum = 0.0;
+        int len = Math.min(a.length, b.length);
+        for (int i = 0; i < len; i++) {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    private double[] solveLinearSystem(double[][] a, double[] b) {
+        int n = b.length;
+        double[][] aug = new double[n][n + 1];
+        for (int i = 0; i < n; i++) {
+            System.arraycopy(a[i], 0, aug[i], 0, n);
+            aug[i][n] = b[i];
+        }
+
+        for (int pivot = 0; pivot < n; pivot++) {
+            int maxRow = pivot;
+            double maxAbs = Math.abs(aug[pivot][pivot]);
+            for (int r = pivot + 1; r < n; r++) {
+                double abs = Math.abs(aug[r][pivot]);
+                if (abs > maxAbs) {
+                    maxAbs = abs;
+                    maxRow = r;
+                }
+            }
+            if (maxAbs < 1e-9) {
+                return null;
+            }
+            if (maxRow != pivot) {
+                double[] tmp = aug[pivot];
+                aug[pivot] = aug[maxRow];
+                aug[maxRow] = tmp;
+            }
+
+            double pivotValue = aug[pivot][pivot];
+            for (int c = pivot; c <= n; c++) {
+                aug[pivot][c] /= pivotValue;
+            }
+
+            for (int r = 0; r < n; r++) {
+                if (r == pivot) {
+                    continue;
+                }
+                double factor = aug[r][pivot];
+                if (Math.abs(factor) < 1e-12) {
+                    continue;
+                }
+                for (int c = pivot; c <= n; c++) {
+                    aug[r][c] -= factor * aug[pivot][c];
+                }
+            }
+        }
+
+        double[] x = new double[n];
+        for (int i = 0; i < n; i++) {
+            x[i] = aug[i][n];
+        }
+        return x;
     }
 
     private String resolveTitle(String inputTitle, BoilerEntity boilerEntity) {
