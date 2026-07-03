@@ -21,6 +21,12 @@ public class GlobalExceptionHandler {
         return Result.error(ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public Result<String> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("状态异常: {}", ex.getMessage());
+        return Result.error(ex.getMessage());
+    }
+
     /**
      * 请求体解析失败 - JSON格式错误、字段类型不匹配等
      */

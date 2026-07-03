@@ -11,6 +11,8 @@
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/OrderVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostCreateDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostEntity.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostSemanticSearchDTO.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostSemanticSearchVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostUpdateDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/ReviewCreateDTO.java

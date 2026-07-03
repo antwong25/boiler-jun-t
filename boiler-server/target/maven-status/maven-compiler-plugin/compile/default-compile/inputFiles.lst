@@ -4,6 +4,8 @@
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/auth/JwtTokenProvider.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/config/FileStorageProperties.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/config/JwtProperties.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/config/VectorStoreConfig.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/config/VectorStoreProperties.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/config/WebMvcConfig.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/controller/GlobalExceptionHandler.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/controller/OrderController.java
@@ -22,11 +24,15 @@
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/mapper/TransactionMapper.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/mapper/UserMapper.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/OrderService.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/PostEmbeddingService.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/PostSemanticSearchService.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/PostService.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/ReviewService.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/TransactionService.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/UserService.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/OrderServiceImpl.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/PostEmbeddingServiceImpl.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/PostSemanticSearchServiceImpl.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/PostServiceImpl.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/ReviewServiceImpl.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/main/java/org/example/boilerserver/service/impl/TransactionServiceImpl.java

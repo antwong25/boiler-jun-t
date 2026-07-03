@@ -1,6 +1,6 @@
-org/example/boilerserver/auth/AuthContext.class
 org/example/boilerserver/interceptor/JwtAuthInterceptor.class
 org/example/boilerserver/config/FileStorageProperties.class
 org/example/boilerserver/auth/AuthUser.class
+org/example/boilerserver/auth/AuthContext.class
 org/example/boilerserver/config/JwtProperties.class
 org/example/boilerserver/auth/JwtTokenProvider.class

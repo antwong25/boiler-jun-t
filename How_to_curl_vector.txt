@@ -1,0 +1,17 @@
+curl -X POST "http://localhost:8080/post/semantic-search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "想找二手10吨燃气锅炉，成色好，排放低",
+    "limit": 5,
+    "minScore": 0.6
+  }'
+
+下一步的想法：
+做GenAI聊天引导用户说出需求
+实现AI筛选 + 用用户输入的自然语言与帖子内容进行向量相似度检索。
+
+希望让GenAI可以做这样几件事（最高目标）
+（1）和用户对话，引导用户说出精细的需求
+（2）针对锅炉类别、城市等需求，让AI可以调用筛选接口，精细筛选
+（3）针对模糊需求，用自然语言做向量相似度检索。
+

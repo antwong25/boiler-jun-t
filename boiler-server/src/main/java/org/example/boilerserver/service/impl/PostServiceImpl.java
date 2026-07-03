@@ -12,6 +12,7 @@ import org.example.constant.PostConstant;
 import org.example.boilerserver.mapper.BoilerMapper;
 import org.example.boilerserver.mapper.PostMapper;
 import org.example.boilerserver.mapper.SellerMapper;
+import org.example.boilerserver.service.PostEmbeddingService;
 import org.example.boilerserver.service.PostService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +30,18 @@ public class PostServiceImpl implements PostService {
     private final PostMapper postMapper;
     private final BoilerMapper boilerMapper;
     private final SellerMapper sellerMapper;
+    private final PostEmbeddingService postEmbeddingService;
 
-    public PostServiceImpl(PostMapper postMapper, BoilerMapper boilerMapper, SellerMapper sellerMapper) {
+    public PostServiceImpl(
+            PostMapper postMapper,
+            BoilerMapper boilerMapper,
+            SellerMapper sellerMapper,
+            PostEmbeddingService postEmbeddingService
+    ) {
         this.postMapper = postMapper;
         this.boilerMapper = boilerMapper;
         this.sellerMapper = sellerMapper;
+        this.postEmbeddingService = postEmbeddingService;
     }
 
     @Override
@@ -67,7 +75,9 @@ public class PostServiceImpl implements PostService {
         postEntity.setBoilerId(boilerId);
         postMapper.insert(postEntity);
 
-        return buildPostVO(postEntity, boilerEntity);
+        PostVO result = buildPostVO(postEntity, boilerEntity);
+        postEmbeddingService.vectorizePost(postEntity.getPostId());
+        return result;
     }
 
     @Override
@@ -107,7 +117,9 @@ public class PostServiceImpl implements PostService {
         postMapper.update(existingPost);
 
         PostEntity latestPostEntity = getExistingPost(existingPost.getPostId());
-        return buildPostVO(latestPostEntity, getExistingBoiler(latestPostEntity.getBoilerId()));
+        PostVO result = buildPostVO(latestPostEntity, getExistingBoiler(latestPostEntity.getBoilerId()));
+        postEmbeddingService.vectorizePost(latestPostEntity.getPostId());
+        return result;
     }
 
     @Override
@@ -115,6 +127,7 @@ public class PostServiceImpl implements PostService {
     public void deletePost(String postId, String sellerId) {
         PostEntity postEntity = getExistingPost(postId);
         validatePostOwnership(postEntity, sellerId);
+        postEmbeddingService.deletePostVector(postEntity.getPostId());
         postMapper.deleteByPostId(postEntity.getPostId());
         boilerMapper.deleteByBoilerId(postEntity.getBoilerId());
     }
