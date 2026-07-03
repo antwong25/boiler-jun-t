@@ -5,6 +5,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * 帖子实体类，对应 post 表
+ */
 @Data
 public class PostEntity {
     private String postId;

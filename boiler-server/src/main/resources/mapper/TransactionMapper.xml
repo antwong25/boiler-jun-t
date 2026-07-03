@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.TransactionMapper">
+    <resultMap id="TransactionResultMap" type="org.example.boilerpojo.TransactionEntity">
+        <id property="transactionId" column="transactionId"/>
+        <result property="buyerId" column="buyerId"/>
+        <result property="sellerId" column="sellerId"/>
+        <result property="transactionAmount" column="transactionAmount"/>
+        <result property="transactionTime" column="transactionTime"/>
+        <result property="transactionStatus" column="transactionStatus"/>
+        <result property="bookingStatus" column="bookingStatus"/>
+        <result property="logisticsInfo" column="logisticsInfo"/>
+    </resultMap>
+
+    <select id="getByTransactionId" resultMap="TransactionResultMap">
+        select * from transaction where transactionId = #{transactionId}
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.TransactionEntity">
+        insert into transaction (
+            transactionId, buyerId, sellerId, transactionAmount,
+            transactionTime, transactionStatus, bookingStatus, logisticsInfo
+        )
+        values (
+            #{transactionId}, #{buyerId}, #{sellerId}, #{transactionAmount},
+            #{transactionTime}, #{transactionStatus}, #{bookingStatus}, #{logisticsInfo}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.TransactionEntity">
+        update transaction
+        <set>
+            <if test="transactionAmount != null">transactionAmount = #{transactionAmount},</if>
+            <if test="transactionTime != null">transactionTime = #{transactionTime},</if>
+            <if test="transactionStatus != null and transactionStatus != ''">transactionStatus = #{transactionStatus},</if>
+            <if test="bookingStatus != null and bookingStatus != ''">bookingStatus = #{bookingStatus},</if>
+            <if test="logisticsInfo != null">logisticsInfo = #{logisticsInfo},</if>
+        </set>
+        where transactionId = #{transactionId}
+    </update>
+
+    <select id="listByUserIdAndStatus" resultMap="TransactionResultMap">
+        select * from transaction
+        <where>
+            (buyerId = #{userId} or sellerId = #{userId})
+            <if test="transactionStatus != null and transactionStatus != ''">
+                and transactionStatus = #{transactionStatus}
+            </if>
+        </where>
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by ${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by transactionTime desc, transactionId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByUserIdAndStatus" resultType="java.lang.Integer">
+        select count(*) from transaction
+        <where>
+            (buyerId = #{userId} or sellerId = #{userId})
+            <if test="transactionStatus != null and transactionStatus != ''">
+                and transactionStatus = #{transactionStatus}
+            </if>
+        </where>
+    </select>
+</mapper>

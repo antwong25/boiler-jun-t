@@ -1,6 +1,7 @@
 package org.example.boilerserver.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.example.boilerpojo.PostEntity;
 
 @Mapper
@@ -14,4 +15,6 @@ public interface PostMapper {
     int incrementViewCount(String postId);
 
     int deleteByPostId(String postId);
+
+    int updateStatus(@Param("postId") String postId, @Param("status") String status);
 }

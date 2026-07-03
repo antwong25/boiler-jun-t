@@ -1,6 +1,6 @@
 HELP.md
 target/
-.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 .DS_Store
@@ -9,6 +9,10 @@ target/
 *.jar
 *.war
 *.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
 *.tmp
 *.swp
 
@@ -23,6 +27,14 @@ target/
 
 ### IntelliJ IDEA ###
 .idea
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
 *.iws
 *.iml
 *.ipr
@@ -40,9 +52,28 @@ build/
 ### VS Code ###
 .vscode/
 
+# IDE - Eclipse
+.settings/
+.classpath
+.project
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Application specific
+application-local.yml
+application-local.properties
+
 ### Generated project files ###
 **/cp.txt
 **/effective-pom.xml
 uploads/
-
-

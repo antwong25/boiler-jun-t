@@ -10,6 +10,10 @@
     <artifactId>boiler-pojo</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>boiler-common</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
