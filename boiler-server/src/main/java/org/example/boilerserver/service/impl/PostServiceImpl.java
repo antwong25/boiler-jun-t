@@ -252,7 +252,7 @@ public class PostServiceImpl implements PostService {
         boilerEntity.setWorkingPressure(dto.getWorkingPressure());
         boilerEntity.setNoxEmissions(dto.getNoxEmissions());
         boilerEntity.setFootprintArea(dto.getFootprintArea());
-        // `schema.sql` 仅保留单个 manufactureYear 字段，优先存储结束日期以兼容现有估值逻辑。
+        // 数据库仅保留单个 manufactureDate 列，继续映射到 manufactureYear 属性以兼容现有估值逻辑。
         boilerEntity.setManufactureYear(resolveManufactureYear(dto));
         boilerEntity.setEvaporationCapacity(dto.getEvaporationCapacity());
         boilerEntity.setRatedThermalPower(dto.getRatedThermalPower());

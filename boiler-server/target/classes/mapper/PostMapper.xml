@@ -83,4 +83,8 @@
     <delete id="deleteByPostId">
         delete from post where postId = #{postId}
     </delete>
+
+    <update id="updateStatus">
+        update post set status = #{status}, updateTime = CURDATE() where postId = #{postId}
+    </update>
 </mapper>

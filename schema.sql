@@ -54,7 +54,7 @@ CREATE TABLE `boiler` (
   workingPressure DECIMAL(10,2),
   noxEmissions DECIMAL(10,2),
   footprintArea DECIMAL(10,2),
-  manufactureYear DATE,
+  manufactureDate DATE,
   evaporationCapacity DECIMAL(10,2),
   ratedThermalPower DECIMAL(10,2),
   thermalEfficiency DECIMAL(10,2),

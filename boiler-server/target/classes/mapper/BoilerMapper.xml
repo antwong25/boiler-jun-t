@@ -13,7 +13,7 @@
         <result property="workingPressure" column="workingPressure"/>
         <result property="noxEmissions" column="noxEmissions"/>
         <result property="footprintArea" column="footprintArea"/>
-        <result property="manufactureYear" column="manufactureYear"/>
+        <result property="manufactureYear" column="manufactureDate"/>
         <result property="evaporationCapacity" column="evaporationCapacity"/>
         <result property="ratedThermalPower" column="ratedThermalPower"/>
         <result property="thermalEfficiency" column="thermalEfficiency"/>
@@ -38,7 +38,7 @@
             workingPressure,
             noxEmissions,
             footprintArea,
-            manufactureYear,
+            manufactureDate,
             evaporationCapacity,
             ratedThermalPower,
             thermalEfficiency,
@@ -79,7 +79,7 @@
             <if test="workingPressure != null">workingPressure = #{workingPressure},</if>
             <if test="noxEmissions != null">noxEmissions = #{noxEmissions},</if>
             <if test="footprintArea != null">footprintArea = #{footprintArea},</if>
-            <if test="manufactureYear != null">manufactureYear = #{manufactureYear},</if>
+            <if test="manufactureYear != null">manufactureDate = #{manufactureYear},</if>
             <if test="evaporationCapacity != null">evaporationCapacity = #{evaporationCapacity},</if>
             <if test="ratedThermalPower != null">ratedThermalPower = #{ratedThermalPower},</if>
             <if test="thermalEfficiency != null">thermalEfficiency = #{thermalEfficiency},</if>
