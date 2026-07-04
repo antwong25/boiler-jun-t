@@ -26,3 +26,9 @@ app:
       username: postgres
       password: 123456
       driver-class-name: org.postgresql.Driver
+  ai:
+    azure:
+      endpoint: "https://apim-ai-gateway-eas-prd.azure-api.net/ec6001"
+      api-key: "XXXX"
+      api-version: 2025-04-01-preview
+      model: gpt-small

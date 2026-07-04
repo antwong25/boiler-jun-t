@@ -2,7 +2,10 @@ package org.example.boilerserver.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.example.boilerpojo.PostFilterSearchDTO;
 import org.example.boilerpojo.PostEntity;
+
+import java.util.List;
 
 @Mapper
 public interface PostMapper {
@@ -17,4 +20,6 @@ public interface PostMapper {
     int deleteByPostId(String postId);
 
     int updateStatus(@Param("postId") String postId, @Param("status") String status);
+
+    List<PostEntity> listByFilter(PostFilterSearchDTO dto);
 }

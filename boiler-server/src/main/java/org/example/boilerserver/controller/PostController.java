@@ -1,11 +1,14 @@
 package org.example.boilerserver.controller;
 
 import org.example.boilercommon.Result;
+import org.example.boilerpojo.PostAiChatRequestDTO;
+import org.example.boilerpojo.PostAiChatResponseVO;
 import org.example.boilerpojo.PostCreateDTO;
 import org.example.boilerpojo.PostSemanticSearchDTO;
 import org.example.boilerpojo.PostSemanticSearchVO;
 import org.example.boilerpojo.PostUpdateDTO;
 import org.example.boilerpojo.PostVO;
+import org.example.boilerserver.service.PostAiChatService;
 import org.example.boilerserver.service.PostSemanticSearchService;
 import org.example.boilerserver.service.PostService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,13 +28,16 @@ import java.util.List;
 public class PostController {
     private final PostService postService;
     private final PostSemanticSearchService postSemanticSearchService;
+    private final PostAiChatService postAiChatService;
 
     public PostController(
             PostService postService,
-            PostSemanticSearchService postSemanticSearchService
+            PostSemanticSearchService postSemanticSearchService,
+            PostAiChatService postAiChatService
     ) {
         this.postService = postService;
         this.postSemanticSearchService = postSemanticSearchService;
+        this.postAiChatService = postAiChatService;
     }
 
     // 卖家发布帖子时同步提交锅炉详情
@@ -62,5 +68,10 @@ public class PostController {
     @PostMapping("/semantic-search")
     public Result<List<PostSemanticSearchVO>> semanticSearch(@RequestBody PostSemanticSearchDTO dto) {
         return Result.success(postSemanticSearchService.search(dto));
+    }
+
+    @PostMapping("/ai-chat")
+    public Result<PostAiChatResponseVO> aiChat(@RequestBody PostAiChatRequestDTO dto) {
+        return Result.success(postAiChatService.chat(dto));
     }
 }

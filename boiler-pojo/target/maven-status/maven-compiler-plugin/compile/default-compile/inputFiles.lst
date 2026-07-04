@@ -1,5 +1,6 @@
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/AdminUserQueryDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/AdminUserUpdateDTO.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/AiChatMessageDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/BoilerDetailDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/BoilerDetailVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/BoilerEntity.java
@@ -9,8 +10,12 @@
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/OrderEntity.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/OrderQueryDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/OrderVO.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostAiChatRequestDTO.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostAiChatResponseVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostCreateDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostEntity.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostFilterSearchDTO.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostSearchResultVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostSemanticSearchDTO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostSemanticSearchVO.java
 /Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-pojo/src/main/java/org/example/boilerpojo/PostUpdateDTO.java

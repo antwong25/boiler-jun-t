@@ -10,8 +10,124 @@ curl -X POST "http://localhost:8080/post/semantic-search" \
 做GenAI聊天引导用户说出需求
 实现AI筛选 + 用用户输入的自然语言与帖子内容进行向量相似度检索。
 
-希望让GenAI可以做这样几件事（最高目标）
+希望让GenAI可以做这样几件事（冒烟测试不完全）
 （1）和用户对话，引导用户说出精细的需求
 （2）针对锅炉类别、城市等需求，让AI可以调用筛选接口，精细筛选
 （3）针对模糊需求，用自然语言做向量相似度检索。
+
+Good Case:
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "Could you find boilers in Lianyungang",
+    "recentMessages": [],
+    "limit": 10
+  }'
+
+Return:
+{"code":1,"msg":null,"data":{"action":"STRUCTURED_FILTER","assistantReply":"Sure — I’ll look for boilers in Lianyungang.","vectorQuery":null,"resultCount":1,"structuredFilter":{"city":"Lianyungang","boilerType":null,"brand":null,"fuelType":null,"limit":10},"results":[{"postId":"9b751b8d7d3b4801a032240ec691f4a9","score":null,"post":{"postId":"9b751b8d7d3b4801a032240ec691f4a9","sellerId":"371fde5001554c5e92cde39a422e8dda","title":"测试3","price":100.00,"description":"二手锅炉 WNS2-1.25-Q 连云港 成色极佳 热水锅炉 信用好，签正式合同","status":"APPROVED","publishTime":"2026-07-03","updateTime":"2026-07-03","viewCount":0,"mediaFiles":null,"aiValuationRange":"CNY 217859 - 266272","city":"Lianyungang","boilerDetail":{"boilerId":"f34093c3b16f47bd9463ba549494e9c1","model":"WNS2-1.25-Q","brand":"unknown","boilerType":"HOT_WATER","tonnage":0.01,"fuelType":"Natural Gas","workingPressure":1.25,"noxEmissions":30.00,"footprintArea":8.00,"manufactureStartDate":"2020-02-02","manufactureEndDate":"2020-02-02","evaporationCapacity":2.00,"ratedThermalPower":0.01,"thermalEfficiency":0.01,"equipmentCondition":"unknownCondition","usageHours":0.00,"testReport":null,"ratedOutletWaterTemperature":0.01,"applicationScenario":null}}}]}}%
+
+boiler-server/target/classes/mapper/PostMapper.xml
+<select id="listByFilter" resultMap="PostResultMap"> 逻辑待优化
+
+
+----------------------------------------
+简要 curl 测试文档补充（AI生成，待冒烟）
+----------------------------------------
+
+说明：
+1. `POST /post/ai-chat` 用于 AI 对话式搜索。
+2. 前端每次请求都传：
+   - `currentUserInput`
+   - `recentMessages`
+3. 返回结果里重点关注：
+   - `action`
+   - `assistantReply`
+   - `structuredFilter`
+   - `vectorQuery`
+   - `results`
+
+（1）中文输入，触发追问
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "我想买一个二手锅炉",
+    "recentMessages": [],
+    "limit": 5,
+    "minScore": 0.5
+  }'
+
+预期：
+- `action` 可能是 `ASK_FOLLOW_UP`
+- `assistantReply` 用中文继续追问
+
+（2）中文输入，走结构化筛选
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "帮我找深圳的蒸汽锅炉",
+    "recentMessages": [],
+    "limit": 10
+  }'
+
+预期：
+- `action` 可能是 `STRUCTURED_FILTER`
+- `structuredFilter.city` = `深圳`
+- `structuredFilter.boilerType` = `STEAM`
+
+（3）中文输入，走语义检索
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "想找适合食品厂用、成色好一点、预算别太高的锅炉",
+    "recentMessages": [],
+    "limit": 5,
+    "minScore": 0.55
+  }'
+
+预期：
+- `action` 可能是 `SEMANTIC_SEARCH`
+- `vectorQuery` 会是提炼后的自然语言检索词
+
+（4）英文输入，AI 用英文回复
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "Could you find steam boilers in Shenzhen",
+    "recentMessages": [],
+    "limit": 10
+  }'
+
+预期：
+- `assistantReply` 用英文返回
+- 若条件明确，`action` 可能是 `STRUCTURED_FILTER`
+
+（5）带最近几轮聊天记录
+
+curl -X POST "http://localhost:8080/post/ai-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentUserInput": "那就先看蒸汽锅炉吧",
+    "recentMessages": [
+      {
+        "role": "assistant",
+        "content": "你更关注城市、锅炉类型，还是使用场景？"
+      },
+      {
+        "role": "user",
+        "content": "先看深圳附近的。"
+      }
+    ],
+    "limit": 5,
+    "minScore": 0.5
+  }'
+
+提示：
+- 如果 `STRUCTURED_FILTER` 返回 `resultCount = 0`，通常说明数据库里没有满足条件的数据。
+- 当前结构化筛选主要按城市、锅炉类型、品牌、燃料类型做匹配。
 

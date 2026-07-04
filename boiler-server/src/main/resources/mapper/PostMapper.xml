@@ -87,4 +87,25 @@
     <update id="updateStatus">
         update post set status = #{status}, updateTime = CURDATE() where postId = #{postId}
     </update>
+
+    <select id="listByFilter" resultMap="PostResultMap">
+        select p.*
+        from post p
+        inner join boiler b on p.boilerId = b.boilerId
+        where p.status = 'APPROVED'
+        <if test="city != null and city != ''">
+            and p.city like concat('%', #{city}, '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+        order by p.updateTime desc, p.publishTime desc
+        limit #{limit}
+    </select>
 </mapper>
