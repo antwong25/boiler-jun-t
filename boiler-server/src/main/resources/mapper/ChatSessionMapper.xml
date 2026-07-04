@@ -63,6 +63,18 @@
     </select>
 
     <!--
+        按主键 sessionId 查询并加行锁。
+        用于 sendMessage 事务内串行化同一会话的消息追加，避免整体覆盖写回时丢消息。
+    -->
+    <select id="selectBySessionIdForUpdate" resultMap="ChatSessionResultMap">
+        SELECT sessionId, sellerId, buyerId, postId,
+               createTime, lastMessageTime, isArchived, messageList
+        FROM chatSession
+        WHERE sessionId = #{sessionId}
+        FOR UPDATE
+    </select>
+
+    <!--
         插入一条新的聊天会话记录。
         messageList 通过 typeHandler 将 Java List<MessageItem> 序列化为 JSON 字符串入库。
     -->

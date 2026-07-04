@@ -1,3 +1,3 @@
-org\example\boilercommon\JsonListTypeHandler.class
-org\example\boilercommon\Result.class
-org\example\constant\UserConstant.class
+org/example/constant/UserConstant.class
+org/example/boilercommon/Result.class
+org/example/boilercommon/JsonListTypeHandler.class

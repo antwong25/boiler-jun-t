@@ -74,8 +74,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     @Override
     @Transactional
     public boolean sendMessage(ChatSendMsgDTO dto) {
-        // 1. 校验会话存在性
-        ChatSessionDO session = chatSessionMapper.selectBySessionId(dto.getSessionId());
+        // 1. 事务内先对会话记录加行锁，避免并发请求基于同一份旧消息列表覆盖写回
+        ChatSessionDO session = chatSessionMapper.selectBySessionIdForUpdate(dto.getSessionId());
         if (session == null) {
             throw new RuntimeException("聊天会话不存在，sessionId: " + dto.getSessionId());
         }

@@ -22,4 +22,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(Objects.requireNonNull(adminAuthInterceptor))
                 .addPathPatterns("/user/admin/**");
     }
+
+    @Override
+    public void addCorsMappings(@NonNull org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
 }

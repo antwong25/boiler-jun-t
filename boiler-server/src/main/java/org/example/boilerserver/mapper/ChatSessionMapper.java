@@ -43,6 +43,15 @@ public interface ChatSessionMapper {
     ChatSessionDO selectBySessionId(@Param("sessionId") String sessionId);
 
     /**
+     * 按主键 sessionId 查询并加行锁。
+     * 仅用于事务内发送消息场景，避免并发请求基于同一份旧 messageList 覆盖写回。
+     *
+     * @param sessionId 会话主键
+     * @return 匹配到的 ChatSessionDO，无匹配时返回 null
+     */
+    ChatSessionDO selectBySessionIdForUpdate(@Param("sessionId") String sessionId);
+
+    /**
      * 插入一条新的聊天会话记录。
      *
      * @param session 待插入的会话实体
