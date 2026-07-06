@@ -25,8 +25,11 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -258,7 +261,7 @@ public class PostAiChatServiceImpl implements PostAiChatService {
                 response.setAction(ACTION_ASK_FOLLOW_UP);
                 response.setAssistantReply("我还需要再确认一个条件，比如城市或锅炉类别，才能帮你精准筛选。");
             } else {
-                results = postFilterSearchService.search(structuredFilter);
+                results = searchStructuredFilter(structuredFilter);
             }
         } else if (ACTION_SEMANTIC_SEARCH.equals(action)) {
             results = semanticSearch(dto, response.getVectorQuery(), structuredFilter);
@@ -301,7 +304,7 @@ public class PostAiChatServiceImpl implements PostAiChatService {
             return null;
         }
         PostFilterSearchDTO normalized = new PostFilterSearchDTO();
-        normalized.setCity(trimToNull(filter.getCity()));
+        normalized.setCity(normalizeCity(filter.getCity()));
         normalized.setBrand(trimToNull(filter.getBrand()));
         normalized.setFuelType(trimToNull(filter.getFuelType()));
         normalized.setBoilerType(normalizeBoilerType(filter.getBoilerType()));
@@ -339,6 +342,134 @@ public class PostAiChatServiceImpl implements PostAiChatService {
         return limit == null ? DEFAULT_LIMIT : limit;
     }
 
+    private List<PostSearchResultVO> searchStructuredFilter(PostFilterSearchDTO structuredFilter) {
+        if (!StringUtils.hasText(structuredFilter.getCity())) {
+            return postFilterSearchService.search(structuredFilter);
+        }
+
+        List<String> cityKeywords = buildCitySearchKeywords(structuredFilter.getCity());
+        if (cityKeywords.isEmpty()) {
+            return postFilterSearchService.search(structuredFilter);
+        }
+
+        Map<String, PostSearchResultVO> mergedResults = new LinkedHashMap<>();
+        for (String cityKeyword : cityKeywords) {
+            PostFilterSearchDTO searchDTO = copyStructuredFilter(structuredFilter);
+            searchDTO.setCity(cityKeyword);
+            List<PostSearchResultVO> partialResults = postFilterSearchService.search(searchDTO);
+            for (PostSearchResultVO result : partialResults) {
+                if (result == null || !StringUtils.hasText(result.getPostId())) {
+                    continue;
+                }
+                mergedResults.putIfAbsent(result.getPostId(), result);
+                if (mergedResults.size() >= resolveLimit(structuredFilter.getLimit())) {
+                    return new ArrayList<>(mergedResults.values());
+                }
+            }
+        }
+        return new ArrayList<>(mergedResults.values());
+    }
+
+    private PostFilterSearchDTO copyStructuredFilter(PostFilterSearchDTO source) {
+        PostFilterSearchDTO target = new PostFilterSearchDTO();
+        target.setCity(source.getCity());
+        target.setBoilerType(source.getBoilerType());
+        target.setBrand(source.getBrand());
+        target.setFuelType(source.getFuelType());
+        target.setLimit(source.getLimit());
+        return target;
+    }
+
+    private List<String> buildCitySearchKeywords(String city) {
+        String rawCity = trimToNull(city);
+        if (rawCity == null) {
+            return List.of();
+        }
+
+        CityAlias cityAlias = resolveCityAlias(rawCity);
+        LinkedHashSet<String> keywords = new LinkedHashSet<>();
+        if (StringUtils.hasText(cityAlias.getEnglishUpper())) {
+            keywords.add(cityAlias.getEnglishUpper());
+        }
+        if (StringUtils.hasText(cityAlias.getSimplifiedChinese())) {
+            keywords.add(cityAlias.getSimplifiedChinese());
+        }
+        if (keywords.isEmpty()) {
+            keywords.add(normalizeCity(rawCity));
+        }
+        return new ArrayList<>(keywords);
+    }
+
+    private CityAlias resolveCityAlias(String city) {
+        CityAlias cityAlias = new CityAlias();
+        if (containsEnglishLetter(city)) {
+            cityAlias.setEnglishUpper(normalizeCity(city));
+        }
+        if (containsChineseCharacter(city)) {
+            cityAlias.setSimplifiedChinese(trimToNull(city));
+        }
+
+        CityAlias aiAlias = requestCityAlias(city);
+        if (!StringUtils.hasText(cityAlias.getEnglishUpper())) {
+            cityAlias.setEnglishUpper(trimToNull(aiAlias.getEnglishUpper()));
+        }
+        if (!StringUtils.hasText(cityAlias.getSimplifiedChinese())) {
+            cityAlias.setSimplifiedChinese(trimToNull(aiAlias.getSimplifiedChinese()));
+        }
+        return cityAlias;
+    }
+
+    private CityAlias requestCityAlias(String city) {
+        CityAlias emptyAlias = new CityAlias();
+        if (!StringUtils.hasText(city)) {
+            return emptyAlias;
+        }
+
+        ObjectNode requestBody = objectMapper.createObjectNode();
+        requestBody.put("model", azureOpenAiProperties.getModel());
+        requestBody.put("temperature", 0);
+
+        ArrayNode messages = objectMapper.createArrayNode();
+        messages.add(createMessage("system", """
+                You normalize one city name for search alias expansion.
+                Return JSON only with this exact structure:
+                {
+                  "englishUpper": "STANDARDIZED ENGLISH CITY NAME IN UPPERCASE, or empty string if unknown",
+                  "simplifiedChinese": "SIMPLIFIED CHINESE CITY NAME, or empty string if unknown"
+                }
+                Rules:
+                - If the input is in English, keep the English city in uppercase and provide simplified Chinese when confident.
+                - If the input is in Chinese, provide the standardized English uppercase city name and the simplified Chinese form.
+                - Do not include province, district, country, explanations, or Markdown.
+                - If uncertain, leave the field empty.
+                """));
+        messages.add(createMessage("user", city.trim()));
+        requestBody.set("messages", messages);
+
+        try {
+            String requestUrl = Objects.requireNonNull(buildChatCompletionsUrl());
+            String responseBody = restClient.post()
+                    .uri(requestUrl)
+                    .contentType(Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                    .header("api-key", azureOpenAiProperties.getApiKey().trim())
+                    .body(requestBody)
+                    .retrieve()
+                    .body(String.class);
+            return objectMapper.readValue(extractJsonFromChatResponse(responseBody), CityAlias.class);
+        } catch (Exception ex) {
+            return emptyAlias;
+        }
+    }
+
+    private String extractJsonFromChatResponse(String responseBody) throws Exception {
+        JsonNode root = objectMapper.readTree(responseBody);
+        String content = root.path("choices").path(0).path("message").path("content").asText(null);
+        if (!StringUtils.hasText(content)) {
+            throw new IllegalStateException("AI模型未返回有效内容");
+        }
+        return extractJson(content);
+    }
+
     private List<PostSearchResultVO> semanticSearch(
             PostAiChatRequestDTO dto,
             String vectorQuery,
@@ -372,7 +503,7 @@ public class PostAiChatServiceImpl implements PostAiChatService {
             return false;
         }
         if (StringUtils.hasText(filter.getCity())) {
-            String city = result.getPost().getCity();
+            String city = normalizeCity(result.getPost().getCity());
             if (!StringUtils.hasText(city) || !city.contains(filter.getCity())) {
                 return false;
             }
@@ -410,6 +541,43 @@ public class PostAiChatServiceImpl implements PostAiChatService {
         return value.trim();
     }
 
+    private String normalizeCity(String city) {
+        String normalized = trimToNull(city);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT);
+    }
+
+    private boolean containsEnglishLetter(String text) {
+        if (!StringUtils.hasText(text)) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            if ((text.charAt(i) >= 'a' && text.charAt(i) <= 'z')
+                    || (text.charAt(i) >= 'A' && text.charAt(i) <= 'Z')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsChineseCharacter(String text) {
+        if (!StringUtils.hasText(text)) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            Character.UnicodeBlock unicodeBlock = Character.UnicodeBlock.of(text.charAt(i));
+            if (Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS.equals(unicodeBlock)
+                    || Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A.equals(unicodeBlock)
+                    || Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B.equals(unicodeBlock)
+                    || Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS.equals(unicodeBlock)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class AiDecision {
@@ -417,5 +585,12 @@ public class PostAiChatServiceImpl implements PostAiChatService {
         private String reply;
         private String vectorQuery;
         private PostFilterSearchDTO structuredFilter;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class CityAlias {
+        private String englishUpper;
+        private String simplifiedChinese;
     }
 }

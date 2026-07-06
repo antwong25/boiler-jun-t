@@ -71,7 +71,7 @@ public class PostServiceImpl implements PostService {
         postEntity.setViewCount(0);
         postEntity.setMediaFiles(trimToNull(dto.getMediaFiles()));
         postEntity.setAiValuationRange(calculateAiValuationRange(boilerEntity));
-        postEntity.setCity(trimToNull(dto.getCity()));
+        postEntity.setCity(normalizeCity(dto.getCity()));
         postEntity.setBoilerId(boilerId);
         postMapper.insert(postEntity);
 
@@ -109,7 +109,7 @@ public class PostServiceImpl implements PostService {
         existingPost.setPrice(dto.getPrice());
         existingPost.setDescription(trimToNull(dto.getDescription()));
         existingPost.setMediaFiles(trimToNull(dto.getMediaFiles()));
-        existingPost.setCity(trimToNull(dto.getCity()));
+        existingPost.setCity(normalizeCity(dto.getCity()));
         existingPost.setAiValuationRange(calculateAiValuationRange(boilerEntity));
         // 编辑后需要重新进入审核流程
         existingPost.setStatus(PostConstant.POST_STATUS_PENDING_REVIEW);
@@ -390,6 +390,14 @@ public class PostServiceImpl implements PostService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeCity(String city) {
+        String normalized = trimToNull(city);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT);
     }
 
     private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {

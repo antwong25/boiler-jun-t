@@ -69,7 +69,7 @@ public class PostFilterSearchServiceImpl implements PostFilterSearchService {
     }
 
     private void normalizeRequest(PostFilterSearchDTO dto) {
-        dto.setCity(trimToNull(dto.getCity()));
+        dto.setCity(normalizeCity(dto.getCity()));
         dto.setBrand(trimToNull(dto.getBrand()));
         dto.setFuelType(trimToNull(dto.getFuelType()));
         dto.setLimit(dto.getLimit() == null ? DEFAULT_LIMIT : dto.getLimit());
@@ -100,6 +100,14 @@ public class PostFilterSearchServiceImpl implements PostFilterSearchService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeCity(String city) {
+        String normalized = trimToNull(city);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT);
     }
 
     private PostVO buildPostVO(PostEntity postEntity, BoilerEntity boilerEntity) {

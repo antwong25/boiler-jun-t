@@ -94,7 +94,7 @@
         inner join boiler b on p.boilerId = b.boilerId
         where p.status = 'APPROVED'
         <if test="city != null and city != ''">
-            and p.city like concat('%', #{city}, '%')
+            and upper(p.city) like concat('%', upper(#{city}), '%')
         </if>
         <if test="boilerType != null and boilerType != ''">
             and upper(b.boilerType) = upper(#{boilerType})

@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/boiler-jun?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: 12345
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
@@ -29,6 +29,6 @@ app:
   ai:
     azure:
       endpoint: "https://apim-ai-gateway-eas-prd.azure-api.net/ec6001"
-      api-key: "XXXX"
+      api-key: "5fb1610d96ec4305a4fc909bd24562d6"
       api-version: 2025-04-01-preview
       model: gpt-small
