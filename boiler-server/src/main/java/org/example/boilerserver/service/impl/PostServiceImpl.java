@@ -1,10 +1,12 @@
 package org.example.boilerserver.service.impl;
 
+import org.example.boilercommon.PageResult;
 import org.example.boilerpojo.BoilerDetailDTO;
 import org.example.boilerpojo.BoilerDetailVO;
 import org.example.boilerpojo.BoilerEntity;
 import org.example.boilerpojo.PostCreateDTO;
 import org.example.boilerpojo.PostEntity;
+import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostUpdateDTO;
 import org.example.boilerpojo.PostVO;
 import org.example.boilerpojo.SellerEntity;
@@ -22,6 +24,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -130,6 +134,29 @@ public class PostServiceImpl implements PostService {
         postEmbeddingService.deletePostVector(postEntity.getPostId());
         postMapper.deleteByPostId(postEntity.getPostId());
         boilerMapper.deleteByBoilerId(postEntity.getBoilerId());
+    }
+
+    @Override
+    public PageResult<PostVO> listPublishedPosts(PostPageQueryDTO dto) {
+        PostPageQueryDTO query = normalizePageQuery(dto, false);
+        long total = postMapper.countPublishedPosts();
+        List<PostVO> records = postMapper
+                .listPublishedPosts(query.getOffset(), query.getPageSize(), query.getSortField(), query.getSortOrder())
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+        return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
+    }
+
+    @Override
+    public PageResult<PostVO> filterPublishedPosts(PostPageQueryDTO dto) {
+        PostPageQueryDTO query = normalizePageQuery(dto, true);
+        long total = postMapper.countPublishedPostsByFilter(query);
+        List<PostVO> records = postMapper.listPublishedPostsByFilter(query)
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+        return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
     }
 
     private void validateCreateRequest(PostCreateDTO dto) {
@@ -277,6 +304,10 @@ public class PostServiceImpl implements PostService {
         return boilerEntity;
     }
 
+    private PostVO buildPostVO(PostEntity postEntity) {
+        return buildPostVO(postEntity, getExistingBoiler(postEntity.getBoilerId()));
+    }
+
     private PostVO buildPostVO(PostEntity postEntity, BoilerEntity boilerEntity) {
         PostVO postVO = new PostVO();
         postVO.setPostId(postEntity.getPostId());
@@ -398,6 +429,44 @@ public class PostServiceImpl implements PostService {
             return null;
         }
         return normalized.toUpperCase(Locale.ROOT);
+    }
+
+    private PostPageQueryDTO normalizePageQuery(PostPageQueryDTO dto, boolean requireFilter) {
+        PostPageQueryDTO query = dto == null ? new PostPageQueryDTO() : dto;
+        int pageNum = query.getPageNum() == null || query.getPageNum() < 1 ? 1 : query.getPageNum();
+        int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
+        query.setPageNum(pageNum);
+        query.setPageSize(pageSize);
+        query.setOffset((pageNum - 1) * pageSize);
+        query.setSortField(validateSortField(
+                query.getSortField(),
+                new String[]{"publishTime", "updateTime", "price", "viewCount"}
+        ));
+        query.setSortOrder("asc".equalsIgnoreCase(query.getSortOrder()) ? "asc" : "desc");
+        query.setCity(normalizeCity(query.getCity()));
+        query.setBrand(trimToNull(query.getBrand()));
+        query.setFuelType(trimToNull(query.getFuelType()));
+        if (StringUtils.hasText(query.getBoilerType())) {
+            query.setBoilerType(normalizeBoilerType(query.getBoilerType()));
+        }
+        if (requireFilter
+                && !StringUtils.hasText(query.getCity())
+                && !StringUtils.hasText(query.getBoilerType())
+                && !StringUtils.hasText(query.getBrand())
+                && !StringUtils.hasText(query.getFuelType())) {
+            throw new IllegalArgumentException("至少需要提供一个筛选条件");
+        }
+        return query;
+    }
+
+    private String validateSortField(String sortField, String[] allowedFields) {
+        if (!StringUtils.hasText(sortField)) {
+            return null;
+        }
+        return Arrays.stream(allowedFields)
+                .filter(field -> field.equals(sortField))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("不支持的排序字段"));
     }
 
     private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {

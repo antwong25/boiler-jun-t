@@ -1,9 +1,11 @@
 package org.example.boilerserver.controller;
 
+import org.example.boilercommon.PageResult;
 import org.example.boilercommon.Result;
 import org.example.boilerpojo.PostAiChatRequestDTO;
 import org.example.boilerpojo.PostAiChatResponseVO;
 import org.example.boilerpojo.PostCreateDTO;
+import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostSemanticSearchDTO;
 import org.example.boilerpojo.PostSemanticSearchVO;
 import org.example.boilerpojo.PostUpdateDTO;
@@ -63,6 +65,16 @@ public class PostController {
     public Result<String> deletePost(@PathVariable String postId, @RequestParam String sellerId) {
         postService.deletePost(postId, sellerId);
         return Result.success("删除成功");
+    }
+
+    @GetMapping("/page")
+    public Result<PageResult<PostVO>> listPublishedPosts(PostPageQueryDTO dto) {
+        return Result.success(postService.listPublishedPosts(dto));
+    }
+
+    @GetMapping("/filter")
+    public Result<PageResult<PostVO>> filterPublishedPosts(PostPageQueryDTO dto) {
+        return Result.success(postService.filterPublishedPosts(dto));
     }
 
     @PostMapping("/semantic-search")

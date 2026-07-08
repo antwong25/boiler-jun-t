@@ -19,6 +19,22 @@
         <result property="boilerId" column="boilerId"/>
     </resultMap>
 
+    <sql id="PublishedPostFilterConditions">
+        where p.status = 'PUBLISHED'
+        <if test="city != null and city != ''">
+            and upper(p.city) like concat('%', upper(#{city}), '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+    </sql>
+
     <select id="getByPostId" resultMap="PostResultMap">
         select * from post where postId = #{postId}
     </select>
@@ -92,20 +108,52 @@
         select p.*
         from post p
         inner join boiler b on p.boilerId = b.boilerId
-        where p.status = 'APPROVED'
-        <if test="city != null and city != ''">
-            and upper(p.city) like concat('%', upper(#{city}), '%')
-        </if>
-        <if test="boilerType != null and boilerType != ''">
-            and upper(b.boilerType) = upper(#{boilerType})
-        </if>
-        <if test="brand != null and brand != ''">
-            and b.brand like concat('%', #{brand}, '%')
-        </if>
-        <if test="fuelType != null and fuelType != ''">
-            and b.fuelType like concat('%', #{fuelType}, '%')
-        </if>
+        <include refid="PublishedPostFilterConditions"/>
         order by p.updateTime desc, p.publishTime desc
         limit #{limit}
+    </select>
+
+    <select id="countPublishedPosts" resultType="long">
+        select count(1)
+        from post p
+        where p.status = 'PUBLISHED'
+    </select>
+
+    <select id="listPublishedPosts" resultMap="PostResultMap">
+        select p.*
+        from post p
+        where p.status = 'PUBLISHED'
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by p.${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by p.updateTime desc, p.publishTime desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPublishedPostsByFilter" resultType="long">
+        select count(1)
+        from post p
+        inner join boiler b on p.boilerId = b.boilerId
+        <include refid="PublishedPostFilterConditions"/>
+    </select>
+
+    <select id="listPublishedPostsByFilter" resultMap="PostResultMap">
+        select p.*
+        from post p
+        inner join boiler b on p.boilerId = b.boilerId
+        <include refid="PublishedPostFilterConditions"/>
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by p.${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by p.updateTime desc, p.publishTime desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{pageSize}
     </select>
 </mapper>
