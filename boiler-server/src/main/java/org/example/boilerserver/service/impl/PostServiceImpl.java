@@ -105,6 +105,12 @@ public class PostServiceImpl implements PostService {
 
         PostEntity existingPost = getExistingPost(dto.getPostId());
         validatePostOwnership(existingPost, dto.getSellerId());
+        
+        // 1. 卖家编辑帖子前，先确保帖子属于published状态或者banned状态
+        if (!PostConstant.STATUS_PUBLISHED.equals(existingPost.getStatus()) && 
+            !PostConstant.STATUS_BANNED.equals(existingPost.getStatus())) {
+            throw new IllegalArgumentException("当前状态不允许编辑");
+        }
 
         BoilerEntity boilerEntity = buildBoilerEntity(existingPost.getBoilerId(), boilerDetail);
         boilerMapper.update(boilerEntity);
@@ -115,8 +121,8 @@ public class PostServiceImpl implements PostService {
         existingPost.setMediaFiles(trimToNull(dto.getMediaFiles()));
         existingPost.setCity(normalizeCity(dto.getCity()));
         existingPost.setAiValuationRange(calculateAiValuationRange(boilerEntity));
-        // 编辑后状态保持或更新为 PUBLISHED
-        existingPost.setStatus(PostConstant.STATUS_PUBLISHED);
+        // 2. 编辑后状态保持原样，而不是无条件流转到 PUBLISHED
+        // existingPost.setStatus(PostConstant.STATUS_PUBLISHED); // 移除状态变更逻辑，保持现有状态
         existingPost.setUpdateTime(LocalDate.now());
         postMapper.update(existingPost);
 
