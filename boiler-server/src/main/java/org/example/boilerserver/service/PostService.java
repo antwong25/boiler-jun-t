@@ -15,6 +15,10 @@ public interface PostService {
 
     void deletePost(String postId, String sellerId);
 
+    void delistPost(String postId, String sellerId);
+
+    void banPost(String postId, String adminUserId);
+
     PageResult<PostVO> listPublishedPosts(PostPageQueryDTO dto);
 
     PageResult<PostVO> filterPublishedPosts(PostPageQueryDTO dto);

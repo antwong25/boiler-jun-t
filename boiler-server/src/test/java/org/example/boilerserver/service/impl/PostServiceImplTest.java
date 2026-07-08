@@ -117,6 +117,77 @@ class PostServiceImplTest {
         assertEquals("至少需要提供一个筛选条件", ex.getMessage());
     }
 
+    @Test
+    void delistPost_success() {
+        PostEntity post = buildPostEntity();
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+
+        postService.delistPost("post001", "seller001");
+
+        verify(postMapper).updateStatus("post001", PostConstant.STATUS_DELISTED);
+    }
+
+    @Test
+    void delistPost_notOwner_throwsException() {
+        PostEntity post = buildPostEntity();
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.delistPost("post001", "otherSeller")
+        );
+
+        assertEquals("仅发帖卖家本人可以操作该帖子", ex.getMessage());
+    }
+
+    @Test
+    void delistPost_alreadyDelisted_throwsException() {
+        PostEntity post = buildPostEntity();
+        post.setStatus(PostConstant.STATUS_DELISTED);
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.delistPost("post001", "seller001")
+        );
+
+        assertEquals("该帖子已经下架", ex.getMessage());
+    }
+
+    @Test
+    void banPost_success() {
+        PostEntity post = buildPostEntity();
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+
+        postService.banPost("post001", "admin001");
+
+        verify(postMapper).updateStatus("post001", PostConstant.STATUS_BANNED);
+    }
+
+    @Test
+    void banPost_emptyAdminId_throwsException() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.banPost("post001", "")
+        );
+
+        assertEquals("管理员ID不能为空", ex.getMessage());
+    }
+
+    @Test
+    void banPost_alreadyBanned_throwsException() {
+        PostEntity post = buildPostEntity();
+        post.setStatus(PostConstant.STATUS_BANNED);
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.banPost("post001", "admin001")
+        );
+
+        assertEquals("该帖子已经被封禁", ex.getMessage());
+    }
+
     private PostEntity buildPostEntity() {
         PostEntity post = new PostEntity();
         post.setPostId("post001");

@@ -69,7 +69,7 @@ public class PostServiceImpl implements PostService {
         postEntity.setTitle(resolveTitle(dto.getTitle(), boilerEntity));
         postEntity.setPrice(dto.getPrice());
         postEntity.setDescription(trimToNull(dto.getDescription()));
-        postEntity.setStatus(PostConstant.POST_STATUS_PENDING_REVIEW);
+        postEntity.setStatus(PostConstant.STATUS_PUBLISHED);
         postEntity.setPublishTime(today);
         postEntity.setUpdateTime(today);
         postEntity.setViewCount(0);
@@ -115,8 +115,8 @@ public class PostServiceImpl implements PostService {
         existingPost.setMediaFiles(trimToNull(dto.getMediaFiles()));
         existingPost.setCity(normalizeCity(dto.getCity()));
         existingPost.setAiValuationRange(calculateAiValuationRange(boilerEntity));
-        // 编辑后需要重新进入审核流程
-        existingPost.setStatus(PostConstant.POST_STATUS_PENDING_REVIEW);
+        // 编辑后状态保持或更新为 PUBLISHED
+        existingPost.setStatus(PostConstant.STATUS_PUBLISHED);
         existingPost.setUpdateTime(LocalDate.now());
         postMapper.update(existingPost);
 
@@ -134,6 +134,30 @@ public class PostServiceImpl implements PostService {
         postEmbeddingService.deletePostVector(postEntity.getPostId());
         postMapper.deleteByPostId(postEntity.getPostId());
         boilerMapper.deleteByBoilerId(postEntity.getBoilerId());
+    }
+
+    @Override
+    @Transactional
+    public void delistPost(String postId, String sellerId) {
+        PostEntity postEntity = getExistingPost(postId);
+        validatePostOwnership(postEntity, sellerId);
+        if (PostConstant.STATUS_DELISTED.equals(postEntity.getStatus())) {
+            throw new IllegalArgumentException("该帖子已经下架");
+        }
+        postMapper.updateStatus(postEntity.getPostId(), PostConstant.STATUS_DELISTED);
+    }
+
+    @Override
+    @Transactional
+    public void banPost(String postId, String adminUserId) {
+        if (!StringUtils.hasText(adminUserId)) {
+            throw new IllegalArgumentException("管理员ID不能为空");
+        }
+        PostEntity postEntity = getExistingPost(postId);
+        if (PostConstant.STATUS_BANNED.equals(postEntity.getStatus())) {
+            throw new IllegalArgumentException("该帖子已经被封禁");
+        }
+        postMapper.updateStatus(postEntity.getPostId(), PostConstant.STATUS_BANNED);
     }
 
     @Override
