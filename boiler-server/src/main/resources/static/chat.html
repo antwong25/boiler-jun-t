@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聊天管理测试页</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .module-list {
+      display: grid;
+      gap: 18px;
+    }
+    .module-card {
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+      gap: 20px;
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .module-result {
+      padding-left: 12px;
+      border-left: 1px solid #ddd;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .button-row {
+      margin-top: 16px;
+    }
+    .hint {
+      font-size: 14px;
+      color: #666;
+    }
+    pre {
+      min-height: 96px;
+      max-height: 320px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background-color: #f5f5f5;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    @media (max-width: 960px) {
+      .module-card {
+        grid-template-columns: 1fr;
+      }
+      .module-result {
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid #ddd;
+        padding-top: 16px;
+      }
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="config-card">
+      <h1>聊天管理测试页</h1>
+      <p class="hint">左侧填写请求参数，右侧保留当前模块的主要结果和原始响应。返回结果中的 sessionId 和 userId 会自动向下填充。</p>
+      <div class="config-grid">
+        <div>
+          <label for="baseUrl"><strong>后端地址</strong></label>
+          <input id="baseUrl" type="text" value="">
+        </div>
+      </div>
+      <div class="button-row">
+          <a href="/index.html">返回用户管理测试页</a>
+      </div>
+    </section>
+
+    <div class="module-list" style="margin-top: 20px;">
+      <!-- 1. 创建会话 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>1. 创建聊天会话</h2>
+          <form id="createSessionForm">
+            <div class="field-row">
+              <label for="createBuyerId">买家业务 ID</label>
+              <input id="createBuyerId" name="buyerId" type="text" placeholder="buyer_xxx">
+            </div>
+            <div class="field-row">
+              <label for="createSellerId">卖家业务 ID</label>
+              <input id="createSellerId" name="sellerId" type="text" placeholder="seller_xxx">
+            </div>
+            <div class="field-row">
+              <label for="createPostId">关联帖子 ID</label>
+              <input id="createPostId" name="postId" type="text" placeholder="post_xxx">
+            </div>
+            <div class="button-row">
+              <button type="submit">创建会话</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="createSessionMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="createSessionRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 发送消息 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>2. 发送消息</h2>
+          <form id="sendMessageForm">
+            <div class="field-row">
+              <label for="sendSessionId">会话 ID</label>
+              <input id="sendSessionId" name="sessionId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sendSenderId">发送者 ID</label>
+              <input id="sendSenderId" name="senderId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="sendSenderType">发送者类型</label>
+              <select name="senderType" id="sendSenderType">
+                <option value="buyer">buyer</option>
+                <option value="seller">seller</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="sendMsgType">消息类型</label>
+              <select name="msgType" id="sendMsgType">
+                <option value="text">text</option>
+                <option value="image">image</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="sendContent">消息正文</label>
+              <input id="sendContent" name="content" type="text" placeholder="输入聊天内容...">
+            </div>
+            <div class="button-row">
+              <button type="submit">发送消息</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="sendMessageMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="sendMessageRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 查询会话列表 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>3. 查询用户的会话列表</h2>
+          <form id="listSessionForm">
+            <div class="field-row">
+              <label for="listUserId">当前用户 ID</label>
+              <input id="listUserId" name="userId" type="text" placeholder="buyer_xxx 或 seller_xxx">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询会话列表</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listSessionMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listSessionRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const baseUrlEl = document.getElementById("baseUrl");
+
+    function getBaseUrl() {
+      return baseUrlEl.value.trim().replace(/\/$/, "");
+    }
+
+    function formToObject(form) {
+      const formData = new FormData(form);
+      const data = {};
+      for (const [key, value] of formData.entries()) {
+        const trimmed = String(value).trim();
+        if (trimmed !== "") {
+          data[key] = trimmed;
+        }
+      }
+      return data;
+    }
+
+    function buildQueryString(params) {
+      const searchParams = new URLSearchParams();
+      Object.keys(params).forEach(function (key) {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
+          searchParams.set(key, params[key]);
+        }
+      });
+      const queryString = searchParams.toString();
+      return queryString ? "?" + queryString : "";
+    }
+
+    function getDisplayResult(data) {
+      if (!data) return "无返回内容";
+      if (data.code === 1) {
+        return data.data !== undefined ? JSON.stringify(data.data, null, 2) : "操作成功";
+      }
+      return data.msg || data.error || "操作失败";
+    }
+
+    function showResult(moduleKey, title, data) {
+      const mainResultEl = document.getElementById(moduleKey + "MainResult");
+      const rawResultEl = document.getElementById(moduleKey + "RawResult");
+      mainResultEl.textContent = getDisplayResult(data);
+      rawResultEl.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
+    }
+
+    function fillSessionId(sessionId) {
+      if (!sessionId) return;
+      document.getElementById("sendSessionId").value = sessionId;
+    }
+    
+    function fillUserId(userId) {
+      if (!userId) return;
+      document.getElementById("listUserId").value = userId;
+      document.getElementById("sendSenderId").value = userId;
+    }
+
+    async function request(path, method, body) {
+      const options = { method: method, headers: {} };
+      if (body) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(getBaseUrl() + path, options);
+      const data = await response.json();
+      
+      // 自动向下填充相关 ID
+      if (data && data.data && data.data.sessionId) {
+        fillSessionId(data.data.sessionId);
+      }
+      return data;
+    }
+
+    // 1. 创建会话
+    document.getElementById("createSessionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const payload = formToObject(event.target);
+        const data = await request("/api/chat/session/create", "POST", payload);
+        showResult("createSession", "创建会话结果", data);
+        if (payload.buyerId) fillUserId(payload.buyerId);
+      } catch (error) {
+        showResult("createSession", "创建失败", { error: String(error) });
+      }
+    });
+
+    // 2. 发送消息
+    document.getElementById("sendMessageForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/api/chat/message/send", "POST", formToObject(event.target));
+        showResult("sendMessage", "发送消息结果", data);
+      } catch (error) {
+        showResult("sendMessage", "发送失败", { error: String(error) });
+      }
+    });
+
+    // 3. 查询会话列表
+    document.getElementById("listSessionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const formData = formToObject(event.target);
+        const query = buildQueryString(formData);
+        const data = await request("/api/chat/session/list" + query, "GET");
+        showResult("listSession", "会话列表", data);
+      } catch (error) {
+        showResult("listSession", "查询失败", { error: String(error) });
+      }
+    });
+  </script>
+</body>
+</html>

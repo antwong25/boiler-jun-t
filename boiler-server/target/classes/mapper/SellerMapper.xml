@@ -6,15 +6,9 @@
     <resultMap id="SellerResultMap" type="org.example.boilerpojo.SellerEntity">
         <id property="sellerId" column="sellerId"/>
         <result property="shopName" column="shopName"/>
-        <result property="shopAddress" column="shopAddress"/>
         <result property="businessLicense" column="businessLicense"/>
         <result property="legalPersonId" column="legalPersonId"/>
-        <result property="businessLicenseFileUrl" column="businessLicenseFileUrl"/>
-        <result property="legalPersonIdFileUrl" column="legalPersonIdFileUrl"/>
         <result property="qualificationStatus" column="qualificationStatus"/>
-        <result property="qualificationAuditRemark" column="qualificationAuditRemark"/>
-        <result property="qualificationAuditedBy" column="qualificationAuditedBy"/>
-        <result property="qualificationAuditTime" column="qualificationAuditTime"/>
         <result property="guaranteeDeposit" column="guaranteeDeposit"/>
         <result property="completedTransactionCount" column="completedTransactionCount"/>
         <result property="positiveRatingRate" column="positiveRatingRate"/>
@@ -32,15 +26,9 @@
         insert into seller (
             sellerId,
             shopName,
-            shopAddress,
             businessLicense,
             legalPersonId,
-            businessLicenseFileUrl,
-            legalPersonIdFileUrl,
             qualificationStatus,
-            qualificationAuditRemark,
-            qualificationAuditedBy,
-            qualificationAuditTime,
             guaranteeDeposit,
             completedTransactionCount,
             positiveRatingRate
@@ -48,15 +36,9 @@
         values (
             #{sellerId},
             #{shopName},
-            #{shopAddress},
             #{businessLicense},
             #{legalPersonId},
-            #{businessLicenseFileUrl},
-            #{legalPersonIdFileUrl},
             #{qualificationStatus},
-            #{qualificationAuditRemark},
-            #{qualificationAuditedBy},
-            #{qualificationAuditTime},
             #{guaranteeDeposit},
             #{completedTransactionCount},
             #{positiveRatingRate}
@@ -67,15 +49,9 @@
         update seller
         <set>
             <if test="shopName != null and shopName != ''">shopName = #{shopName},</if>
-            <if test="shopAddress != null">shopAddress = #{shopAddress},</if>
             <if test="businessLicense != null">businessLicense = #{businessLicense},</if>
             <if test="legalPersonId != null">legalPersonId = #{legalPersonId},</if>
-            <if test="businessLicenseFileUrl != null">businessLicenseFileUrl = #{businessLicenseFileUrl},</if>
-            <if test="legalPersonIdFileUrl != null">legalPersonIdFileUrl = #{legalPersonIdFileUrl},</if>
             <if test="qualificationStatus != null and qualificationStatus != ''">qualificationStatus = #{qualificationStatus},</if>
-            <if test="qualificationAuditRemark != null">qualificationAuditRemark = #{qualificationAuditRemark},</if>
-            <if test="qualificationAuditedBy != null">qualificationAuditedBy = #{qualificationAuditedBy},</if>
-            <if test="qualificationAuditTime != null">qualificationAuditTime = #{qualificationAuditTime},</if>
             <if test="guaranteeDeposit != null">guaranteeDeposit = #{guaranteeDeposit},</if>
             <if test="completedTransactionCount != null">completedTransactionCount = #{completedTransactionCount},</if>
             <if test="positiveRatingRate != null">positiveRatingRate = #{positiveRatingRate},</if>

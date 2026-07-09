@@ -77,3 +77,6 @@ application-local.properties
 **/cp.txt
 **/effective-pom.xml
 uploads/
+boiler-pojo/target/*
+boiler-server/target/*
+boiler-common/target/*
