@@ -1,10 +1,12 @@
 package org.example.boilerserver.service.impl;
 
+import org.example.boilercommon.PageResult;
 import org.example.boilerpojo.BoilerDetailDTO;
 import org.example.boilerpojo.BoilerDetailVO;
 import org.example.boilerpojo.BoilerEntity;
 import org.example.boilerpojo.PostCreateDTO;
 import org.example.boilerpojo.PostEntity;
+import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostUpdateDTO;
 import org.example.boilerpojo.PostVO;
 import org.example.boilerpojo.SellerEntity;
@@ -22,6 +24,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -65,7 +69,7 @@ public class PostServiceImpl implements PostService {
         postEntity.setTitle(resolveTitle(dto.getTitle(), boilerEntity));
         postEntity.setPrice(dto.getPrice());
         postEntity.setDescription(trimToNull(dto.getDescription()));
-        postEntity.setStatus(PostConstant.POST_STATUS_PENDING_REVIEW);
+        postEntity.setStatus(PostConstant.STATUS_PUBLISHED);
         postEntity.setPublishTime(today);
         postEntity.setUpdateTime(today);
         postEntity.setViewCount(0);
@@ -101,6 +105,12 @@ public class PostServiceImpl implements PostService {
 
         PostEntity existingPost = getExistingPost(dto.getPostId());
         validatePostOwnership(existingPost, dto.getSellerId());
+        
+        // 1. 卖家编辑帖子前，先确保帖子属于published状态或者banned状态
+        if (!PostConstant.STATUS_PUBLISHED.equals(existingPost.getStatus()) && 
+            !PostConstant.STATUS_BANNED.equals(existingPost.getStatus())) {
+            throw new IllegalArgumentException("当前状态不允许编辑");
+        }
 
         BoilerEntity boilerEntity = buildBoilerEntity(existingPost.getBoilerId(), boilerDetail);
         boilerMapper.update(boilerEntity);
@@ -111,8 +121,8 @@ public class PostServiceImpl implements PostService {
         existingPost.setMediaFiles(trimToNull(dto.getMediaFiles()));
         existingPost.setCity(normalizeCity(dto.getCity()));
         existingPost.setAiValuationRange(calculateAiValuationRange(boilerEntity));
-        // 编辑后需要重新进入审核流程
-        existingPost.setStatus(PostConstant.POST_STATUS_PENDING_REVIEW);
+        // 2. 编辑后状态保持原样，而不是无条件流转到 PUBLISHED
+        // existingPost.setStatus(PostConstant.STATUS_PUBLISHED); // 移除状态变更逻辑，保持现有状态
         existingPost.setUpdateTime(LocalDate.now());
         postMapper.update(existingPost);
 
@@ -130,6 +140,53 @@ public class PostServiceImpl implements PostService {
         postEmbeddingService.deletePostVector(postEntity.getPostId());
         postMapper.deleteByPostId(postEntity.getPostId());
         boilerMapper.deleteByBoilerId(postEntity.getBoilerId());
+    }
+
+    @Override
+    @Transactional
+    public void delistPost(String postId, String sellerId) {
+        PostEntity postEntity = getExistingPost(postId);
+        validatePostOwnership(postEntity, sellerId);
+        if (PostConstant.STATUS_DELISTED.equals(postEntity.getStatus())) {
+            throw new IllegalArgumentException("该帖子已经下架");
+        }
+        postMapper.updateStatus(postEntity.getPostId(), PostConstant.STATUS_DELISTED);
+    }
+
+    @Override
+    @Transactional
+    public void banPost(String postId, String adminUserId) {
+        if (!StringUtils.hasText(adminUserId)) {
+            throw new IllegalArgumentException("管理员ID不能为空");
+        }
+        PostEntity postEntity = getExistingPost(postId);
+        if (PostConstant.STATUS_BANNED.equals(postEntity.getStatus())) {
+            throw new IllegalArgumentException("该帖子已经被封禁");
+        }
+        postMapper.updateStatus(postEntity.getPostId(), PostConstant.STATUS_BANNED);
+    }
+
+    @Override
+    public PageResult<PostVO> listPublishedPosts(PostPageQueryDTO dto) {
+        PostPageQueryDTO query = normalizePageQuery(dto, false);
+        long total = postMapper.countPublishedPosts();
+        List<PostVO> records = postMapper
+                .listPublishedPosts(query.getOffset(), query.getPageSize(), query.getSortField(), query.getSortOrder())
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+        return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
+    }
+
+    @Override
+    public PageResult<PostVO> filterPublishedPosts(PostPageQueryDTO dto) {
+        PostPageQueryDTO query = normalizePageQuery(dto, true);
+        long total = postMapper.countPublishedPostsByFilter(query);
+        List<PostVO> records = postMapper.listPublishedPostsByFilter(query)
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+        return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
     }
 
     private void validateCreateRequest(PostCreateDTO dto) {
@@ -277,6 +334,10 @@ public class PostServiceImpl implements PostService {
         return boilerEntity;
     }
 
+    private PostVO buildPostVO(PostEntity postEntity) {
+        return buildPostVO(postEntity, getExistingBoiler(postEntity.getBoilerId()));
+    }
+
     private PostVO buildPostVO(PostEntity postEntity, BoilerEntity boilerEntity) {
         PostVO postVO = new PostVO();
         postVO.setPostId(postEntity.getPostId());
@@ -398,6 +459,44 @@ public class PostServiceImpl implements PostService {
             return null;
         }
         return normalized.toUpperCase(Locale.ROOT);
+    }
+
+    private PostPageQueryDTO normalizePageQuery(PostPageQueryDTO dto, boolean requireFilter) {
+        PostPageQueryDTO query = dto == null ? new PostPageQueryDTO() : dto;
+        int pageNum = query.getPageNum() == null || query.getPageNum() < 1 ? 1 : query.getPageNum();
+        int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
+        query.setPageNum(pageNum);
+        query.setPageSize(pageSize);
+        query.setOffset((pageNum - 1) * pageSize);
+        query.setSortField(validateSortField(
+                query.getSortField(),
+                new String[]{"publishTime", "updateTime", "price", "viewCount"}
+        ));
+        query.setSortOrder("asc".equalsIgnoreCase(query.getSortOrder()) ? "asc" : "desc");
+        query.setCity(normalizeCity(query.getCity()));
+        query.setBrand(trimToNull(query.getBrand()));
+        query.setFuelType(trimToNull(query.getFuelType()));
+        if (StringUtils.hasText(query.getBoilerType())) {
+            query.setBoilerType(normalizeBoilerType(query.getBoilerType()));
+        }
+        if (requireFilter
+                && !StringUtils.hasText(query.getCity())
+                && !StringUtils.hasText(query.getBoilerType())
+                && !StringUtils.hasText(query.getBrand())
+                && !StringUtils.hasText(query.getFuelType())) {
+            throw new IllegalArgumentException("至少需要提供一个筛选条件");
+        }
+        return query;
+    }
+
+    private String validateSortField(String sortField, String[] allowedFields) {
+        if (!StringUtils.hasText(sortField)) {
+            return null;
+        }
+        return Arrays.stream(allowedFields)
+                .filter(field -> field.equals(sortField))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("不支持的排序字段"));
     }
 
     private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {

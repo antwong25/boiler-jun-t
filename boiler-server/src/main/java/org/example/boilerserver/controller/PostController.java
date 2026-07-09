@@ -1,9 +1,11 @@
 package org.example.boilerserver.controller;
 
+import org.example.boilercommon.PageResult;
 import org.example.boilercommon.Result;
 import org.example.boilerpojo.PostAiChatRequestDTO;
 import org.example.boilerpojo.PostAiChatResponseVO;
 import org.example.boilerpojo.PostCreateDTO;
+import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostSemanticSearchDTO;
 import org.example.boilerpojo.PostSemanticSearchVO;
 import org.example.boilerpojo.PostUpdateDTO;
@@ -58,11 +60,36 @@ public class PostController {
         return Result.success(postService.updatePost(dto));
     }
 
-    // 仅发帖卖家本人可以删除帖子
-    @DeleteMapping("/{postId}")
-    public Result<String> deletePost(@PathVariable String postId, @RequestParam String sellerId) {
-        postService.deletePost(postId, sellerId);
-        return Result.success("删除成功");
+    // // 仅发帖卖家本人可以删除帖子
+    // 修改：从业务逻辑考虑，不该删除帖子，应该直接改状态
+    // @DeleteMapping("/{postId}")
+    // public Result<String> deletePost(@PathVariable String postId, @RequestParam String sellerId) {
+    //     postService.deletePost(postId, sellerId);
+    //     return Result.success("删除成功");
+    // }
+
+    // 卖家主动下架帖子
+    @PutMapping("/{postId}/delist")
+    public Result<String> delistPost(@PathVariable String postId, @RequestParam String sellerId) {
+        postService.delistPost(postId, sellerId);
+        return Result.success("下架成功");
+    }
+
+    // 管理员封禁帖子
+    @PutMapping("/{postId}/ban")
+    public Result<String> banPost(@PathVariable String postId, @RequestParam String adminUserId) {
+        postService.banPost(postId, adminUserId);
+        return Result.success("封禁成功");
+    }
+
+    @GetMapping("/page")
+    public Result<PageResult<PostVO>> listPublishedPosts(PostPageQueryDTO dto) {
+        return Result.success(postService.listPublishedPosts(dto));
+    }
+
+    @GetMapping("/filter")
+    public Result<PageResult<PostVO>> filterPublishedPosts(PostPageQueryDTO dto) {
+        return Result.success(postService.filterPublishedPosts(dto));
     }
 
     @PostMapping("/semantic-search")
