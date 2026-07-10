@@ -7,6 +7,7 @@ import org.example.boilerpojo.PostEntity;
 import org.example.boilerpojo.PostPageQueryDTO;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface PostMapper {
@@ -36,4 +37,6 @@ public interface PostMapper {
     long countPublishedPostsByFilter(PostPageQueryDTO dto);
 
     List<PostEntity> listPublishedPostsByFilter(PostPageQueryDTO dto);
+
+    List<Map<String, Object>> listAiValuationTrainingRows(@Param("limit") int limit);
 }
