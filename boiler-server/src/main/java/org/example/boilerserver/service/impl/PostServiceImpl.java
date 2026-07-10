@@ -1,6 +1,7 @@
 package org.example.boilerserver.service.impl;
 
 import org.example.boilercommon.PageResult;
+import org.example.boilerpojo.AdminPostQueryDTO;
 import org.example.boilerpojo.BoilerDetailDTO;
 import org.example.boilerpojo.BoilerDetailVO;
 import org.example.boilerpojo.BoilerEntity;
@@ -188,6 +189,34 @@ public class PostServiceImpl implements PostService {
                 .map(this::buildPostVO)
                 .toList();
         return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
+    }
+
+    @Override
+    public List<PostVO> listSellerPosts(String sellerId) {
+        if (!StringUtils.hasText(sellerId)) {
+            throw new IllegalArgumentException("卖家ID不能为空");
+        }
+        ensureSellerExists(sellerId);
+        return postMapper.listBySellerId(sellerId.trim())
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+    }
+
+    @Override
+    public PageResult<PostVO> adminListPosts(AdminPostQueryDTO dto) {
+        AdminPostQueryDTO query = normalizeAdminPostQuery(dto);
+        long total = postMapper.countAdminPosts(query);
+        List<PostVO> records = postMapper.listAdminPosts(query)
+                .stream()
+                .map(this::buildPostVO)
+                .toList();
+        return PageResult.of(records, total, query.getPageNum(), query.getPageSize());
+    }
+
+    @Override
+    public PostVO adminGetPostDetail(String postId) {
+        return buildPostVO(getExistingPost(postId));
     }
 
     public String evaluateAiValuationRange(BoilerDetailDTO boilerDetail) {
@@ -838,6 +867,29 @@ public class PostServiceImpl implements PostService {
         return query;
     }
 
+    private AdminPostQueryDTO normalizeAdminPostQuery(AdminPostQueryDTO dto) {
+        AdminPostQueryDTO query = dto == null ? new AdminPostQueryDTO() : dto;
+        int pageNum = query.getPageNum() == null || query.getPageNum() < 1 ? 1 : query.getPageNum();
+        int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
+        query.setPageNum(pageNum);
+        query.setPageSize(pageSize);
+        query.setOffset((pageNum - 1) * pageSize);
+        query.setSortField(validateSortField(
+                query.getSortField(),
+                new String[]{"publishTime", "updateTime", "price", "viewCount", "status", "sellerId"}
+        ));
+        query.setSortOrder("asc".equalsIgnoreCase(query.getSortOrder()) ? "asc" : "desc");
+        query.setSellerId(trimToNull(query.getSellerId()));
+        query.setStatus(normalizePostStatus(query.getStatus()));
+        query.setCity(normalizeCity(query.getCity()));
+        query.setBrand(trimToNull(query.getBrand()));
+        query.setFuelType(trimToNull(query.getFuelType()));
+        if (StringUtils.hasText(query.getBoilerType())) {
+            query.setBoilerType(normalizeBoilerType(query.getBoilerType()));
+        }
+        return query;
+    }
+
     private String validateSortField(String sortField, String[] allowedFields) {
         if (!StringUtils.hasText(sortField)) {
             return null;
@@ -846,6 +898,22 @@ public class PostServiceImpl implements PostService {
                 .filter(field -> field.equals(sortField))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("不支持的排序字段"));
+    }
+
+    private String normalizePostStatus(String status) {
+        String normalized = trimToNull(status);
+        if (normalized == null) {
+            return null;
+        }
+        normalized = normalized.toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case PostConstant.STATUS_PUBLISHED,
+                 PostConstant.STATUS_RESERVED,
+                 PostConstant.STATUS_SOLD,
+                 PostConstant.STATUS_DELISTED,
+                 PostConstant.STATUS_BANNED -> normalized;
+            default -> throw new IllegalArgumentException("不支持的帖子状态");
+        };
     }
 
     private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {

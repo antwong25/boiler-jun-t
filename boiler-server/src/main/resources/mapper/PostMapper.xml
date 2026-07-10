@@ -35,6 +35,28 @@
         </if>
     </sql>
 
+    <sql id="AdminPostFilterConditions">
+        where 1 = 1
+        <if test="sellerId != null and sellerId != ''">
+            and p.sellerId = #{sellerId}
+        </if>
+        <if test="status != null and status != ''">
+            and p.status = #{status}
+        </if>
+        <if test="city != null and city != ''">
+            and upper(p.city) like concat('%', upper(#{city}), '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+    </sql>
+
     <select id="getByPostId" resultMap="PostResultMap">
         select * from post where postId = #{postId}
     </select>
@@ -152,6 +174,36 @@
             </when>
             <otherwise>
                 order by p.updateTime desc, p.publishTime desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{pageSize}
+    </select>
+
+    <select id="listBySellerId" resultMap="PostResultMap">
+        select p.*
+        from post p
+        where p.sellerId = #{sellerId}
+        order by p.updateTime desc, p.publishTime desc, p.postId desc
+    </select>
+
+    <select id="countAdminPosts" resultType="long">
+        select count(1)
+        from post p
+        left join boiler b on p.boilerId = b.boilerId
+        <include refid="AdminPostFilterConditions"/>
+    </select>
+
+    <select id="listAdminPosts" resultMap="PostResultMap">
+        select p.*
+        from post p
+        left join boiler b on p.boilerId = b.boilerId
+        <include refid="AdminPostFilterConditions"/>
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by p.${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by p.updateTime desc, p.publishTime desc, p.postId desc
             </otherwise>
         </choose>
         limit #{offset}, #{pageSize}

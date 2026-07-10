@@ -1,6 +1,7 @@
 package org.example.boilerserver.service.impl;
 
 import org.example.boilercommon.PageResult;
+import org.example.boilerpojo.AdminPostQueryDTO;
 import org.example.boilerpojo.BoilerEntity;
 import org.example.boilerpojo.PostEntity;
 import org.example.boilerpojo.PostPageQueryDTO;
@@ -22,7 +23,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -186,6 +189,83 @@ class PostServiceImplTest {
         );
 
         assertEquals("该帖子已经被封禁", ex.getMessage());
+    }
+
+    @Test
+    void adminListPosts_normalizesConditionsAndReturnsPagedRecords() {
+        AdminPostQueryDTO dto = new AdminPostQueryDTO();
+        dto.setPageNum(2);
+        dto.setPageSize(5);
+        dto.setSellerId(" seller001 ");
+        dto.setStatus("sold");
+        dto.setCity("guangzhou");
+        dto.setBoilerType("steam boiler");
+        dto.setBrand("Test");
+        dto.setFuelType("Gas");
+        dto.setSortField("status");
+        dto.setSortOrder("asc");
+
+        PostEntity post = buildPostEntity();
+        BoilerEntity boiler = buildBoilerEntity();
+
+        when(postMapper.countAdminPosts(argThat(query ->
+                "seller001".equals(query.getSellerId())
+                        && PostConstant.STATUS_SOLD.equals(query.getStatus())
+                        && "GUANGZHOU".equals(query.getCity())
+                        && PostConstant.BOILER_TYPE_STEAM.equals(query.getBoilerType())
+                        && "Test".equals(query.getBrand())
+                        && "Gas".equals(query.getFuelType())
+                        && "status".equals(query.getSortField())
+                        && "asc".equals(query.getSortOrder())
+                        && query.getOffset() == 5
+        ))).thenReturn(1L);
+        when(postMapper.listAdminPosts(argThat(query ->
+                "seller001".equals(query.getSellerId())
+                        && PostConstant.STATUS_SOLD.equals(query.getStatus())
+                        && "GUANGZHOU".equals(query.getCity())
+                        && PostConstant.BOILER_TYPE_STEAM.equals(query.getBoilerType())
+                        && "Test".equals(query.getBrand())
+                        && "Gas".equals(query.getFuelType())
+                        && "status".equals(query.getSortField())
+                        && "asc".equals(query.getSortOrder())
+                        && query.getOffset() == 5
+        ))).thenReturn(List.of(post));
+        when(boilerMapper.getByBoilerId("boiler001")).thenReturn(boiler);
+
+        PageResult<PostVO> result = postService.adminListPosts(dto);
+
+        assertEquals(1L, result.getTotal());
+        assertEquals(2, result.getPageNum());
+        assertEquals(5, result.getPageSize());
+        assertEquals(1, result.getRecords().size());
+        assertEquals("post001", result.getRecords().get(0).getPostId());
+    }
+
+    @Test
+    void adminListPosts_invalidStatus_throwsException() {
+        AdminPostQueryDTO dto = new AdminPostQueryDTO();
+        dto.setStatus("unknown");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.adminListPosts(dto)
+        );
+
+        assertEquals("不支持的帖子状态", ex.getMessage());
+    }
+
+    @Test
+    void adminGetPostDetail_returnsPostWithoutIncrementingViewCount() {
+        PostEntity post = buildPostEntity();
+        BoilerEntity boiler = buildBoilerEntity();
+        when(postMapper.getByPostId("post001")).thenReturn(post);
+        when(boilerMapper.getByBoilerId("boiler001")).thenReturn(boiler);
+
+        PostVO result = postService.adminGetPostDetail("post001");
+
+        assertEquals("post001", result.getPostId());
+        assertEquals("boiler001", result.getBoilerDetail().getBoilerId());
+        verify(postMapper, never()).incrementViewCount(anyString());
     }
 
     private PostEntity buildPostEntity() {

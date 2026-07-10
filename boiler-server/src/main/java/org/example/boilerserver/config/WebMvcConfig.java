@@ -30,10 +30,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/user/seller-profile/me",
                         "/user/seller-profile",
                         "/user/seller-profile/files",
-                        "/user/admin/**"
+                        "/user/admin/**",
+                        "/post/admin/**"
                 );
         registry.addInterceptor(Objects.requireNonNull(adminAuthInterceptor))
-                .addPathPatterns("/user/admin/**");
+                .addPathPatterns("/user/admin/**", "/post/admin/**");
     }
 
     @Override

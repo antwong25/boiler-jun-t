@@ -2,6 +2,7 @@ package org.example.boilerserver.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.example.boilerpojo.AdminPostQueryDTO;
 import org.example.boilerpojo.PostFilterSearchDTO;
 import org.example.boilerpojo.PostEntity;
 import org.example.boilerpojo.PostPageQueryDTO;
@@ -37,6 +38,12 @@ public interface PostMapper {
     long countPublishedPostsByFilter(PostPageQueryDTO dto);
 
     List<PostEntity> listPublishedPostsByFilter(PostPageQueryDTO dto);
+
+    List<PostEntity> listBySellerId(String sellerId);
+
+    long countAdminPosts(AdminPostQueryDTO dto);
+
+    List<PostEntity> listAdminPosts(AdminPostQueryDTO dto);
 
     List<Map<String, Object>> listAiValuationTrainingRows(@Param("limit") int limit);
 }

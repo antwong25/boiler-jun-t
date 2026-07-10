@@ -2,6 +2,7 @@ package org.example.boilerserver.controller;
 
 import org.example.boilercommon.PageResult;
 import org.example.boilercommon.Result;
+import org.example.boilerpojo.AdminPostQueryDTO;
 import org.example.boilerpojo.PostAiChatRequestDTO;
 import org.example.boilerpojo.PostAiChatResponseVO;
 import org.example.boilerpojo.PostCreateDTO;
@@ -13,7 +14,6 @@ import org.example.boilerpojo.PostVO;
 import org.example.boilerserver.service.PostAiChatService;
 import org.example.boilerserver.service.PostSemanticSearchService;
 import org.example.boilerserver.service.PostService;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -90,6 +90,21 @@ public class PostController {
     @GetMapping("/filter")
     public Result<PageResult<PostVO>> filterPublishedPosts(PostPageQueryDTO dto) {
         return Result.success(postService.filterPublishedPosts(dto));
+    }
+
+    @GetMapping("/seller/{sellerId}")
+    public Result<List<PostVO>> listSellerPosts(@PathVariable String sellerId) {
+        return Result.success(postService.listSellerPosts(sellerId));
+    }
+
+    @GetMapping("/admin/posts")
+    public Result<PageResult<PostVO>> adminListPosts(AdminPostQueryDTO dto) {
+        return Result.success(postService.adminListPosts(dto));
+    }
+
+    @GetMapping("/admin/posts/{postId}")
+    public Result<PostVO> adminGetPostDetail(@PathVariable String postId) {
+        return Result.success(postService.adminGetPostDetail(postId));
     }
 
     @PostMapping("/semantic-search")
