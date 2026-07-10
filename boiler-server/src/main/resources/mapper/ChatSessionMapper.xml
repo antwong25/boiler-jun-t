@@ -21,7 +21,7 @@
         <result column="isArchived"       property="isArchived"       javaType="Boolean"/>
         <result column="messageList"      property="messageList"
                 javaType="java.util.List"
-                typeHandler="org.example.boilercommon.JsonListTypeHandler"/>
+                typeHandler="org.example.boilerpojo.JsonListTypeHandler"/>
     </resultMap>
 
     <!-- ==================== SQL 语句定义 ==================== -->
@@ -85,7 +85,7 @@
         ) VALUES (
             #{sessionId}, #{sellerId}, #{buyerId}, #{postId},
             #{createTime}, #{lastMessageTime}, #{isArchived},
-            #{messageList, typeHandler=org.example.boilercommon.JsonListTypeHandler}
+            #{messageList, typeHandler=org.example.boilerpojo.JsonListTypeHandler}
         )
     </insert>
 
@@ -95,7 +95,7 @@
     -->
     <update id="updateMessageList">
         UPDATE chatSession
-        SET messageList      = #{messageList, typeHandler=org.example.boilercommon.JsonListTypeHandler},
+        SET messageList      = #{messageList, typeHandler=org.example.boilerpojo.JsonListTypeHandler},
             lastMessageTime = #{lastMessageTime}
         WHERE sessionId = #{sessionId}
     </update>

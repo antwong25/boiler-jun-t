@@ -1,10 +1,9 @@
-package org.example.boilercommon;
+package org.example.boilerpojo;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedTypes;
-import org.example.boilerpojo.MessageItem;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
@@ -15,7 +14,7 @@ import java.util.List;
 
 /**
  * 自定义 MyBatis 类型处理器：实现 List<MessageItem> 与数据库 TEXT(JSON) 字段的双向转换。
- * 使用 FastJSON2 进行序列化与反序列化，兼容空值、空字符串、空 JSON 数组场景。
+ * 放在 boiler-pojo 模块中，避免 boiler-common 反向依赖 boiler-pojo 造成模块循环依赖。
  */
 @MappedTypes(List.class)
 public class JsonListTypeHandler extends BaseTypeHandler<List<MessageItem>> {
@@ -70,7 +69,6 @@ public class JsonListTypeHandler extends BaseTypeHandler<List<MessageItem>> {
             List<MessageItem> result = JSON.parseArray(jsonStr, MessageItem.class);
             return result == null ? Collections.emptyList() : result;
         } catch (Exception e) {
-            // 解析异常时记录日志并返回空集合，避免单条脏数据影响整体查询
             System.err.println("JsonListTypeHandler 解析 messageList JSON 失败: " + e.getMessage());
             return Collections.emptyList();
         }
