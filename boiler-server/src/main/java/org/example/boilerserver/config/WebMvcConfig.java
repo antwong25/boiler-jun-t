@@ -30,6 +30,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/user/seller-profile/me",
                         "/user/seller-profile",
                         "/user/seller-profile/files",
+                        "/transaction/**",
+                        "/order/**",
                         "/user/admin/**",
                         "/post/admin/**"
                 );

@@ -5,7 +5,8 @@
 <mapper namespace="org.example.boilerserver.mapper.ReviewMapper">
     <resultMap id="ReviewResultMap" type="org.example.boilerpojo.ReviewEntity">
         <id property="reviewId" column="reviewId"/>
-        <result property="buyerId" column="buyerId"/>
+        <result property="reviewerId" column="reviewerId"/>
+        <result property="revieweeId" column="revieweeId"/>
         <result property="postId" column="postId"/>
         <result property="orderId" column="orderId"/>
         <result property="rating" column="rating"/>
@@ -15,15 +16,15 @@
 
     <insert id="insert" parameterType="org.example.boilerpojo.ReviewEntity">
         insert into review (
-            reviewId, buyerId, postId, orderId, rating, content, reviewTime
+            reviewId, reviewerId, revieweeId, postId, orderId, rating, content, reviewTime
         )
         values (
-            #{reviewId}, #{buyerId}, #{postId}, #{orderId}, #{rating}, #{content}, #{reviewTime}
+            #{reviewId}, #{reviewerId}, #{revieweeId}, #{postId}, #{orderId}, #{rating}, #{content}, #{reviewTime}
         )
     </insert>
 
-    <select id="getByOrderIdAndBuyerId" resultMap="ReviewResultMap">
-        select * from review where orderId = #{orderId} and buyerId = #{buyerId}
+    <select id="getByOrderIdAndReviewerId" resultMap="ReviewResultMap">
+        select * from review where orderId = #{orderId} and reviewerId = #{reviewerId}
     </select>
 
     <select id="listByPostId" resultMap="ReviewResultMap">
@@ -60,44 +61,30 @@
         select count(*) from review where orderId = #{orderId}
     </select>
 
-    <select id="listBySellerId" resultMap="ReviewResultMap">
-        select r.*
-        from review r
-        inner join `order` o on r.orderId = o.orderId
-        inner join transaction t on o.transactionId = t.transactionId
-        where t.sellerId = #{sellerId}
+    <select id="listByRevieweeId" resultMap="ReviewResultMap">
+        select *
+        from review
+        where revieweeId = #{revieweeId}
         <choose>
             <when test="sortField != null and sortField != ''">
-                order by r.${sortField} ${sortOrder}
+                order by ${sortField} ${sortOrder}
             </when>
             <otherwise>
-                order by r.reviewTime desc, r.reviewId desc
+                order by reviewTime desc, reviewId desc
             </otherwise>
         </choose>
         limit #{offset}, #{size}
     </select>
 
-    <select id="countBySellerId" resultType="java.lang.Integer">
-        select count(*)
-        from review r
-        inner join `order` o on r.orderId = o.orderId
-        inner join transaction t on o.transactionId = t.transactionId
-        where t.sellerId = #{sellerId}
+    <select id="countByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId}
     </select>
 
-    <select id="countPositiveBySellerId" resultType="java.lang.Integer">
-        select count(*)
-        from review r
-        inner join `order` o on r.orderId = o.orderId
-        inner join transaction t on o.transactionId = t.transactionId
-        where t.sellerId = #{sellerId} and r.rating &gt;= #{threshold}
+    <select id="countPositiveByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId} and rating &gt;= #{threshold}
     </select>
 
-    <select id="avgRatingBySellerId" resultType="java.lang.Double">
-        select avg(r.rating)
-        from review r
-        inner join `order` o on r.orderId = o.orderId
-        inner join transaction t on o.transactionId = t.transactionId
-        where t.sellerId = #{sellerId}
+    <select id="avgRatingByRevieweeId" resultType="java.lang.Double">
+        select avg(rating) from review where revieweeId = #{revieweeId}
     </select>
 </mapper>

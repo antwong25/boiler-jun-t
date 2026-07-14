@@ -15,6 +15,10 @@
         select * from `order` where orderId = #{orderId}
     </select>
 
+    <select id="getByTransactionId" resultMap="OrderResultMap">
+        select * from `order` where transactionId = #{transactionId} limit 1
+    </select>
+
     <insert id="insert" parameterType="org.example.boilerpojo.OrderEntity">
         insert into `order` (
             orderId, transactionId, orderStatus, createTime, updateTime

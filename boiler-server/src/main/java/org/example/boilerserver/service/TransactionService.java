@@ -14,4 +14,6 @@ public interface TransactionService {
     PageResult<TransactionVO> listMyTransactions(TransactionQueryDTO dto);
 
     TransactionVO cancelTransaction(String transactionId, String userId);
+
+    TransactionVO completeTransaction(String transactionId, String userId);
 }

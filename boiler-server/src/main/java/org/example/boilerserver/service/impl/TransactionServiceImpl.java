@@ -1,24 +1,30 @@
 package org.example.boilerserver.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.boilercommon.PageQuery;
 import org.example.boilercommon.PageResult;
 import org.example.boilerpojo.BuyerEntity;
+import org.example.boilerpojo.OrderEntity;
 import org.example.boilerpojo.PostEntity;
 import org.example.boilerpojo.SellerEntity;
+import org.example.boilerpojo.ReviewEntity;
 import org.example.boilerpojo.TransactionEntity;
 import org.example.boilerpojo.TransactionCreateDTO;
 import org.example.boilerpojo.TransactionQueryDTO;
 import org.example.boilerpojo.TransactionVO;
 import org.example.boilerpojo.UserEntity;
+import org.example.boilerserver.auth.AuthContext;
 import org.example.boilerserver.mapper.BuyerMapper;
+import org.example.boilerserver.mapper.OrderMapper;
 import org.example.boilerserver.mapper.PostMapper;
+import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
 import org.example.boilerserver.service.TransactionService;
+import org.example.constant.OrderConstant;
 import org.example.constant.PostConstant;
 import org.example.constant.TransactionConstant;
+import org.example.constant.UserConstant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -40,17 +46,23 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserMapper userMapper;
     private final SellerMapper sellerMapper;
     private final BuyerMapper buyerMapper;
+    private final OrderMapper orderMapper;
+    private final ReviewMapper reviewMapper;
 
     public TransactionServiceImpl(TransactionMapper transactionMapper,
                                   PostMapper postMapper,
                                   UserMapper userMapper,
                                   SellerMapper sellerMapper,
-                                  BuyerMapper buyerMapper) {
+                                  BuyerMapper buyerMapper,
+                                  OrderMapper orderMapper,
+                                  ReviewMapper reviewMapper) {
         this.transactionMapper = transactionMapper;
         this.postMapper = postMapper;
         this.userMapper = userMapper;
         this.sellerMapper = sellerMapper;
         this.buyerMapper = buyerMapper;
+        this.orderMapper = orderMapper;
+        this.reviewMapper = reviewMapper;
     }
 
     /**
@@ -66,6 +78,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (!StringUtils.hasText(dto.getBuyerId())) {
             throw new IllegalArgumentException("买家ID不能为空");
         }
+        validateAuthenticatedBuyer(dto.getBuyerId());
 
         // 校验帖子存在且状态为已发布
         PostEntity post = postMapper.getByPostId(dto.getPostId());
@@ -104,13 +117,13 @@ public class TransactionServiceImpl implements TransactionService {
         // 更新帖子状态为已预约
         postMapper.updateStatus(post.getPostId(), PostConstant.STATUS_RESERVED);
 
-        return buildTransactionVO(transactionMapper.getByTransactionId(transactionId));
+        return buildTransactionVO(transactionMapper.getByTransactionId(transactionId), dto.getBuyerId());
     }
 
     @Override
     public TransactionVO getTransaction(String transactionId) {
         validateIdFormat(transactionId, "交易ID");
-        return buildTransactionVO(getExistingTransaction(transactionId));
+        return buildTransactionVO(getExistingTransaction(transactionId), null);
     }
 
     @Override
@@ -128,7 +141,7 @@ public class TransactionServiceImpl implements TransactionService {
         long total = transactionMapper.countByUserIdAndStatus(dto.getUserId(), dto.getTransactionStatus());
         List<TransactionVO> records = transactionMapper.listByUserIdAndStatus(
                 dto.getUserId(), dto.getTransactionStatus(), offset, pageSize, sortField, sortOrder)
-                .stream().map(this::buildTransactionVO).toList();
+                .stream().map(item -> buildTransactionVO(item, dto.getUserId())).toList();
         return PageResult.of(records, total, pageNum, pageSize);
     }
 
@@ -142,6 +155,7 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("取消交易, transactionId={}, userId={}", transactionId, userId);
         validateIdFormat(transactionId, "交易ID");
         validateIdFormat(userId, "用户ID");
+        validateAuthenticatedUser(userId);
         TransactionEntity transaction = getExistingTransaction(transactionId);
 
         // 仅 PENDING 状态的交易可取消
@@ -165,7 +179,54 @@ public class TransactionServiceImpl implements TransactionService {
             postMapper.updateStatus(postId, PostConstant.STATUS_PUBLISHED);
         }
 
-        return buildTransactionVO(transactionMapper.getByTransactionId(transactionId));
+        return buildTransactionVO(transactionMapper.getByTransactionId(transactionId), userId);
+    }
+
+    /**
+     * 卖家确认成交：PENDING -> COMPLETED
+     * 事务边界：更新交易状态 + 更新帖子状态为已售 + 补齐评价所需订单
+     */
+    @Override
+    @Transactional
+    public TransactionVO completeTransaction(String transactionId, String userId) {
+        log.info("卖家成交交易, transactionId={}, userId={}", transactionId, userId);
+        validateIdFormat(transactionId, "交易ID");
+        validateIdFormat(userId, "用户ID");
+        validateAuthenticatedSeller(userId);
+        TransactionEntity transaction = getExistingTransaction(transactionId);
+
+        if (!TransactionConstant.STATUS_PENDING.equals(transaction.getTransactionStatus())) {
+            throw new IllegalArgumentException("仅已预订状态的交易可以成交");
+        }
+
+        if (!transaction.getSellerId().equals(userId)) {
+            throw new IllegalArgumentException("仅卖家可确认成交");
+        }
+
+        transaction.setTransactionStatus(TransactionConstant.STATUS_COMPLETED);
+        transactionMapper.update(transaction);
+
+        OrderEntity order = orderMapper.getByTransactionId(transactionId);
+        if (order == null) {
+            order = new OrderEntity();
+            order.setOrderId(UUID.randomUUID().toString().replace("-", ""));
+            order.setTransactionId(transactionId);
+            order.setOrderStatus(OrderConstant.STATUS_COMPLETED);
+            order.setCreateTime(LocalDate.now());
+            order.setUpdateTime(LocalDate.now());
+            orderMapper.insert(order);
+        } else {
+            order.setOrderStatus(OrderConstant.STATUS_COMPLETED);
+            order.setUpdateTime(LocalDate.now());
+            orderMapper.update(order);
+        }
+
+        String postId = transaction.getLogisticsInfo();
+        if (StringUtils.hasText(postId)) {
+            postMapper.updateStatus(postId, PostConstant.STATUS_SOLD);
+        }
+
+        return buildTransactionVO(transactionMapper.getByTransactionId(transactionId), userId);
     }
 
     // ==================== 私有辅助方法 ====================
@@ -182,9 +243,9 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     /**
-     * 组装交易视图对象，关联买家/卖家名称、店铺名称、帖子信息
+     * 组装交易视图对象，关联买家/卖家名称、店铺名称、帖子信息和评价状态
      */
-    private TransactionVO buildTransactionVO(TransactionEntity transaction) {
+    private TransactionVO buildTransactionVO(TransactionEntity transaction, String currentUserId) {
         TransactionVO vo = new TransactionVO();
         vo.setTransactionId(transaction.getTransactionId());
         vo.setBuyerId(transaction.getBuyerId());
@@ -221,6 +282,29 @@ public class TransactionServiceImpl implements TransactionService {
             }
         }
 
+        OrderEntity order = orderMapper.getByTransactionId(transaction.getTransactionId());
+        if (order != null) {
+            vo.setOrderId(order.getOrderId());
+        }
+
+        if (StringUtils.hasText(currentUserId)) {
+            boolean isBuyer = currentUserId.equals(transaction.getBuyerId());
+            boolean isSeller = currentUserId.equals(transaction.getSellerId());
+            if (isBuyer || isSeller) {
+                String targetId = isBuyer ? transaction.getSellerId() : transaction.getBuyerId();
+                vo.setReviewTargetId(targetId);
+                vo.setReviewTargetRole(isBuyer ? "SELLER" : "BUYER");
+                vo.setReviewTargetName(isBuyer
+                        ? (StringUtils.hasText(vo.getSellerName()) ? vo.getSellerName() : vo.getShopName())
+                        : vo.getBuyerName());
+
+                boolean completed = TransactionConstant.STATUS_COMPLETED.equals(transaction.getTransactionStatus()) && order != null;
+                ReviewEntity existingReview = completed ? reviewMapper.getByOrderIdAndReviewerId(order.getOrderId(), currentUserId) : null;
+                vo.setCurrentUserReviewed(existingReview != null);
+                vo.setCurrentUserCanReview(completed && existingReview == null);
+            }
+        }
+
         return vo;
     }
 
@@ -248,6 +332,29 @@ public class TransactionServiceImpl implements TransactionService {
         }
         if (!ID_PATTERN.matcher(id).matches()) {
             throw new IllegalArgumentException(fieldName + "格式非法");
+        }
+    }
+
+    private void validateAuthenticatedUser(String userId) {
+        String currentUserId = AuthContext.getRequiredUserId();
+        if (!currentUserId.equals(userId)) {
+            throw new IllegalArgumentException("当前登录用户与操作用户不一致");
+        }
+    }
+
+    private void validateAuthenticatedBuyer(String buyerId) {
+        validateAuthenticatedUser(buyerId);
+        String currentUserType = AuthContext.getRequiredUserType();
+        if (!UserConstant.USER_TYPE_BUYER.equals(currentUserType)) {
+            throw new IllegalArgumentException("仅买家可预约帖子");
+        }
+    }
+
+    private void validateAuthenticatedSeller(String sellerId) {
+        validateAuthenticatedUser(sellerId);
+        String currentUserType = AuthContext.getRequiredUserType();
+        if (!UserConstant.USER_TYPE_SELLER.equals(currentUserType)) {
+            throw new IllegalArgumentException("仅卖家可确认成交");
         }
     }
 }

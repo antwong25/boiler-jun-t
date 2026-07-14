@@ -2,9 +2,9 @@ spring:
   application:
     name: boiler-server
   datasource:
-    url: jdbc:mysql://localhost:3306/boiler-jun?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: a
-    password: a
+    url: jdbc:mysql://54.254.3.254:3306/boiler-jun?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ec6001-boiler
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
@@ -22,7 +22,7 @@ app:
   vector:
     table: post_embedding
     datasource:
-      url: jdbc:postgresql://localhost:5432/vector_db
+      url: jdbc:postgresql://54.254.3.254:5432/vector_db
       username: postgres
       password: 123456
       driver-class-name: org.postgresql.Driver

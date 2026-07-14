@@ -15,9 +15,13 @@ import org.example.boilerpojo.UserRegisterDTO;
 import org.example.boilerpojo.UserVO;
 import org.example.boilerserver.config.FileStorageProperties;
 import org.example.boilerserver.mapper.BuyerMapper;
+import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
+import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
 import org.example.boilerserver.service.UserService;
+import org.example.constant.ReviewConstant;
+import org.example.constant.TransactionConstant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.nio.file.Files;
@@ -45,17 +50,23 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final BuyerMapper buyerMapper;
     private final SellerMapper sellerMapper;
+    private final TransactionMapper transactionMapper;
+    private final ReviewMapper reviewMapper;
     private final FileStorageProperties fileStorageProperties;
 
     public UserServiceImpl(
             UserMapper userMapper,
             BuyerMapper buyerMapper,
             SellerMapper sellerMapper,
+            TransactionMapper transactionMapper,
+            ReviewMapper reviewMapper,
             FileStorageProperties fileStorageProperties
     ) {
         this.userMapper = userMapper;
         this.buyerMapper = buyerMapper;
         this.sellerMapper = sellerMapper;
+        this.transactionMapper = transactionMapper;
+        this.reviewMapper = reviewMapper;
         this.fileStorageProperties = fileStorageProperties;
     }
 
@@ -413,8 +424,23 @@ public class UserServiceImpl implements UserService {
             userVO.setQualificationAuditedBy(sellerEntity.getQualificationAuditedBy());
             userVO.setQualificationAuditTime(sellerEntity.getQualificationAuditTime());
             userVO.setGuaranteeDeposit(sellerEntity.getGuaranteeDeposit());
-            userVO.setCompletedTransactionCount(sellerEntity.getCompletedTransactionCount());
-            userVO.setPositiveRatingRate(sellerEntity.getPositiveRatingRate());
+            userVO.setCompletedTransactionCount(transactionMapper.countCompletedBySellerId(
+                    userEntity.getUserId(),
+                    TransactionConstant.STATUS_COMPLETED
+            ));
+
+            int totalReviews = reviewMapper.countByRevieweeId(userEntity.getUserId());
+            if (totalReviews == 0) {
+                userVO.setPositiveRatingRate(BigDecimal.ZERO);
+            } else {
+                int positiveCount = reviewMapper.countPositiveByRevieweeId(
+                        userEntity.getUserId(),
+                        ReviewConstant.POSITIVE_RATING_THRESHOLD
+                );
+                userVO.setPositiveRatingRate(BigDecimal.valueOf(positiveCount)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(totalReviews), 2, RoundingMode.HALF_UP));
+            }
             return userVO;
         }
 

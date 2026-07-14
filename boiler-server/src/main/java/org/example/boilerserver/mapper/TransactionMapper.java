@@ -29,4 +29,10 @@ public interface TransactionMapper {
      */
     int countByUserIdAndStatus(@Param("userId") String userId,
                                @Param("transactionStatus") String transactionStatus);
+
+    /**
+     * 统计卖家已完成交易数量
+     */
+    int countCompletedBySellerId(@Param("sellerId") String sellerId,
+                                 @Param("transactionStatus") String transactionStatus);
 }

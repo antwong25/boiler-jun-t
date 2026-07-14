@@ -69,4 +69,15 @@
             </if>
         </where>
     </select>
+
+    <select id="countCompletedBySellerId" resultType="java.lang.Integer">
+        select count(*)
+        from transaction
+        <where>
+            sellerId = #{sellerId}
+            <if test="transactionStatus != null and transactionStatus != ''">
+                and transactionStatus = #{transactionStatus}
+            </if>
+        </where>
+    </select>
 </mapper>

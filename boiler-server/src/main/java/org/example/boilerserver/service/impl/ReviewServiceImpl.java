@@ -56,9 +56,8 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
-     * 提交评论（买家评卖家）
-     * 校验链：订单存在 → 订单已完成 → 评论者为订单买方 → 该方向未评论过
-     * 事务边界：插入评论 + 更新卖家好评率
+     * 提交评论（线下交易完成后的双向互评）
+     * 校验链：订单存在 → 订单已完成 → 评论者为订单买方或卖方 → 当前方向未评论过
      */
     @Override
     @Transactional
@@ -73,56 +72,50 @@ public class ReviewServiceImpl implements ReviewService {
         }
         validateIdFormat(dto.getOrderId(), "订单ID");
         validateIdFormat(dto.getReviewerId(), "评论者ID");
-        if (dto.getRating() == null || dto.getRating() < ReviewConstant.MIN_RATING
-                || dto.getRating() > ReviewConstant.MAX_RATING) {
-            throw new IllegalArgumentException("评分必须在" + ReviewConstant.MIN_RATING + "到" + ReviewConstant.MAX_RATING + "之间");
-        }
-        if (!StringUtils.hasText(dto.getContent())) {
-            throw new IllegalArgumentException("评论内容不能为空");
+        if (dto.getRating() == null
+                || (dto.getRating() != ReviewConstant.MIN_RATING && dto.getRating() != ReviewConstant.MAX_RATING)) {
+            throw new IllegalArgumentException("评价结果仅支持好评或差评");
         }
 
-        // 校验订单存在且已完成
         OrderEntity order = getExistingOrder(dto.getOrderId());
         if (!OrderConstant.STATUS_COMPLETED.equals(order.getOrderStatus())) {
             throw new IllegalArgumentException("仅已完成的订单可以评论");
         }
 
-        // 校验交易存在
         TransactionEntity transaction = getExistingTransaction(order.getTransactionId());
-
-        // 校验评论者为订单买方（单向评论：仅买家评卖家）
-        if (!transaction.getBuyerId().equals(dto.getReviewerId())) {
-            throw new IllegalArgumentException("仅订单买方可评价卖家");
+        boolean reviewerIsBuyer = transaction.getBuyerId().equals(dto.getReviewerId());
+        boolean reviewerIsSeller = transaction.getSellerId().equals(dto.getReviewerId());
+        if (!reviewerIsBuyer && !reviewerIsSeller) {
+            throw new IllegalArgumentException("仅订单买卖双方可以互评");
         }
 
-        // 校验该买方对此订单仅评论1次
-        ReviewEntity existing = reviewMapper.getByOrderIdAndBuyerId(dto.getOrderId(), dto.getReviewerId());
+        ReviewEntity existing = reviewMapper.getByOrderIdAndReviewerId(dto.getOrderId(), dto.getReviewerId());
         if (existing != null) {
             throw new IllegalArgumentException("您已对此订单发表过评论");
         }
 
-        // 从交易记录的 logisticsInfo 字段获取 postId
         String postId = transaction.getLogisticsInfo();
         if (!StringUtils.hasText(postId)) {
             throw new IllegalArgumentException("无法确定评论关联的帖子");
         }
 
-        // 写入评论（提交后不可编辑、不可删除）
+        String revieweeId = reviewerIsBuyer ? transaction.getSellerId() : transaction.getBuyerId();
         String reviewId = UUID.randomUUID().toString().replace("-", "");
         ReviewEntity review = new ReviewEntity();
         review.setReviewId(reviewId);
-        review.setBuyerId(dto.getReviewerId());
+        review.setReviewerId(dto.getReviewerId());
+        review.setRevieweeId(revieweeId);
         review.setPostId(postId);
         review.setOrderId(dto.getOrderId());
         review.setRating(dto.getRating());
-        // HTML 转义防止 XSS 攻击（存储转义后的内容，前端渲染时安全）
-        review.setContent(HtmlUtils.htmlEscape(dto.getContent().trim()));
+        review.setContent(StringUtils.hasText(dto.getContent()) ? HtmlUtils.htmlEscape(dto.getContent().trim()) : null);
         review.setReviewTime(LocalDate.now());
         reviewMapper.insert(review);
         log.info("评论提交成功, reviewId={}", reviewId);
 
-        // 更新卖家好评率
-        updateSellerPositiveRatingRate(transaction.getSellerId());
+        if (reviewerIsBuyer) {
+            updateSellerPositiveRatingRate(revieweeId);
+        }
 
         return buildReviewVO(review);
     }
@@ -175,8 +168,8 @@ public class ReviewServiceImpl implements ReviewService {
         String sf = validateSortField(sortField, new String[]{"reviewTime", "rating"});
         String so = "asc".equalsIgnoreCase(sortOrder) ? "asc" : "desc";
 
-        long total = reviewMapper.countBySellerId(userId);
-        List<ReviewVO> records = reviewMapper.listBySellerId(userId, offset, pageSize, sf, so)
+        long total = reviewMapper.countByRevieweeId(userId);
+        List<ReviewVO> records = reviewMapper.listByRevieweeId(userId, offset, pageSize, sf, so)
                 .stream().map(this::buildReviewVO).toList();
         return PageResult.of(records, total, pageNum, pageSize);
     }
@@ -195,19 +188,19 @@ public class ReviewServiceImpl implements ReviewService {
         SellerRatingVO vo = new SellerRatingVO();
         vo.setSellerId(sellerId);
 
-        int totalReviews = reviewMapper.countBySellerId(sellerId);
+        int totalReviews = reviewMapper.countByRevieweeId(sellerId);
         vo.setTotalReviews(totalReviews);
 
         if (totalReviews == 0) {
             vo.setAverageRating(BigDecimal.ZERO);
             vo.setPositiveRatingRate(BigDecimal.ZERO);
         } else {
-            Double avgRating = reviewMapper.avgRatingBySellerId(sellerId);
+            Double avgRating = reviewMapper.avgRatingByRevieweeId(sellerId);
             vo.setAverageRating(avgRating != null
                     ? BigDecimal.valueOf(avgRating).setScale(2, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO);
 
-            int positiveCount = reviewMapper.countPositiveBySellerId(sellerId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
+            int positiveCount = reviewMapper.countPositiveByRevieweeId(sellerId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
             BigDecimal rate = BigDecimal.valueOf(positiveCount)
                     .multiply(BigDecimal.valueOf(100))
                     .divide(BigDecimal.valueOf(totalReviews), 2, RoundingMode.HALF_UP);
@@ -244,11 +237,11 @@ public class ReviewServiceImpl implements ReviewService {
             return;
         }
 
-        int totalReviews = reviewMapper.countBySellerId(sellerId);
+        int totalReviews = reviewMapper.countByRevieweeId(sellerId);
         if (totalReviews == 0) {
             seller.setPositiveRatingRate(BigDecimal.ZERO);
         } else {
-            int positiveCount = reviewMapper.countPositiveBySellerId(sellerId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
+            int positiveCount = reviewMapper.countPositiveByRevieweeId(sellerId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
             BigDecimal rate = BigDecimal.valueOf(positiveCount)
                     .multiply(BigDecimal.valueOf(100))
                     .divide(BigDecimal.valueOf(totalReviews), 2, RoundingMode.HALF_UP);
@@ -258,22 +251,27 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
-     * 组装评论视图对象，填充评论者名称
+     * 组装评论视图对象，填充评价双方名称
      */
     private ReviewVO buildReviewVO(ReviewEntity review) {
         ReviewVO vo = new ReviewVO();
         vo.setReviewId(review.getReviewId());
-        vo.setReviewerId(review.getBuyerId());
+        vo.setReviewerId(review.getReviewerId());
+        vo.setRevieweeId(review.getRevieweeId());
         vo.setPostId(review.getPostId());
         vo.setOrderId(review.getOrderId());
         vo.setRating(review.getRating());
+        vo.setRatingLabel(review.getRating() != null && review.getRating() >= ReviewConstant.POSITIVE_RATING_THRESHOLD ? "好评" : "差评");
         vo.setContent(review.getContent());
         vo.setReviewTime(review.getReviewTime());
 
-        // 填充评论者名称
-        UserEntity reviewer = userMapper.getByUserId(review.getBuyerId());
+        UserEntity reviewer = userMapper.getByUserId(review.getReviewerId());
         if (reviewer != null) {
             vo.setReviewerName(reviewer.getUsername());
+        }
+        UserEntity reviewee = userMapper.getByUserId(review.getRevieweeId());
+        if (reviewee != null) {
+            vo.setRevieweeName(reviewee.getUsername());
         }
 
         return vo;

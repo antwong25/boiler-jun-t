@@ -2,6 +2,7 @@ package org.example.boilerserver.service.impl;
 
 import org.example.boilercommon.PageResult;
 import org.example.boilerpojo.BuyerEntity;
+import org.example.boilerpojo.OrderEntity;
 import org.example.boilerpojo.PostEntity;
 import org.example.boilerpojo.SellerEntity;
 import org.example.boilerpojo.TransactionCreateDTO;
@@ -9,13 +10,20 @@ import org.example.boilerpojo.TransactionEntity;
 import org.example.boilerpojo.TransactionQueryDTO;
 import org.example.boilerpojo.TransactionVO;
 import org.example.boilerpojo.UserEntity;
+import org.example.boilerserver.auth.AuthContext;
+import org.example.boilerserver.auth.AuthUser;
 import org.example.boilerserver.mapper.BuyerMapper;
+import org.example.boilerserver.mapper.OrderMapper;
 import org.example.boilerserver.mapper.PostMapper;
+import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
+import org.example.constant.OrderConstant;
 import org.example.constant.PostConstant;
 import org.example.constant.TransactionConstant;
+import org.example.constant.UserConstant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -52,9 +60,18 @@ class TransactionServiceImplTest {
     private SellerMapper sellerMapper;
     @Mock
     private BuyerMapper buyerMapper;
+    @Mock
+    private OrderMapper orderMapper;
+    @Mock
+    private ReviewMapper reviewMapper;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
+
+    @AfterEach
+    void tearDown() {
+        AuthContext.clear();
+    }
 
     // ==================== Helper methods ====================
 
@@ -101,10 +118,15 @@ class TransactionServiceImplTest {
         return seller;
     }
 
+    private void loginAs(String userId, String userType) {
+        AuthContext.setCurrentUser(new AuthUser(userId, userType));
+    }
+
     // ==================== createTransaction tests ====================
 
     @Test
     void createTransaction_success() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
         dto.setBuyerId("buyer001");
@@ -141,6 +163,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_postNotFound_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("postNotFound");
         dto.setBuyerId("buyer001");
@@ -156,6 +179,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_postStatusNotPublished_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
         dto.setBuyerId("buyer001");
@@ -173,6 +197,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_buyerNotFound_throwsException() {
+        loginAs("buyerNotFound", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
         dto.setBuyerId("buyerNotFound");
@@ -188,6 +213,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_buyerIsSeller_throwsException() {
+        loginAs("seller001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
         dto.setBuyerId("seller001");
@@ -203,6 +229,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_nullPostId_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setBuyerId("buyer001");
 
@@ -214,6 +241,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_emptyPostId_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("");
         dto.setBuyerId("buyer001");
@@ -225,6 +253,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_nullBuyerId_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
 
@@ -235,6 +264,7 @@ class TransactionServiceImplTest {
 
     @Test
     void createTransaction_emptyBuyerId_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionCreateDTO dto = new TransactionCreateDTO();
         dto.setPostId("post001");
         dto.setBuyerId("   ");
@@ -356,6 +386,7 @@ class TransactionServiceImplTest {
 
     @Test
     void cancelTransaction_success() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionEntity transaction = buildTransaction();
         when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
         when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
@@ -374,6 +405,7 @@ class TransactionServiceImplTest {
 
     @Test
     void cancelTransaction_notFound_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         when(transactionMapper.getByTransactionId("txnNotFound")).thenReturn(null);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -384,6 +416,7 @@ class TransactionServiceImplTest {
 
     @Test
     void cancelTransaction_statusNotPending_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         TransactionEntity transaction = buildTransaction();
         transaction.setTransactionStatus(TransactionConstant.STATUS_COMPLETED);
         when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
@@ -396,6 +429,7 @@ class TransactionServiceImplTest {
 
     @Test
     void cancelTransaction_userNotBuyer_throwsException() {
+        loginAs("otherUser", UserConstant.USER_TYPE_BUYER);
         TransactionEntity transaction = buildTransaction();
         when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
 
@@ -407,9 +441,58 @@ class TransactionServiceImplTest {
 
     @Test
     void cancelTransaction_emptyTransactionId_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> transactionService.cancelTransaction("", "buyer001"));
         assertEquals("交易ID不能为空", ex.getMessage());
         verify(transactionMapper, never()).getByTransactionId(anyString());
+    }
+
+    // ==================== completeTransaction tests ====================
+
+    @Test
+    void completeTransaction_success() {
+        loginAs("seller001", UserConstant.USER_TYPE_SELLER);
+        TransactionEntity transaction = buildTransaction();
+        PostEntity soldPost = buildPublishedPost();
+        soldPost.setStatus(PostConstant.STATUS_SOLD);
+
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
+        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
+        when(userMapper.getByUserId("seller001")).thenReturn(buildUser("seller001", "SellerName"));
+        when(sellerMapper.getBySellerId("seller001")).thenReturn(buildSeller());
+        when(postMapper.getByPostId("post001")).thenReturn(soldPost);
+        when(orderMapper.getByTransactionId("txn001")).thenReturn(null);
+
+        TransactionVO result = transactionService.completeTransaction("txn001", "seller001");
+
+        assertNotNull(result);
+        verify(transactionMapper).update(argThat(t ->
+                TransactionConstant.STATUS_COMPLETED.equals(t.getTransactionStatus())));
+        verify(orderMapper).insert(any(OrderEntity.class));
+        verify(postMapper).updateStatus("post001", PostConstant.STATUS_SOLD);
+    }
+
+    @Test
+    void completeTransaction_statusNotPending_throwsException() {
+        loginAs("seller001", UserConstant.USER_TYPE_SELLER);
+        TransactionEntity transaction = buildTransaction();
+        transaction.setTransactionStatus(TransactionConstant.STATUS_COMPLETED);
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> transactionService.completeTransaction("txn001", "seller001"));
+        assertEquals("仅已预订状态的交易可以成交", ex.getMessage());
+        verify(transactionMapper, never()).update(any());
+    }
+
+    @Test
+    void completeTransaction_userNotSeller_throwsException() {
+        loginAs("buyer001", UserConstant.USER_TYPE_BUYER);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> transactionService.completeTransaction("txn001", "buyer001"));
+        assertEquals("仅卖家可确认成交", ex.getMessage());
+        verify(transactionMapper, never()).update(any());
     }
 }

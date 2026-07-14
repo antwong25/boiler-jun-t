@@ -10,7 +10,8 @@ import java.time.LocalDate;
 @Data
 public class ReviewEntity {
     private String reviewId;
-    private String buyerId;
+    private String reviewerId;
+    private String revieweeId;
     private String postId;
     private String orderId;
     private Integer rating;

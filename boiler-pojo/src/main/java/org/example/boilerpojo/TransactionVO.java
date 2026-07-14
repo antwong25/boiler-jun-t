@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @Data
 public class TransactionVO {
     private String transactionId;
+    private String orderId;
     private String buyerId;
     private String buyerName;
     private String sellerId;
@@ -23,4 +24,9 @@ public class TransactionVO {
     private String logisticsInfo;
     private String postId;
     private String postTitle;
+    private Boolean currentUserCanReview;
+    private Boolean currentUserReviewed;
+    private String reviewTargetId;
+    private String reviewTargetName;
+    private String reviewTargetRole;
 }

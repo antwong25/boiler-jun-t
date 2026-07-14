@@ -10,6 +10,8 @@ import java.util.List;
 public interface OrderMapper {
     OrderEntity getByOrderId(String orderId);
 
+    OrderEntity getByTransactionId(String transactionId);
+
     int insert(OrderEntity orderEntity);
 
     int update(OrderEntity orderEntity);

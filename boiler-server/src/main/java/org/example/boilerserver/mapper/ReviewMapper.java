@@ -11,10 +11,10 @@ public interface ReviewMapper {
     int insert(ReviewEntity reviewEntity);
 
     /**
-     * 查询某订单下某买家是否已评论（单方向仅1次）
+     * 查询某订单下某评价人是否已评论（每个方向仅1次）
      */
-    ReviewEntity getByOrderIdAndBuyerId(@Param("orderId") String orderId,
-                                        @Param("buyerId") String buyerId);
+    ReviewEntity getByOrderIdAndReviewerId(@Param("orderId") String orderId,
+                                           @Param("reviewerId") String reviewerId);
 
     /**
      * 按帖子分页查询评论（支持排序）
@@ -39,27 +39,27 @@ public interface ReviewMapper {
     int countByOrderId(String orderId);
 
     /**
-     * 查询卖家收到的所有评论（通过 order → transaction 关联，支持分页排序）
+     * 查询用户收到的所有评论（支持分页排序）
      */
-    List<ReviewEntity> listBySellerId(@Param("sellerId") String sellerId,
-                                      @Param("offset") int offset,
-                                      @Param("size") int size,
-                                      @Param("sortField") String sortField,
-                                      @Param("sortOrder") String sortOrder);
+    List<ReviewEntity> listByRevieweeId(@Param("revieweeId") String revieweeId,
+                                        @Param("offset") int offset,
+                                        @Param("size") int size,
+                                        @Param("sortField") String sortField,
+                                        @Param("sortOrder") String sortOrder);
 
     /**
-     * 统计卖家收到的评论总数
+     * 统计用户收到的评论总数
      */
-    int countBySellerId(String sellerId);
+    int countByRevieweeId(String revieweeId);
 
     /**
-     * 统计卖家收到的好评数（rating >= threshold）
+     * 统计用户收到的好评数（rating >= threshold）
      */
-    int countPositiveBySellerId(@Param("sellerId") String sellerId,
-                                @Param("threshold") int threshold);
+    int countPositiveByRevieweeId(@Param("revieweeId") String revieweeId,
+                                  @Param("threshold") int threshold);
 
     /**
-     * 计算卖家收到评论的平均评分
+     * 计算用户收到评论的平均评分
      */
-    Double avgRatingBySellerId(String sellerId);
+    Double avgRatingByRevieweeId(String revieweeId);
 }

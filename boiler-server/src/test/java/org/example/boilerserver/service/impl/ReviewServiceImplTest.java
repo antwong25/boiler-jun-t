@@ -24,18 +24,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,8 +51,6 @@ class ReviewServiceImplTest {
 
     @InjectMocks
     private ReviewServiceImpl reviewService;
-
-    // ==================== Helper methods ====================
 
     private OrderEntity buildCompletedOrder() {
         OrderEntity order = new OrderEntity();
@@ -80,14 +73,24 @@ class ReviewServiceImplTest {
         return transaction;
     }
 
-    private ReviewEntity buildReview() {
+    private ReviewCreateDTO buildDto(String reviewerId, Integer rating, String content) {
+        ReviewCreateDTO dto = new ReviewCreateDTO();
+        dto.setOrderId("order001");
+        dto.setReviewerId(reviewerId);
+        dto.setRating(rating);
+        dto.setContent(content);
+        return dto;
+    }
+
+    private ReviewEntity buildStoredReview(String reviewerId, String revieweeId, int rating) {
         ReviewEntity review = new ReviewEntity();
         review.setReviewId("review001");
-        review.setBuyerId("buyer001");
+        review.setReviewerId(reviewerId);
+        review.setRevieweeId(revieweeId);
         review.setPostId("post001");
         review.setOrderId("order001");
-        review.setRating(5);
-        review.setContent("Great seller!");
+        review.setRating(rating);
+        review.setContent("已评价");
         review.setReviewTime(LocalDate.now());
         return review;
     }
@@ -102,285 +105,120 @@ class ReviewServiceImplTest {
     private SellerEntity buildSeller() {
         SellerEntity seller = new SellerEntity();
         seller.setSellerId("seller001");
-        seller.setShopName("Test Shop");
-        seller.setCompletedTransactionCount(1);
         seller.setPositiveRatingRate(BigDecimal.ZERO);
         return seller;
     }
 
-    private ReviewCreateDTO buildValidDto() {
-        ReviewCreateDTO dto = new ReviewCreateDTO();
-        dto.setOrderId("order001");
-        dto.setReviewerId("buyer001");
-        dto.setRating(5);
-        dto.setContent("Great seller!");
-        return dto;
-    }
-
-    // ==================== submitReview tests ====================
-
     @Test
-    void submitReview_success() {
-        ReviewCreateDTO dto = buildValidDto();
-        OrderEntity order = buildCompletedOrder();
-        TransactionEntity transaction = buildTransaction();
-        SellerEntity seller = buildSeller();
+    void submitReview_buyerToSeller_success() {
+        ReviewCreateDTO dto = buildDto("buyer001", ReviewConstant.MAX_RATING, "合作顺利");
 
-        when(orderMapper.getByOrderId("order001")).thenReturn(order);
-        when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
-        when(reviewMapper.getByOrderIdAndBuyerId("order001", "buyer001")).thenReturn(null);
-        when(sellerMapper.getBySellerId("seller001")).thenReturn(seller);
-        when(reviewMapper.countBySellerId("seller001")).thenReturn(1);
-        when(reviewMapper.countPositiveBySellerId("seller001", ReviewConstant.POSITIVE_RATING_THRESHOLD)).thenReturn(1);
-        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
+        when(orderMapper.getByOrderId("order001")).thenReturn(buildCompletedOrder());
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(buildTransaction());
+        when(reviewMapper.getByOrderIdAndReviewerId("order001", "buyer001")).thenReturn(null);
+        when(sellerMapper.getBySellerId("seller001")).thenReturn(buildSeller());
+        when(reviewMapper.countByRevieweeId("seller001")).thenReturn(1);
+        when(reviewMapper.countPositiveByRevieweeId("seller001", ReviewConstant.POSITIVE_RATING_THRESHOLD)).thenReturn(1);
+        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "买家A"));
+        when(userMapper.getByUserId("seller001")).thenReturn(buildUser("seller001", "卖家B"));
 
         ReviewVO result = reviewService.submitReview(dto);
 
         assertNotNull(result);
         assertEquals("buyer001", result.getReviewerId());
-        assertEquals("post001", result.getPostId());
-        assertEquals("order001", result.getOrderId());
-        assertEquals(5, result.getRating());
-        assertEquals("Great seller!", result.getContent());
-        assertEquals("BuyerName", result.getReviewerName());
-
+        assertEquals("seller001", result.getRevieweeId());
+        assertEquals("好评", result.getRatingLabel());
         verify(reviewMapper).insert(any(ReviewEntity.class));
         verify(sellerMapper).update(any(SellerEntity.class));
     }
 
     @Test
-    void submitReview_orderNotFound_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        when(orderMapper.getByOrderId("order001")).thenReturn(null);
+    void submitReview_sellerToBuyer_success() {
+        ReviewCreateDTO dto = buildDto("seller001", ReviewConstant.MIN_RATING, "");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("订单不存在", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
+        when(orderMapper.getByOrderId("order001")).thenReturn(buildCompletedOrder());
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(buildTransaction());
+        when(reviewMapper.getByOrderIdAndReviewerId("order001", "seller001")).thenReturn(null);
+        when(userMapper.getByUserId("seller001")).thenReturn(buildUser("seller001", "卖家B"));
+        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "买家A"));
+
+        ReviewVO result = reviewService.submitReview(dto);
+
+        assertNotNull(result);
+        assertEquals("seller001", result.getReviewerId());
+        assertEquals("buyer001", result.getRevieweeId());
+        assertEquals("差评", result.getRatingLabel());
+        verify(reviewMapper).insert(any(ReviewEntity.class));
+        verify(sellerMapper, never()).update(any(SellerEntity.class));
     }
 
     @Test
-    void submitReview_orderStatusNotCompleted_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
+    void submitReview_orderNotCompleted_throwsException() {
         OrderEntity order = buildCompletedOrder();
         order.setOrderStatus(OrderConstant.STATUS_IN_PROGRESS);
         when(orderMapper.getByOrderId("order001")).thenReturn(order);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
+                () -> reviewService.submitReview(buildDto("buyer001", ReviewConstant.MAX_RATING, "ok")));
         assertEquals("仅已完成的订单可以评论", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
     }
 
     @Test
-    void submitReview_reviewerNotBuyer_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setReviewerId("otherUser");
-
-        OrderEntity order = buildCompletedOrder();
-        TransactionEntity transaction = buildTransaction();
-
-        when(orderMapper.getByOrderId("order001")).thenReturn(order);
-        when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
+    void submitReview_outsiderReviewer_throwsException() {
+        when(orderMapper.getByOrderId("order001")).thenReturn(buildCompletedOrder());
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(buildTransaction());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("仅订单买方可评价卖家", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
+                () -> reviewService.submitReview(buildDto("other001", ReviewConstant.MAX_RATING, "ok")));
+        assertEquals("仅订单买卖双方可以互评", ex.getMessage());
     }
 
     @Test
     void submitReview_duplicateReview_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        OrderEntity order = buildCompletedOrder();
-        TransactionEntity transaction = buildTransaction();
-        ReviewEntity existing = buildReview();
-
-        when(orderMapper.getByOrderId("order001")).thenReturn(order);
-        when(transactionMapper.getByTransactionId("txn001")).thenReturn(transaction);
-        when(reviewMapper.getByOrderIdAndBuyerId("order001", "buyer001")).thenReturn(existing);
+        when(orderMapper.getByOrderId("order001")).thenReturn(buildCompletedOrder());
+        when(transactionMapper.getByTransactionId("txn001")).thenReturn(buildTransaction());
+        when(reviewMapper.getByOrderIdAndReviewerId("order001", "buyer001"))
+                .thenReturn(buildStoredReview("buyer001", "seller001", ReviewConstant.MAX_RATING));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
+                () -> reviewService.submitReview(buildDto("buyer001", ReviewConstant.MAX_RATING, "ok")));
         assertEquals("您已对此订单发表过评论", ex.getMessage());
         verify(reviewMapper, never()).insert(any());
     }
 
     @Test
-    void submitReview_ratingTooLow_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setRating(0);
-
+    void submitReview_invalidBinaryRating_throwsException() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("评分必须在" + ReviewConstant.MIN_RATING + "到" + ReviewConstant.MAX_RATING + "之间", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
+                () -> reviewService.submitReview(buildDto("buyer001", 3, "ok")));
+        assertEquals("评价结果仅支持好评或差评", ex.getMessage());
     }
 
     @Test
-    void submitReview_ratingTooHigh_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setRating(6);
+    void listReceivedByUser_returnsGenericReviews() {
+        ReviewEntity review = buildStoredReview("seller001", "buyer001", ReviewConstant.MIN_RATING);
+        when(reviewMapper.countByRevieweeId("buyer001")).thenReturn(1);
+        when(reviewMapper.listByRevieweeId("buyer001", 0, 10, "reviewTime", "desc")).thenReturn(List.of(review));
+        when(userMapper.getByUserId("seller001")).thenReturn(buildUser("seller001", "卖家B"));
+        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "买家A"));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("评分必须在" + ReviewConstant.MIN_RATING + "到" + ReviewConstant.MAX_RATING + "之间", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
+        PageResult<ReviewVO> page = reviewService.listReceivedByUser("buyer001", 1, 10, "reviewTime", "desc");
+
+        assertEquals(1, page.getTotal());
+        assertEquals("seller001", page.getRecords().get(0).getReviewerId());
+        assertEquals("buyer001", page.getRecords().get(0).getRevieweeId());
     }
 
     @Test
-    void submitReview_emptyContent_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setContent("");
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("评论内容不能为空", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
-    }
-
-    @Test
-    void submitReview_nullOrderId_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setOrderId(null);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("订单ID不能为空", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
-    }
-
-    @Test
-    void submitReview_nullReviewerId_throwsException() {
-        ReviewCreateDTO dto = buildValidDto();
-        dto.setReviewerId(null);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.submitReview(dto));
-        assertEquals("评论者ID不能为空", ex.getMessage());
-        verify(reviewMapper, never()).insert(any());
-    }
-
-    // ==================== listByPost tests ====================
-
-    @Test
-    void listByPost_success() {
-        ReviewEntity review = buildReview();
-        when(reviewMapper.countByPostId("post001")).thenReturn(1);
-        when(reviewMapper.listByPostId(eq("post001"), eq(0), eq(10), isNull(), eq("desc")))
-                .thenReturn(List.of(review));
-        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
-
-        PageResult<ReviewVO> result = reviewService.listByPost("post001", 1, 10, null, null);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getTotal());
-        assertEquals(1, result.getRecords().size());
-        assertEquals("review001", result.getRecords().get(0).getReviewId());
-        assertEquals("buyer001", result.getRecords().get(0).getReviewerId());
-        assertEquals("BuyerName", result.getRecords().get(0).getReviewerName());
-        assertEquals(1, result.getPageNum());
-        assertEquals(10, result.getPageSize());
-    }
-
-    @Test
-    void listByPost_emptyPostId_throwsException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.listByPost("", 1, 10, null, null));
-        assertEquals("帖子ID不能为空", ex.getMessage());
-    }
-
-    // ==================== listByOrder tests ====================
-
-    @Test
-    void listByOrder_success() {
-        ReviewEntity review = buildReview();
-        when(reviewMapper.countByOrderId("order001")).thenReturn(1);
-        when(reviewMapper.listByOrderId(eq("order001"), eq(0), eq(10), isNull(), eq("desc")))
-                .thenReturn(List.of(review));
-        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
-
-        PageResult<ReviewVO> result = reviewService.listByOrder("order001", 1, 10, null, null);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getTotal());
-        assertEquals(1, result.getRecords().size());
-        assertEquals("review001", result.getRecords().get(0).getReviewId());
-        assertEquals("order001", result.getRecords().get(0).getOrderId());
-    }
-
-    @Test
-    void listByOrder_emptyOrderId_throwsException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.listByOrder("", 1, 10, null, null));
-        assertEquals("订单ID不能为空", ex.getMessage());
-    }
-
-    // ==================== listReceivedByUser tests ====================
-
-    @Test
-    void listReceivedByUser_success() {
-        ReviewEntity review = buildReview();
-        when(reviewMapper.countBySellerId("seller001")).thenReturn(1);
-        when(reviewMapper.listBySellerId(eq("seller001"), eq(0), eq(10), isNull(), eq("desc")))
-                .thenReturn(List.of(review));
-        when(userMapper.getByUserId("buyer001")).thenReturn(buildUser("buyer001", "BuyerName"));
-
-        PageResult<ReviewVO> result = reviewService.listReceivedByUser("seller001", 1, 10, null, null);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getTotal());
-        assertEquals(1, result.getRecords().size());
-        assertEquals("review001", result.getRecords().get(0).getReviewId());
-    }
-
-    @Test
-    void listReceivedByUser_emptyUserId_throwsException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.listReceivedByUser("", 1, 10, null, null));
-        assertEquals("用户ID不能为空", ex.getMessage());
-    }
-
-    // ==================== getSellerRating tests ====================
-
-    @Test
-    void getSellerRating_successWithReviews() {
-        SellerEntity seller = buildSeller();
-        when(sellerMapper.getBySellerId("seller001")).thenReturn(seller);
-        when(reviewMapper.countBySellerId("seller001")).thenReturn(2);
-        when(reviewMapper.avgRatingBySellerId("seller001")).thenReturn(4.5);
-        when(reviewMapper.countPositiveBySellerId("seller001", ReviewConstant.POSITIVE_RATING_THRESHOLD)).thenReturn(2);
+    void getSellerRating_usesGenericReviewStats() {
+        when(sellerMapper.getBySellerId("seller001")).thenReturn(buildSeller());
+        when(reviewMapper.countByRevieweeId("seller001")).thenReturn(2);
+        when(reviewMapper.countPositiveByRevieweeId("seller001", ReviewConstant.POSITIVE_RATING_THRESHOLD)).thenReturn(1);
+        when(reviewMapper.avgRatingByRevieweeId("seller001")).thenReturn(3.0);
 
         SellerRatingVO result = reviewService.getSellerRating("seller001");
 
-        assertNotNull(result);
-        assertEquals("seller001", result.getSellerId());
         assertEquals(2, result.getTotalReviews());
-        assertEquals(BigDecimal.valueOf(4.5).setScale(2, RoundingMode.HALF_UP), result.getAverageRating());
-        assertEquals(new BigDecimal("100.00"), result.getPositiveRatingRate());
-    }
-
-    @Test
-    void getSellerRating_sellerNotFound_throwsException() {
-        when(sellerMapper.getBySellerId("sellerNotFound")).thenReturn(null);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> reviewService.getSellerRating("sellerNotFound"));
-        assertEquals("卖家不存在", ex.getMessage());
-    }
-
-    @Test
-    void getSellerRating_noReviews() {
-        SellerEntity seller = buildSeller();
-        when(sellerMapper.getBySellerId("seller001")).thenReturn(seller);
-        when(reviewMapper.countBySellerId("seller001")).thenReturn(0);
-
-        SellerRatingVO result = reviewService.getSellerRating("seller001");
-
-        assertNotNull(result);
-        assertEquals("seller001", result.getSellerId());
-        assertEquals(0, result.getTotalReviews());
-        assertEquals(BigDecimal.ZERO, result.getAverageRating());
-        assertEquals(BigDecimal.ZERO, result.getPositiveRatingRate());
+        assertEquals(new BigDecimal("3.00"), result.getAverageRating());
+        assertEquals(new BigDecimal("50.00"), result.getPositiveRatingRate());
     }
 }

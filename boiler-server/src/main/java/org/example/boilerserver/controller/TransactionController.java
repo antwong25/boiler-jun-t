@@ -37,4 +37,10 @@ public class TransactionController {
                                                     @RequestParam String userId) {
         return Result.success(transactionService.cancelTransaction(transactionId, userId));
     }
+
+    @PutMapping("/{transactionId}/complete")
+    public Result<TransactionVO> completeTransaction(@PathVariable String transactionId,
+                                                     @RequestParam String userId) {
+        return Result.success(transactionService.completeTransaction(transactionId, userId));
+    }
 }

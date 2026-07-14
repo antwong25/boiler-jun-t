@@ -851,17 +851,31 @@ public class PostServiceImpl implements PostService {
                 new String[]{"publishTime", "updateTime", "price", "viewCount"}
         ));
         query.setSortOrder("asc".equalsIgnoreCase(query.getSortOrder()) ? "asc" : "desc");
+        query.setKeyword(trimToNull(query.getKeyword()));
         query.setCity(normalizeCity(query.getCity()));
         query.setBrand(trimToNull(query.getBrand()));
         query.setFuelType(trimToNull(query.getFuelType()));
         if (StringUtils.hasText(query.getBoilerType())) {
             query.setBoilerType(normalizeBoilerType(query.getBoilerType()));
         }
+        if (query.getTonnageMin() != null && query.getTonnageMin().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("吨位下限不能小于 0");
+        }
+        if (query.getTonnageMax() != null && query.getTonnageMax().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("吨位上限必须大于 0");
+        }
+        if (query.getTonnageMin() != null && query.getTonnageMax() != null
+                && query.getTonnageMin().compareTo(query.getTonnageMax()) > 0) {
+            throw new IllegalArgumentException("吨位下限不能大于上限");
+        }
         if (requireFilter
+                && !StringUtils.hasText(query.getKeyword())
                 && !StringUtils.hasText(query.getCity())
                 && !StringUtils.hasText(query.getBoilerType())
                 && !StringUtils.hasText(query.getBrand())
-                && !StringUtils.hasText(query.getFuelType())) {
+                && !StringUtils.hasText(query.getFuelType())
+                && query.getTonnageMin() == null
+                && query.getTonnageMax() == null) {
             throw new IllegalArgumentException("至少需要提供一个筛选条件");
         }
         return query;

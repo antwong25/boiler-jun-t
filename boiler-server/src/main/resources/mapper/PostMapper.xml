@@ -21,6 +21,37 @@
 
     <sql id="PublishedPostFilterConditions">
         where p.status = 'PUBLISHED'
+        <if test="keyword != null and keyword != ''">
+            and (
+                p.title like concat('%', #{keyword}, '%')
+                or p.description like concat('%', #{keyword}, '%')
+                or p.city like concat('%', #{keyword}, '%')
+                or b.brand like concat('%', #{keyword}, '%')
+                or b.model like concat('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="city != null and city != ''">
+            and upper(p.city) like concat('%', upper(#{city}), '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+        <if test="tonnageMin != null">
+            and b.tonnage &gt;= #{tonnageMin}
+        </if>
+        <if test="tonnageMax != null">
+            and b.tonnage &lt;= #{tonnageMax}
+        </if>
+    </sql>
+
+    <sql id="StructuredFilterConditions">
+        where p.status = 'PUBLISHED'
         <if test="city != null and city != ''">
             and upper(p.city) like concat('%', upper(#{city}), '%')
         </if>
@@ -130,7 +161,7 @@
         select p.*
         from post p
         inner join boiler b on p.boilerId = b.boilerId
-        <include refid="PublishedPostFilterConditions"/>
+        <include refid="StructuredFilterConditions"/>
         order by p.updateTime desc, p.publishTime desc
         limit #{limit}
     </select>
