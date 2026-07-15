@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的帖子 My Posts - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/my-posts.css">
+</head>
+<body>
+    <div class="header-title">
+        <h1 class="main-title">我的帖子 My Posts</h1>
+        <p class="sub-title">管理已发布的锅炉转让信息 Manage your published boiler listings</p>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link active">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="quick-nav" id="quickNav"></div>
+
+        <div class="card" id="mainCard">
+            <div class="card-header">
+                <h2 class="card-title">帖子列表</h2>
+            </div>
+            <div class="card-content" id="postListContainer">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>加载中... Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>二手工业锅炉交易平台 Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved</p>
+        </footer>
+    </div>
+
+    <script>
+        var BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            var token = getToken();
+            if (!token) return {};
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) return '面议 Negotiable';
+            return '¥' + Number(price).toLocaleString('zh-CN');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('zh-CN');
+        }
+
+        function applyGuestNavigation() {
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            var userId = user.userId || localStorage.getItem('userId');
+            var username = user.username || localStorage.getItem('username') || '用户';
+            var userType = Object.prototype.hasOwnProperty.call(user, 'userType')
+                ? (user.userType || '')
+                : (localStorage.getItem('userType') || '');
+            var isSeller = userType === 'SELLER';
+
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userNameDisplay = document.getElementById('userNameDisplay');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+            var sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? 'userDetail.html?userId=' + encodeURIComponent(userId) : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' : userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? 'qualification.html?userId=' + encodeURIComponent(userId) : 'qualification.html';
+            }
+            renderQuickNav(userType);
+        }
+
+        function renderQuickNav(userType) {
+            var quickNav = document.getElementById('quickNav');
+            if (!quickNav) {
+                return;
+            }
+
+            var links = [
+                { href: 'my-transactions.html', label: '我的交易 My Transactions', key: 'transactions' },
+                { href: 'chat.html', label: '我的消息 My Messages', key: 'messages' }
+            ];
+
+            if (userType === 'SELLER') {
+                links.push({ href: 'my-posts.html', label: '我的帖子 My Posts', key: 'posts' });
+            }
+
+            quickNav.innerHTML = links.map(function(link) {
+                var activeClass = link.key === 'posts' ? ' class="here"' : '';
+                return '<a href="' + link.href + '"' + activeClass + '>' + link.label + '</a>';
+            }).join('');
+        }
+
+        async function loadUserProfile() {
+            var response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            var data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            var token = getToken();
+            var userId = localStorage.getItem('userId');
+            var username = localStorage.getItem('username') || '用户';
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: ''
+            });
+
+            try {
+                var user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadMyPosts() {
+            var userId = localStorage.getItem('userId');
+            if (!userId) {
+                showError('请先登录 Please log in first');
+                return;
+            }
+
+            try {
+                var resp = await fetch(BASE_URL + '/post/seller/' + encodeURIComponent(userId));
+                var data = await resp.json();
+                if (data.code !== 1) {
+                    throw new Error(data.msg || '获取帖子失败');
+                }
+                renderPosts(data.data || []);
+            } catch (e) {
+                showError('加载失败 Failed to load: ' + e.message);
+            }
+        }
+
+        function renderPosts(posts) {
+            var container = document.getElementById('postListContainer');
+
+            if (!posts || posts.length === 0) {
+                container.innerHTML =
+                    '<div class="empty-state">' +
+                    '<p>还没有发布任何帖子 No posts published yet</p>' +
+                    '<a href="publish.html" class="publish-link">立即发布 Publish Now</a>' +
+                    '</div>';
+                return;
+            }
+
+            var statusMap = {
+                'PUBLISHED': { label: '在售 On Sale', cls: 'published' },
+                'RESERVED': { label: '已预订 Reserved', cls: 'reserved' },
+                'SOLD': { label: '已售 Sold', cls: 'sold' },
+                'DELISTED': { label: '已下架 Delisted', cls: 'delisted' },
+                'BANNED': { label: '已封禁 Banned', cls: 'banned' }
+            };
+
+            var rows = '';
+            for (var i = 0; i < posts.length; i++) {
+                var p = posts[i];
+                var st = statusMap[p.status] || { label: p.status || '未知 Unknown', cls: '' };
+                var canDelist = p.status === 'PUBLISHED' || p.status === 'RESERVED';
+
+                rows +=
+                    '<tr>' +
+                    '<td class="title-cell"><a href="postDetail.html?postId=' + encodeURIComponent(p.postId) + '">' + escapeHtml(p.title || '锅炉转让 Boiler Listing') + '</a></td>' +
+                    '<td>' + escapeHtml(p.city || '-') + '</td>' +
+                    '<td class="price-cell">' + formatPrice(p.price) + '</td>' +
+                    '<td><span class="status-badge ' + st.cls + '">' + st.label + '</span></td>' +
+                    '<td>' + (p.viewCount || 0) + '</td>' +
+                    '<td>' + formatDate(p.publishTime) + '</td>' +
+                    '<td>' +
+                    '<a href="postDetail.html?postId=' + encodeURIComponent(p.postId) + '" class="action-link">查看 View</a>' +
+                    (canDelist
+                        ? '<span class="action-link danger" onclick="delistPost(\'' + escapeHtml(p.postId) + '\')">下架 Delist</span>'
+                        : '<span class="action-link disabled">下架 Delist</span>') +
+                    '</td>' +
+                    '</tr>';
+            }
+
+            container.innerHTML =
+                '<table class="post-table">' +
+                '<thead>' +
+                '<tr>' +
+                '<th>标题 Title</th>' +
+                '<th>所在地 Location</th>' +
+                '<th>价格 Price</th>' +
+                '<th>状态 Status</th>' +
+                '<th>浏览 Views</th>' +
+                '<th>发布时间 Publish Time</th>' +
+                '<th>操作 Actions</th>' +
+                '</tr>' +
+                '</thead>' +
+                '<tbody>' + rows + '</tbody>' +
+                '</table>';
+        }
+
+        async function delistPost(postId) {
+            if (!confirm('确认下架该帖子？下架后将不再公开展示。 Confirm delisting? The post will no longer be public.')) return;
+
+            var userId = localStorage.getItem('userId');
+            try {
+                var resp = await fetch(
+                    BASE_URL + '/post/' + encodeURIComponent(postId) + '/delist?sellerId=' + encodeURIComponent(userId),
+                    { method: 'PUT', headers: getUserHeaders() }
+                );
+                var data = await resp.json();
+                if (data.code === 1) {
+                    alert('下架成功 Delisted successfully');
+                    loadMyPosts();
+                } else {
+                    alert('下架失败 Delist failed: ' + (data.msg || '未知错误 Unknown error'));
+                }
+            } catch (e) {
+                alert('网络错误，请重试 Network error, please retry');
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('postListContainer').innerHTML =
+                '<div class="error-state">' +
+                '<p>⚠️ ' + escapeHtml(msg) + '</p>' +
+                '<button class="retry-btn" onclick="loadMyPosts()">重新加载 Reload</button>' +
+                '</div>';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            var token = getToken();
+            if (!token) {
+                showError('请先登录 Please log in first');
+                return;
+            }
+            loadMyPosts();
+        });
+    </script>
+</body>
+</html>

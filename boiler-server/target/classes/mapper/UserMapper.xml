@@ -27,6 +27,10 @@
         select count(*) from user where username = #{username}
     </select>
 
+    <select id="listAllUsers" resultMap="UserResultMap">
+        select * from user order by registrationDate desc, userId desc
+    </select>
+
     <select id="listUsers" resultMap="UserResultMap">
         select u.*
         from user u

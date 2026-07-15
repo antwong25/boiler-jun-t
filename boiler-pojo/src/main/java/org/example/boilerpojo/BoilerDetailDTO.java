@@ -15,8 +15,7 @@ public class BoilerDetailDTO {
     private BigDecimal workingPressure;
     private BigDecimal noxEmissions;
     private BigDecimal footprintArea;
-    private LocalDate manufactureStartDate;
-    private LocalDate manufactureEndDate;
+    private LocalDate manufactureDate;
     private BigDecimal evaporationCapacity;
     private BigDecimal ratedThermalPower;
     private BigDecimal thermalEfficiency;

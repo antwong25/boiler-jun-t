@@ -46,4 +46,6 @@ public interface PostMapper {
     List<PostEntity> listAdminPosts(AdminPostQueryDTO dto);
 
     List<Map<String, Object>> listAiValuationTrainingRows(@Param("limit") int limit);
+
+    List<PostEntity> listAllPosts();
 }

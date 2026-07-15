@@ -260,4 +260,8 @@
         order by p.updateTime desc, p.postId desc
         limit #{limit}
     </select>
+
+    <select id="listAllPosts" resultMap="PostResultMap">
+        select * from post order by publishTime desc, postId desc
+    </select>
 </mapper>

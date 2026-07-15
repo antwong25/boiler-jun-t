@@ -6,6 +6,7 @@ import com.pgvector.PGvector;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.example.boilerpojo.BoilerEntity;
+import org.example.boilerpojo.PostEmbeddingRecalculateVO;
 import org.example.boilerpojo.PostEntity;
 import org.example.boilerserver.config.VectorStoreProperties;
 import org.example.boilerserver.mapper.BoilerMapper;
@@ -16,7 +17,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -62,6 +65,46 @@ public class PostEmbeddingServiceImpl implements PostEmbeddingService {
         }
         String sql = "DELETE FROM %s WHERE post_id = ?".formatted(vectorStoreProperties.getTable());
         vectorJdbcTemplate.update(sql, postId.trim());
+    }
+
+    @Override
+    public PostEmbeddingRecalculateVO vectorizeAllPosts() {
+        List<PostEntity> allPosts = postMapper.listAllPosts();
+        List<PostEmbeddingRecalculateVO.PostEmbeddingResultVO> results = new ArrayList<>();
+        int generatedCount = 0;
+        int failedCount = 0;
+
+        for (PostEntity post : allPosts) {
+            PostEmbeddingRecalculateVO.PostEmbeddingResultVO result = new PostEmbeddingRecalculateVO.PostEmbeddingResultVO();
+            result.setPostId(post.getPostId());
+            result.setTitle(post.getTitle());
+
+            try {
+                if (StringUtils.hasText(post.getBoilerId())) {
+                    vectorizePost(post.getPostId());
+                    result.setSuccess(true);
+                    generatedCount++;
+                } else {
+                    result.setSuccess(false);
+                    result.setErrorMessage("缺少锅炉详情");
+                    failedCount++;
+                }
+            } catch (Exception e) {
+                result.setSuccess(false);
+                result.setErrorMessage(e.getMessage());
+                failedCount++;
+            }
+
+            results.add(result);
+        }
+
+        PostEmbeddingRecalculateVO vo = new PostEmbeddingRecalculateVO();
+        vo.setTotalPostCount(allPosts.size());
+        vo.setGeneratedCount(generatedCount);
+        vo.setFailedCount(failedCount);
+        vo.setResults(results);
+
+        return vo;
     }
 
     private void upsertEmbedding(String postId, String content, float[] vector) {

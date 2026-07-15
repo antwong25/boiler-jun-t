@@ -21,6 +21,59 @@
 
     <sql id="PublishedPostFilterConditions">
         where p.status = 'PUBLISHED'
+        <if test="keyword != null and keyword != ''">
+            and (
+                p.title like concat('%', #{keyword}, '%')
+                or p.description like concat('%', #{keyword}, '%')
+                or p.city like concat('%', #{keyword}, '%')
+                or b.brand like concat('%', #{keyword}, '%')
+                or b.model like concat('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="city != null and city != ''">
+            and upper(p.city) like concat('%', upper(#{city}), '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+        <if test="tonnageMin != null">
+            and b.tonnage &gt;= #{tonnageMin}
+        </if>
+        <if test="tonnageMax != null">
+            and b.tonnage &lt;= #{tonnageMax}
+        </if>
+    </sql>
+
+    <sql id="StructuredFilterConditions">
+        where p.status = 'PUBLISHED'
+        <if test="city != null and city != ''">
+            and upper(p.city) like concat('%', upper(#{city}), '%')
+        </if>
+        <if test="boilerType != null and boilerType != ''">
+            and upper(b.boilerType) = upper(#{boilerType})
+        </if>
+        <if test="brand != null and brand != ''">
+            and b.brand like concat('%', #{brand}, '%')
+        </if>
+        <if test="fuelType != null and fuelType != ''">
+            and b.fuelType like concat('%', #{fuelType}, '%')
+        </if>
+    </sql>
+
+    <sql id="AdminPostFilterConditions">
+        where 1 = 1
+        <if test="sellerId != null and sellerId != ''">
+            and p.sellerId = #{sellerId}
+        </if>
+        <if test="status != null and status != ''">
+            and p.status = #{status}
+        </if>
         <if test="city != null and city != ''">
             and upper(p.city) like concat('%', upper(#{city}), '%')
         </if>
@@ -108,7 +161,7 @@
         select p.*
         from post p
         inner join boiler b on p.boilerId = b.boilerId
-        <include refid="PublishedPostFilterConditions"/>
+        <include refid="StructuredFilterConditions"/>
         order by p.updateTime desc, p.publishTime desc
         limit #{limit}
     </select>
@@ -157,6 +210,36 @@
         limit #{offset}, #{pageSize}
     </select>
 
+    <select id="listBySellerId" resultMap="PostResultMap">
+        select p.*
+        from post p
+        where p.sellerId = #{sellerId}
+        order by p.updateTime desc, p.publishTime desc, p.postId desc
+    </select>
+
+    <select id="countAdminPosts" resultType="long">
+        select count(1)
+        from post p
+        left join boiler b on p.boilerId = b.boilerId
+        <include refid="AdminPostFilterConditions"/>
+    </select>
+
+    <select id="listAdminPosts" resultMap="PostResultMap">
+        select p.*
+        from post p
+        left join boiler b on p.boilerId = b.boilerId
+        <include refid="AdminPostFilterConditions"/>
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by p.${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by p.updateTime desc, p.publishTime desc, p.postId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{pageSize}
+    </select>
+
     <select id="listAiValuationTrainingRows" resultType="map">
         select
         p.price as price,
@@ -176,5 +259,9 @@
         and p.price is not null
         order by p.updateTime desc, p.postId desc
         limit #{limit}
+    </select>
+
+    <select id="listAllPosts" resultMap="PostResultMap">
+        select * from post order by publishTime desc, postId desc
     </select>
 </mapper>

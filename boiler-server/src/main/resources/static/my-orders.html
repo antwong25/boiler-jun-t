@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易入口已调整 Entry Updated - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/my-orders.css">
+</head>
+<body>
+    <div class="header-title">
+        <h1 class="main-title">交易入口已调整 Entry Updated</h1>
+        <p class="sub-title">订单流程已下线，正在为您跳转到我的交易 The order flow is offline and you are being redirected to My Transactions</p>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link active">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="quick-nav" id="quickNav"></div>
+
+        <div class="card" id="mainCard">
+            <div class="card-header">
+                <h2 class="card-title">订单列表 Orders</h2>
+            </div>
+            <div class="card-content">
+                <div class="status-filter" id="statusFilter">
+                    <button class="status-filter-btn active" data-status="">全部 All</button>
+                    <button class="status-filter-btn" data-status="PENDING">待确认 Pending</button>
+                    <button class="status-filter-btn" data-status="CONFIRMED">已确认 Confirmed</button>
+                    <button class="status-filter-btn" data-status="COMPLETED">已完成 Completed</button>
+                    <button class="status-filter-btn" data-status="CANCELLED">已取消 Cancelled</button>
+                </div>
+                <div id="orderListContainer">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>加载中... Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>二手工业锅炉交易平台 Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved</p>
+        </footer>
+    </div>
+
+    <script>
+        var BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        var currentPage = 1;
+        var totalPages = 1;
+        var currentStatus = '';
+        var PAGE_SIZE = 10;
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            var token = getToken();
+            if (!token) return {};
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) return '-';
+            return '¥' + Number(price).toLocaleString('zh-CN');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('zh-CN');
+        }
+
+        function applyGuestNavigation() {
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            var userId = user.userId || localStorage.getItem('userId');
+            var username = user.username || localStorage.getItem('username') || '用户';
+            var userType = Object.prototype.hasOwnProperty.call(user, 'userType')
+                ? (user.userType || '')
+                : (localStorage.getItem('userType') || '');
+            var isSeller = userType === 'SELLER';
+
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userNameDisplay = document.getElementById('userNameDisplay');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+            var sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? 'userDetail.html?userId=' + encodeURIComponent(userId) : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' : userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? 'qualification.html?userId=' + encodeURIComponent(userId) : 'qualification.html';
+            }
+            renderQuickNav(userType);
+        }
+
+        function renderQuickNav(userType) {
+            var quickNav = document.getElementById('quickNav');
+            if (!quickNav) {
+                return;
+            }
+
+            var links = [
+                { href: 'my-transactions.html', label: '我的交易 My Transactions', key: 'transactions' },
+                { href: 'chat.html', label: '我的消息 My Messages', key: 'messages' }
+            ];
+
+            if (userType === 'SELLER') {
+                links.push({ href: 'my-posts.html', label: '我的帖子 My Posts', key: 'posts' });
+            }
+
+            quickNav.innerHTML = links.map(function(link) {
+                var activeClass = link.key === 'orders' ? ' class="here"' : '';
+                return '<a href="' + link.href + '"' + activeClass + '>' + link.label + '</a>';
+            }).join('');
+        }
+
+        async function loadUserProfile() {
+            var response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            var data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            var token = getToken();
+            var userId = localStorage.getItem('userId');
+            var username = localStorage.getItem('username') || '用户';
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: ''
+            });
+
+            try {
+                var user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadOrders(pageNum, status) {
+            var userId = localStorage.getItem('userId');
+            if (!userId) {
+                showError('请先登录 Please log in first');
+                return;
+            }
+
+            pageNum = pageNum || 1;
+            currentPage = pageNum;
+
+            var params = 'userId=' + encodeURIComponent(userId) +
+                '&pageNum=' + pageNum + '&pageSize=' + PAGE_SIZE;
+            if (status) {
+                params += '&orderStatus=' + encodeURIComponent(status);
+            }
+
+            try {
+                var resp = await fetch(BASE_URL + '/order/my?' + params, { headers: getUserHeaders() });
+                var data = await resp.json();
+                if (data.code !== 1) {
+                    throw new Error(data.msg || '获取订单列表 Orders失败');
+                }
+                renderOrders(data.data);
+            } catch (e) {
+                showError('加载失败：' + e.message);
+            }
+        }
+
+        function renderOrders(pageData) {
+            var container = document.getElementById('orderListContainer');
+
+            if (!pageData || !pageData.records || pageData.records.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>暂无订单记录 No order records yet</p></div>';
+                return;
+            }
+
+            totalPages = pageData.totalPages || 1;
+
+            var orders = pageData.records;
+            var userId = localStorage.getItem('userId');
+
+            var rows = '';
+            for (var i = 0; i < orders.length; i++) {
+                var o = orders[i];
+                var isBuyer = o.buyerId === userId;
+                var roleLabel = isBuyer ? '买家 Buyer' : '卖家 Seller';
+                var roleCls = isBuyer ? 'buyer' : 'seller';
+                var counterpartyName = isBuyer ? (o.sellerName || o.shopName || o.sellerId) : (o.buyerName || o.buyerId);
+
+                var statusCls = 'pending';
+                if (o.orderStatus === 'CONFIRMED') statusCls = 'confirmed';
+                else if (o.orderStatus === 'COMPLETED') statusCls = 'completed';
+                else if (o.orderStatus === 'CANCELLED') statusCls = 'cancelled';
+
+                var actions = '';
+                if (o.orderStatus === 'PENDING') {
+                    actions += '<span class="action-link success" onclick="confirmOrder(\'' + escapeHtml(o.orderId) + '\')">确认 Confirm</span>';
+                    actions += '<span class="action-link danger" onclick="cancelOrder(\'' + escapeHtml(o.orderId) + '\')">取消 Cancel</span>';
+                } else if (o.orderStatus === 'CONFIRMED' && isBuyer) {
+                    actions += '<span class="action-link success" onclick="completeOrder(\'' + escapeHtml(o.orderId) + '\')">确认完成 Confirm Complete</span>';
+                } else if (o.orderStatus === 'CONFIRMED' && !isBuyer) {
+                    actions += '<span class="action-link disabled">等待买家确认 Waiting for buyer confirmation</span>';
+                }
+
+                rows +=
+                    '<tr>' +
+                    '<td><span class="order-id">' + escapeHtml((o.orderId || '').substring(0, 12) + '...') + '</span></td>' +
+                    '<td><span class="role-badge ' + roleCls + '">' + roleLabel + '</span></td>' +
+                    '<td><a href="postDetail.html?postId=' + encodeURIComponent(o.postId || '') + '" class="post-link">' + escapeHtml(o.postTitle || o.postId || '-') + '</a></td>' +
+                    '<td>' + escapeHtml(counterpartyName) + '</td>' +
+                    '<td>' + formatPrice(o.transactionAmount || o.postPrice) + '</td>' +
+                    '<td><span class="status-badge ' + statusCls + '">' + escapeHtml(o.orderStatus || '-') + '</span></td>' +
+                    '<td>' + formatDate(o.createTime) + '</td>' +
+                    '<td>' + actions + '</td>' +
+                    '</tr>';
+            }
+
+            var paginationHtml = '';
+            if (totalPages > 1) {
+                paginationHtml =
+                    '<div class="pagination">' +
+                    '<button class="page-btn" onclick="goPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>上一页 Prev</button>' +
+                    '<span class="page-info">第 ' + currentPage + ' / ' + totalPages + ' 页 / Page ' + currentPage + ' of ' + totalPages + '</span>' +
+                    '<button class="page-btn" onclick="goPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>下一页 Next</button>' +
+                    '</div>';
+            }
+
+            container.innerHTML =
+                '<table class="order-table">' +
+                '<thead>' +
+                '<tr>' +
+                '<th>订单号 Order ID</th>' +
+                '<th>身份 Role</th>' +
+                '<th>关联 Linked 帖子</th>' +
+                '<th>对方 Counterparty</th>' +
+                '<th>金额 Amount</th>' +
+                '<th>状态 Status</th>' +
+                '<th>创建时间 Created At</th>' +
+                '<th>操作 Actions</th>' +
+                '</tr>' +
+                '</thead>' +
+                '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+                paginationHtml;
+        }
+
+        function goPage(pageNum) {
+            loadOrders(pageNum, currentStatus);
+        }
+
+        async function confirmOrder(orderId) {
+            if (!confirm('确认接受该订单？确认后订单将进入执行阶段。 Confirm this order? It will enter the execution stage.')) return;
+            await orderAction(orderId, 'confirm');
+        }
+
+        async function completeOrder(orderId) {
+            if (!confirm('确认订单已完成？此操作不可撤销。 Confirm the order is completed? This action cannot be undone.')) return;
+            await orderAction(orderId, 'complete');
+        }
+
+        async function cancelOrder(orderId) {
+            if (!confirm('确认取消该订单？ Confirm order cancellation?')) return;
+            await orderAction(orderId, 'cancel');
+        }
+
+        async function orderAction(orderId, action) {
+            var userId = localStorage.getItem('userId');
+            try {
+                var resp = await fetch(
+                    BASE_URL + '/order/' + encodeURIComponent(orderId) + '/' + action + '?operatorId=' + encodeURIComponent(userId),
+                    { method: 'PUT', headers: getUserHeaders() }
+                );
+                var data = await resp.json();
+                if (data.code === 1) {
+                    alert('操作成功 Operation succeeded');
+                    loadOrders(currentPage, currentStatus);
+                } else {
+                    alert('操作失败 Operation failed: ' + (data.msg || '未知错误 Unknown error'));
+                }
+            } catch (e) {
+                alert('网络错误，请重试 Network error, please retry');
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('orderListContainer').innerHTML =
+                '<div class="error-state">' +
+                '<p>⚠️ ' + escapeHtml(msg) + '</p>' +
+                '<button class="retry-btn" onclick="loadOrders(1, currentStatus)">重新加载 Reload</button>' +
+                '</div>';
+        }
+
+        function initStatusFilter() {
+            var btns = document.querySelectorAll('#statusFilter .status-filter-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].addEventListener('click', function() {
+                    for (var j = 0; j < btns.length; j++) {
+                        btns[j].classList.remove('active');
+                    }
+                    this.classList.add('active');
+                    currentStatus = this.getAttribute('data-status') || '';
+                    currentPage = 1;
+                    loadOrders(1, currentStatus);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.location.replace('my-transactions.html');
+        });
+    </script>
+</body>
+</html>

@@ -2,6 +2,7 @@ package org.example.boilerserver.service;
 
 import org.example.boilerpojo.AdminUserQueryDTO;
 import org.example.boilerpojo.AdminUserUpdateDTO;
+import org.example.boilerpojo.CreditScoreRecalculateVO;
 import org.example.boilerpojo.SellerQualificationFileUploadDTO;
 import org.example.boilerpojo.SellerProfileDTO;
 import org.example.boilerpojo.SellerQualificationAuditDTO;
@@ -33,6 +34,10 @@ public interface UserService {
     UserVO adminGetUserDetail(String userId);
 
     UserVO adminUpdateUser(AdminUserUpdateDTO dto);
+
+    UserVO recalculateCreditScore(String userId);
+
+    CreditScoreRecalculateVO recalculateAllCreditScores();
 
     UserVO auditSellerQualification(String adminUserId, SellerQualificationAuditDTO dto);
 

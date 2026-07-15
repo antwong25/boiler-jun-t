@@ -4,6 +4,7 @@ import org.example.constant.UserConstant;
 import org.example.boilerpojo.AdminUserQueryDTO;
 import org.example.boilerpojo.AdminUserUpdateDTO;
 import org.example.boilerpojo.BuyerEntity;
+import org.example.boilerpojo.CreditScoreRecalculateVO;
 import org.example.boilerpojo.SellerEntity;
 import org.example.boilerpojo.SellerQualificationFileUploadDTO;
 import org.example.boilerpojo.SellerProfileDTO;
@@ -36,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -110,7 +112,7 @@ public class UserServiceImpl implements UserService {
             sellerMapper.insert(sellerEntity);
         }
 
-        return buildUserVO(userMapper.getByUserId(userId));
+        return recalculateCreditScore(userId);
     }
 
     @Override
@@ -300,6 +302,46 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserVO recalculateCreditScore(String userId) {
+        UserEntity userEntity = getExistingUser(userId);
+        int recalculatedCreditScore = calculateCreditScore(userEntity);
+        if (!Objects.equals(userEntity.getCreditScore(), recalculatedCreditScore)) {
+            userEntity.setCreditScore(recalculatedCreditScore);
+            userMapper.update(userEntity);
+        } else {
+            userEntity.setCreditScore(recalculatedCreditScore);
+        }
+        return buildUserVO(userEntity);
+    }
+
+    @Override
+    @Transactional
+    public CreditScoreRecalculateVO recalculateAllCreditScores() {
+        List<UserEntity> userEntities = userMapper.listAllUsers();
+        List<UserVO> users = new ArrayList<>(userEntities.size());
+        int updatedUserCount = 0;
+
+        for (UserEntity userEntity : userEntities) {
+            int recalculatedCreditScore = calculateCreditScore(userEntity);
+            if (!Objects.equals(userEntity.getCreditScore(), recalculatedCreditScore)) {
+                userEntity.setCreditScore(recalculatedCreditScore);
+                userMapper.update(userEntity);
+                updatedUserCount++;
+            } else {
+                userEntity.setCreditScore(recalculatedCreditScore);
+            }
+            users.add(buildUserVO(userEntity));
+        }
+
+        CreditScoreRecalculateVO result = new CreditScoreRecalculateVO();
+        result.setTotalUserCount(userEntities.size());
+        result.setUpdatedUserCount(updatedUserCount);
+        result.setUsers(users);
+        return result;
+    }
+
+    @Override
+    @Transactional
     public UserVO auditSellerQualification(String adminUserId, SellerQualificationAuditDTO dto) {
         if (!StringUtils.hasText(adminUserId)) {
             throw new IllegalArgumentException("管理员ID不能为空");
@@ -329,13 +371,7 @@ public class UserServiceImpl implements UserService {
         sellerEntity.setQualificationAuditTime(LocalDateTime.now());
         sellerMapper.update(sellerEntity);
 
-        UserEntity userEntity = getExistingUser(dto.getSellerId());
-        if (UserConstant.QUALIFICATION_STATUS_APPROVED.equals(targetStatus)) {
-            applySellerApprovedCreditRule(userEntity);
-            userMapper.update(userEntity);
-        }
-
-        return buildUserVO(userMapper.getByUserId(dto.getSellerId()));
+        return recalculateCreditScore(dto.getSellerId());
     }
 
     @Override
@@ -524,11 +560,44 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void applySellerApprovedCreditRule(UserEntity userEntity) {
-        int currentCreditScore = userEntity.getCreditScore() == null
-                ? UserConstant.DEFAULT_CREDIT_SCORE
-                : userEntity.getCreditScore();
-        userEntity.setCreditScore(Math.max(currentCreditScore, UserConstant.SELLER_APPROVAL_CREDIT_SCORE));
+    private int calculateCreditScore(UserEntity userEntity) {
+        int informationCompletenessScore = calculateInformationCompletenessScore(userEntity);
+        int mutualReviewScore = calculateMutualReviewScore(userEntity.getUserId());
+        int transactionBehaviorScore = calculateTransactionBehaviorScore(userEntity.getUserId());
+        int communityConductScore = calculateCommunityConductScore(userEntity);
+        int totalScore = informationCompletenessScore + mutualReviewScore + transactionBehaviorScore + communityConductScore;
+        return Math.max(UserConstant.MIN_CREDIT_SCORE, Math.min(totalScore, UserConstant.MAX_CREDIT_SCORE));
+    }
+
+    private int calculateInformationCompletenessScore(UserEntity userEntity) {
+        return userEntity != null && StringUtils.hasText(userEntity.getUserId())
+                ? UserConstant.INFORMATION_COMPLETENESS_SCORE
+                : 0;
+    }
+
+    private int calculateMutualReviewScore(String userId) {
+        int positiveReviewCount = reviewMapper.countPositiveByRevieweeId(userId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
+        int negativeReviewCount = reviewMapper.countNegativeByRevieweeId(userId, 2);
+        int score = UserConstant.MUTUAL_REVIEW_BASE_SCORE
+                + positiveReviewCount * UserConstant.MUTUAL_REVIEW_POSITIVE_BONUS
+                - negativeReviewCount * UserConstant.MUTUAL_REVIEW_NEGATIVE_PENALTY;
+        return Math.max(0, Math.min(score, UserConstant.MUTUAL_REVIEW_MAX_SCORE));
+    }
+
+    private int calculateTransactionBehaviorScore(String userId) {
+        int completedTransactionCount = transactionMapper.countByUserIdAndStatus(
+                userId,
+                TransactionConstant.STATUS_COMPLETED
+        );
+        int score = UserConstant.TRANSACTION_BEHAVIOR_BASE_SCORE
+                + completedTransactionCount * UserConstant.TRANSACTION_BEHAVIOR_COMPLETED_BONUS;
+        return Math.min(score, UserConstant.TRANSACTION_BEHAVIOR_MAX_SCORE);
+    }
+
+    private int calculateCommunityConductScore(UserEntity userEntity) {
+        return UserConstant.VERIFICATION_STATUS_SUSPENDED.equalsIgnoreCase(userEntity.getVerificationStatus())
+                ? 0
+                : UserConstant.COMMUNITY_CONDUCT_SCORE;
     }
 
     private boolean hasSellerQualificationChanged(SellerEntity sellerEntity, SellerProfileDTO dto) {

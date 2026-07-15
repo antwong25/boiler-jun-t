@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卖家店铺详情 Seller Store Details - AI二手工业锅炉交易平台 AI Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/userDetail.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link active">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 顶部用户信息显示 -->
+        <div class="page-top-banner">
+            <div>
+                <span>当前查看用户： Viewing User: </span>
+                <span id="viewingUserName" class="page-top-banner-name">加载中... Loading...</span>
+            </div>
+            <div>
+                <a href="home.html" class="page-top-banner-link">← 返回首页 Back Home</a>
+            </div>
+        </div>
+
+        <div class="quick-nav my-page-tabs hidden" id="myPageTabs"></div>
+
+        <!-- 区块1：个人/企业基础信息卡片 -->
+        <section class="card seller-info-section">
+            <div class="seller-info-main">
+                <!-- 1.1 左侧资质图片 Images预览区 -->
+                <div class="qualification-images">
+                    <div class="image-item">
+                        <div class="image-placeholder">🏢</div>
+                        <div class="image-label">办公场地实拍 Office Photo</div>
+                    </div>
+                    <div class="image-item">
+                        <div class="image-placeholder">🏭</div>
+                        <div class="image-label">设备展厅实拍 Showroom Photo</div>
+                    </div>
+                    <div class="image-item">
+                        <div class="image-placeholder">📄</div>
+                        <div class="image-label">营业执照 Business License</div>
+                        <span class="verified-badge">已核验 Verified</span>
+                    </div>
+                    <div class="image-item">
+                        <div class="image-placeholder">🏆</div>
+                        <div class="image-label">平台认证证书 Platform Certificate</div>
+                    </div>
+                </div>
+
+                <!-- 1.2 右侧企业基础信息文本区 -->
+                <div class="seller-info-text">
+                    <div class="info-row essential-field">
+                        <span class="info-label">用户名称： Username: </span>
+                        <span class="info-value" id="userName">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row essential-field">
+                        <span class="info-label">身份类型： User Type: </span>
+                        <span class="info-value"><span class="user-type-badge" id="userType">加载中... Loading...</span></span>
+                    </div>
+                    <div class="info-row essential-field">
+                        <span class="info-label">联系电话： Phone: </span>
+                        <span class="info-value" id="phone">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row essential-field">
+                        <span class="info-label">邮箱 Email：</span>
+                        <span class="info-value" id="email">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">统一信用代码： Unified Credit Code: </span>
+                        <span class="info-value" id="businessLicense">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">所在地址： Address: </span>
+                        <span class="info-value" id="shopAddress">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">店铺名称 Shop Name：</span>
+                        <span class="info-value" id="shopName">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row essential-field">
+                        <span class="info-label">注册日期： Registration Date: </span>
+                        <span class="info-value" id="registrationDate">加载中... Loading...</span>
+                    </div>
+                                        <div class="info-row essential-field">
+                        <span class="info-label">信用分数： Credit Score: </span>
+                        <span class="info-value credit-score" id="creditScore">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">交易完成笔数： Completed Deals: </span>
+                        <span class="info-value" id="completedTransactions">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">好评率： Positive Rating: </span>
+                        <span class="info-value" id="positiveRating">加载中... Loading...</span>
+                    </div>
+                    <div class="info-row seller-only-field">
+                        <span class="info-label">资质认证状态： Verification Status: </span>
+                        <div class="qualification-status" id="verificationStatus">
+                            <span class="status-item">加载中... Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 区块2：在售二手工业锅炉 Boilers for Sale列表卡片 -->
+        <section class="card boiler-list-section" id="boilerListSection">
+            <div class="card-header">
+                <h2 class="card-title" id="postSectionTitle">在售二手工业锅炉 Boilers for Sale</h2>
+            </div>
+            <div class="card-content" id="postListContainer">
+                <table class="boiler-table">
+                    <thead>
+                        <tr>
+                            <th>设备/需求名称 Item / Demand</th>
+                            <th>规格/吨位 Spec / Capacity</th>
+                            <th>所在地 Location</th>
+                            <th>价格/预算 Price / Budget</th>
+                            <th>操作 Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postTableBody">
+                        <tr>
+                            <td colspan="5" class="boiler-empty-state">帖子加载中... Loading posts...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="section-link-wrap">
+                    <a href="index.html" class="view-all-link">查看全部资产/需求 >> View all assets / demands >></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 区块3：交易评价记录 Review History卡片 -->
+        <section class="card reviews-section">
+            <div class="card-header">
+                <h2 class="card-title" id="reviewSectionTitle">交易评价记录 Review History</h2>
+            </div>
+            <div class="card-content" id="reviewListContainer">
+                <div class="review-item review-state-item">
+                    <div class="review-content">评价加载中... Loading reviews...</div>
+                </div>
+                <div class="section-link-wrap">
+                    <a href="index.html" class="view-all-link">查看全部评价记录 >> View all reviews >></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 区块4：平台交易保障 Platform Protection卡片 -->
+        <section class="card guarantee-section">
+            <div class="card-header">
+                <h2 class="card-title">平台交易保障 Platform Protection</h2>
+            </div>
+            <div class="card-content">
+                <div class="guarantee-list">
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✓</span>
+                        <div class="guarantee-text">实名认证核验，身份信息真实可查，杜绝虚假账号 Real-name identity verification to prevent fake accounts</div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✓</span>
+                        <div class="guarantee-text">交易资金担保，验货合格后再付款，保障资金安全 Escrow payment released after inspection</div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✓</span>
+                        <div class="guarantee-text">设备信息核验，杜绝虚假锅炉信息，支持第三方验机 Equipment info verification with third-party inspection support</div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✓</span>
+                        <div class="guarantee-text">交易纠纷平台介入，7个工作日内专业协调解决 Platform intervention for disputes within 7 working days</div>
+                    </div>
+                    <div class="guarantee-item">
+                        <span class="guarantee-icon">✓</span>
+                        <div class="guarantee-text">违规行为严厉处罚，情节严重者封禁账号 Strict penalties for violations, including account bans</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 区块5：页面底部风险提示 & 版权信息 -->
+        <section class="card footer-section">
+            <div class="copyright-info">
+                <div class="copyright-text">
+                    <span>AI二手工业锅炉交易平台 AI Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved</span>
+                    <span>|</span>
+                    <span>企业认证·交易担保·资质核验 Business Verification · Transaction Protection · Qualification Check</span>
+                    <span>|</span>
+                    <span>客服热线：400-XXXX-XXXX Service Hotline: 400-XXXX-XXXX</span>
+                    <span>|</span>
+                    <span>平台备案号：XXXX-XXXX Platform Record No.: XXXX-XXXX</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+        const INITIAL_POST_PAGE_SIZE = 3;
+        const MAX_POST_PAGE_SIZE = 50;
+        const INITIAL_REVIEW_PAGE_SIZE = 3;
+        const MAX_REVIEW_PAGE_SIZE = 50;
+        const postDisplayState = {
+            total: 0,
+            pageSize: INITIAL_POST_PAGE_SIZE
+        };
+        const reviewDisplayState = {
+            total: 0,
+            pageSize: INITIAL_REVIEW_PAGE_SIZE
+        };
+
+        // 获取URL参数中的userId
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getTargetUserId(fallbackUserId) {
+            return getUrlParameter('userId') || fallbackUserId || localStorage.getItem('userId');
+        }
+
+        function getCurrentUserId() {
+            return localStorage.getItem('userId');
+        }
+
+        function isCurrentUserPage(targetUserId) {
+            const currentUserId = getCurrentUserId();
+            return !!(targetUserId && currentUserId && targetUserId === currentUserId);
+        }
+
+        function getUserHeaders() {
+            const token = getToken();
+            if (!token) {
+                return {};
+            }
+            return { 'Authorization': `Bearer ${token}` };
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) {
+                return '';
+            }
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
+
+        async function fetchUserProfileById(userId) {
+            const response = await fetch(`${BASE_URL}/user/profile/${encodeURIComponent(userId)}`, {
+                method: 'GET',
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.code !== 1 || !result.data) {
+                throw new Error(result.msg || '加载用户信息失败');
+            }
+            return result.data;
+        }
+
+        function renderMyPageTabs(isSelfPage, userType) {
+            const tabs = document.getElementById('myPageTabs');
+            if (!tabs) {
+                return;
+            }
+
+            if (!isSelfPage) {
+                tabs.classList.add('hidden');
+                tabs.innerHTML = '';
+                return;
+            }
+
+            const links = [
+                { href: 'my-transactions.html', label: '我的交易 My Transactions' },
+                { href: 'chat.html', label: '我的消息 My Messages' }
+            ];
+
+            if (userType === 'SELLER') {
+                links.push({ href: 'my-posts.html', label: '我的帖子 My Posts' });
+            }
+
+            tabs.innerHTML = links.map(link => `
+                <a href="${link.href}" class="my-page-tab-link">${link.label}</a>
+            `).join('');
+            tabs.classList.remove('hidden');
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined || price === '') {
+                return '面议 Negotiable';
+            }
+            const numericPrice = Number(price);
+            if (Number.isNaN(numericPrice)) {
+                return escapeHtml(price);
+            }
+            return `¥${numericPrice.toLocaleString('zh-CN')}`;
+        }
+
+        function formatPostSpec(post) {
+            const detail = post.boilerDetail || {};
+            const parts = [];
+            if (detail.tonnage !== null && detail.tonnage !== undefined && detail.tonnage !== '') {
+                parts.push(`${detail.tonnage}吨`);
+            }
+            if (detail.fuelType) {
+                parts.push(detail.fuelType);
+            } else if (detail.boilerType) {
+                parts.push(detail.boilerType);
+            }
+            return parts.length > 0 ? escapeHtml(parts.join('/')) : '规格待补充';
+        }
+
+        function getPostDisplayName(post) {
+            const detail = post.boilerDetail || {};
+            return escapeHtml(post.title || detail.brand || detail.model || '未命名帖子');
+        }
+
+        function updatePostTitle(total) {
+            const postSectionTitle = document.getElementById('postSectionTitle');
+            if (postSectionTitle) {
+                postSectionTitle.textContent = `在售二手工业锅炉 Boilers for Sale（共${total}台）`;
+            }
+        }
+
+        function renderPostList(posts, total) {
+            const postTableBody = document.getElementById('postTableBody');
+            const postListContainer = document.getElementById('postListContainer');
+            if (!postTableBody || !postListContainer) {
+                return;
+            }
+
+            postTableBody.innerHTML = posts.map(post => `
+                <tr>
+                    <td class="boiler-name">${getPostDisplayName(post)}</td>
+                    <td class="boiler-specs">${formatPostSpec(post)}</td>
+                    <td class="boiler-location">${escapeHtml(post.city || '地区待补充')}</td>
+                    <td class="boiler-price">${formatPrice(post.price)}</td>
+                    <td><a href="postDetail.html?postId=${encodeURIComponent(post.postId)}" class="view-detail-link" data-post-id="${escapeHtml(post.postId)}">查看详情 View Details</a></td>
+                </tr>
+            `).join('');
+
+            let linkWrap = postListContainer.querySelector('.section-link-wrap');
+            if (!linkWrap && total > posts.length) {
+                linkWrap = document.createElement('div');
+                linkWrap.className = 'section-link-wrap';
+                linkWrap.innerHTML = '<a href="index.html" class="view-all-link">查看全部资产/需求 >> View all assets / demands >></a>';
+                postListContainer.appendChild(linkWrap);
+            }
+            if (linkWrap) {
+                linkWrap.style.display = total > posts.length ? '' : 'none';
+            }
+
+            bindPostDetailLinks();
+            bindViewAllLinks();
+        }
+
+        function renderEmptyPosts() {
+            const postTableBody = document.getElementById('postTableBody');
+            const postListContainer = document.getElementById('postListContainer');
+            if (!postTableBody || !postListContainer) {
+                return;
+            }
+
+            postTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="boiler-empty-state">暂时还没有在售帖子</td>
+                </tr>
+            `;
+            const linkWrap = postListContainer.querySelector('.section-link-wrap');
+            if (linkWrap) {
+                linkWrap.style.display = 'none';
+            }
+        }
+
+        async function loadSellerPosts(userId, pageSize = INITIAL_POST_PAGE_SIZE) {
+            const targetUserId = getTargetUserId(userId);
+            if (!targetUserId) {
+                postDisplayState.total = 0;
+                postDisplayState.pageSize = pageSize;
+                updatePostTitle(0);
+                renderEmptyPosts();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/post/seller/${encodeURIComponent(targetUserId)}`, {
+                    method: 'GET',
+                    headers: getUserHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.code !== 1 || !Array.isArray(result.data)) {
+                    throw new Error(result.msg || '加载帖子失败');
+                }
+
+                const publishedPosts = result.data.filter(post => post && post.status === 'PUBLISHED');
+                postDisplayState.total = publishedPosts.length;
+                postDisplayState.pageSize = pageSize;
+                updatePostTitle(publishedPosts.length);
+
+                if (publishedPosts.length === 0) {
+                    renderEmptyPosts();
+                    return;
+                }
+
+                renderPostList(publishedPosts.slice(0, pageSize), publishedPosts.length);
+            } catch (error) {
+                console.error('加载卖家 Seller帖子失败:', error);
+                postDisplayState.total = 0;
+                postDisplayState.pageSize = pageSize;
+                updatePostTitle(0);
+                renderEmptyPosts();
+            }
+        }
+
+        function formatReviewDate(dateStr) {
+            if (!dateStr) {
+                return '未知时间';
+            }
+            const date = new Date(dateStr);
+            if (Number.isNaN(date.getTime())) {
+                return escapeHtml(dateStr);
+            }
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        function renderStars(rating) {
+            const safeRating = Math.max(0, Math.min(5, Number(rating) || 0));
+            return '★'.repeat(safeRating) + '☆'.repeat(5 - safeRating);
+        }
+
+        function formatPercent(value) {
+            const numericValue = Number(value);
+            if (Number.isNaN(numericValue)) {
+                return '0%';
+            }
+            if (Number.isInteger(numericValue)) {
+                return `${numericValue}%`;
+            }
+            return `${numericValue.toFixed(2).replace(/\.?0+$/, '')}%`;
+        }
+
+        function updateReviewTitle(total) {
+            const reviewSectionTitle = document.getElementById('reviewSectionTitle');
+            if (reviewSectionTitle) {
+                reviewSectionTitle.textContent = `交易评价记录 Review History（共${total}条）`;
+            }
+        }
+
+        function renderReviewList(reviews, total) {
+            const reviewListContainer = document.getElementById('reviewListContainer');
+            if (!reviewListContainer) {
+                return;
+            }
+
+            const reviewHtml = reviews.map((review, index) => {
+                const reviewerName = escapeHtml(review.reviewerName || '匿名用户');
+                const content = escapeHtml(review.content || '该评价未填写具体内容');
+                const orderId = review.orderId ? escapeHtml(review.orderId) : '未关联 Linked 订单号';
+
+                return `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <div class="review-title">评价${index + 1}：来自 ${reviewerName}</div>
+                        </div>
+                        <div class="review-meta">评价人：${reviewerName} | 订单号：${orderId} | 评价时间：${formatReviewDate(review.reviewTime)}</div>
+                        <div class="review-content">${content}</div>
+                        <div class="review-rating">${renderStars(review.rating)}</div>
+                        <div class="verified-badge-small">真实订单关联 Linked 评价</div>
+                    </div>
+                `;
+            }).join('');
+
+            const viewAllHtml = total > reviews.length ? `
+                <div class="section-link-wrap">
+                    <a href="index.html" class="view-all-link">查看全部评价记录 >> View all reviews >></a>
+                </div>
+            ` : '';
+
+            reviewListContainer.innerHTML = reviewHtml + viewAllHtml;
+            bindViewAllLinks();
+        }
+
+        function renderEmptyReviews() {
+            const reviewListContainer = document.getElementById('reviewListContainer');
+            if (!reviewListContainer) {
+                return;
+            }
+
+            reviewListContainer.innerHTML = `
+                <div class="review-item review-state-item">
+                    <div class="review-content">暂时还没有真实评价记录</div>
+                </div>
+            `;
+            bindViewAllLinks();
+        }
+
+        async function loadUserReviews(userId, pageSize = INITIAL_REVIEW_PAGE_SIZE) {
+            const targetUserId = getTargetUserId(userId);
+            if (!targetUserId) {
+                reviewDisplayState.total = 0;
+                reviewDisplayState.pageSize = pageSize;
+                updateReviewTitle(0);
+                renderEmptyReviews();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/review/user/${encodeURIComponent(targetUserId)}?pageNum=1&pageSize=${pageSize}&sortField=reviewTime&sortOrder=desc`, {
+                    method: 'GET',
+                    headers: getUserHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.code !== 1 || !result.data) {
+                    throw new Error(result.msg || '加载评价失败');
+                }
+
+                const total = Number(result.data.total) || 0;
+                const records = Array.isArray(result.data.records) ? result.data.records : [];
+                reviewDisplayState.total = total;
+                reviewDisplayState.pageSize = pageSize;
+                updateReviewTitle(total);
+
+                if (records.length === 0) {
+                    renderEmptyReviews();
+                    return;
+                }
+
+                renderReviewList(records, total);
+            } catch (error) {
+                console.error('加载评价失败:', error);
+                reviewDisplayState.total = 0;
+                reviewDisplayState.pageSize = pageSize;
+                updateReviewTitle(0);
+                renderEmptyReviews();
+            }
+        }
+
+        function applyGuestNavigation() {
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            const userId = user.userId || localStorage.getItem('userId');
+            const username = user.username || localStorage.getItem('username') || '用户';
+            const userType = Object.prototype.hasOwnProperty.call(user, 'userType')
+                ? (user.userType || '')
+                : (localStorage.getItem('userType') || '');
+            const isSeller = userType === 'SELLER';
+
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+            const sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? `userDetail.html?userId=${encodeURIComponent(userId)}` : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' :
+                    userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? `qualification.html?userId=${encodeURIComponent(userId)}` : 'qualification.html';
+            }
+        }
+
+        async function loadNavigationProfile() {
+            const response = await fetch(`${BASE_URL}/user/profile/me`, {
+                method: 'GET',
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                applyGuestNavigation();
+                alert('请先登录 Please log in first');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: localStorage.getItem('userId'),
+                username: localStorage.getItem('username') || '用户',
+                userType: localStorage.getItem('userType') || ''
+            });
+
+            loadUserDetailPage();
+        });
+
+        async function loadUserDetailPage() {
+            try {
+                const currentUser = await loadNavigationProfile();
+                applyLoggedInNavigation(currentUser);
+
+                const targetUserId = getTargetUserId(currentUser.userId);
+                const targetProfile = await fetchUserProfileById(targetUserId);
+
+                document.getElementById('viewingUserName').textContent = targetProfile.username || '用户';
+                renderMyPageTabs(isCurrentUserPage(targetUserId), currentUser.userType);
+
+                document.body.classList.remove('seller-view', 'buyer-view');
+                if (targetProfile.userType === 'SELLER') {
+                    document.body.classList.add('seller-view');
+                } else {
+                    document.body.classList.add('buyer-view');
+                }
+
+                updateUserProfile(targetProfile);
+                controlBoilerListSection(targetProfile.userType);
+
+                if (targetProfile.userType === 'SELLER') {
+                    loadSellerPosts(targetUserId);
+                }
+
+                loadUserReviews(targetUserId);
+
+                if (targetProfile.userType === 'SELLER') {
+                    loadSellerProfile(targetUserId);
+                } else {
+                    updateBuyerProfile(targetProfile);
+                }
+            } catch (error) {
+                console.error('网络错误:', error);
+                showError('网络错误，请检查连接');
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 加载卖家 Seller详细信息
+        async function loadSellerProfile(userId) {
+            try {
+                const sellerProfileResponse = await fetch(`${BASE_URL}/user/seller-profile/${encodeURIComponent(userId)}`, {
+                    method: 'GET',
+                    headers: getUserHeaders()
+                });
+
+                const sellerData = await sellerProfileResponse.json();
+
+                if (sellerData.code === 1) {
+                    updateSellerInfo({
+                        userId: userId,
+                        ...sellerData.data
+                    });
+                } else {
+                    console.error('加载卖家 Seller信息失败:', sellerData.msg);
+                    showError('加载卖家 Seller信息失败: ' + sellerData.msg);
+                }
+            } catch (error) {
+                console.error('网络错误:', error);
+                showError('网络错误，请检查连接');
+            }
+        }
+
+        // 更新用户基本信息 Basic Information
+        function updateUserProfile(data) {
+            // 更新用户名 Username称
+            const userName = document.getElementById('userName');
+            if (userName) {
+                userName.textContent = data.username || '未设置 Not set';
+            }
+
+            // 更新身份类型
+            const userType = document.getElementById('userType');
+            if (userType) {
+                const typeText = data.userType === 'SELLER' ? '卖家 Seller' : '买家 Buyer';
+                userType.textContent = typeText;
+            }
+
+            // 更新联系电话 Phone - 所有用户都显示
+            const phone = document.getElementById('phone');
+            if (phone) {
+                phone.textContent = data.phone || '未设置 Not set';
+            }
+
+            // 更新邮箱 Email - 所有用户都显示
+            const email = document.getElementById('email');
+            if (email) {
+                email.textContent = data.email || '未设置 Not set';
+            }
+
+            // 更新所在地 Location址 - 如果是买家 Buyer，显示"未设置"
+            const shopAddress = document.getElementById('shopAddress');
+            if (shopAddress) {
+                shopAddress.textContent = data.shopAddress || '未设置 Not set';
+            }
+
+            // 更新店铺名称 Shop Name - 如果是买家 Buyer，显示"未设置"
+            const shopName = document.getElementById('shopName');
+            if (shopName) {
+                shopName.textContent = data.shopName || '未设置 Not set';
+            }
+
+            // 更新注册 Register日期 - 所有用户都显示
+            const registrationDate = document.getElementById('registrationDate');
+            if (registrationDate && data.registrationDate) {
+                const date = new Date(data.registrationDate);
+                registrationDate.textContent = date.toLocaleDateString('zh-CN');
+            }
+
+            // 更新信用分数 - 所有用户都显示
+            const creditScore = document.getElementById('creditScore');
+            if (creditScore) {
+                if (data.creditScore !== undefined && data.creditScore !== null && data.creditScore !== '') {
+                    const score = Math.round(Number(data.creditScore));
+                    creditScore.textContent = `${score}分 / pts`;
+                } else {
+                    creditScore.textContent = '暂无 N/A';
+                }
+                creditScore.className = 'info-value credit-score';
+            }
+
+            // 只在卖家 Seller时显示卖家 Seller的特有字段
+            if (data.userType === 'SELLER') {
+                updateSellerSpecificFields(data);
+            }
+        }
+
+        // 更新卖家 Seller特有字段
+        function updateSellerSpecificFields(data) {
+            // 更新统一信用代码
+            const businessLicense = document.getElementById('businessLicense');
+            if (businessLicense) {
+                businessLicense.textContent = data.businessLicense || '未设置 Not set';
+            }
+
+            // 更新店铺名称 Shop Name
+            const shopName = document.getElementById('shopName');
+            if (shopName) {
+                shopName.textContent = data.shopName || '未设置 Not set';
+            }
+
+            // 更新所在地 Location址
+            const shopAddress = document.getElementById('shopAddress');
+            if (shopAddress) {
+                shopAddress.textContent = data.shopAddress || '未设置 Not set';
+            }
+
+            // 更新交易完成笔数
+            const completedTransactions = document.getElementById('completedTransactions');
+            if (completedTransactions && data.completedTransactionCount !== undefined && data.completedTransactionCount !== null) {
+                const completedCount = Number(data.completedTransactionCount);
+                completedTransactions.textContent = `${Number.isNaN(completedCount) ? 0 : completedCount}笔 / deals`;
+            } else if (completedTransactions) {
+                completedTransactions.textContent = '0笔 / deals';
+            }
+
+            // 更新好评 Positive率
+            const positiveRating = document.getElementById('positiveRating');
+            if (positiveRating && data.positiveRatingRate !== undefined && data.positiveRatingRate !== null) {
+                positiveRating.textContent = formatPercent(data.positiveRatingRate);
+            } else if (positiveRating) {
+                positiveRating.textContent = '0%';
+            }
+
+            // 更新资质认证状态
+            const verificationStatus = document.getElementById('verificationStatus');
+            if (verificationStatus && data.qualificationStatus) {
+                verificationStatus.innerHTML = '';
+                if (data.qualificationStatus === 'APPROVED') {
+                    verificationStatus.innerHTML = '<span class="status-item status-success">已认证 Verified</span>';
+                } else {
+                    verificationStatus.innerHTML = '<span class="status-item status-muted">未认证 Unverified</span>';
+                }
+            }
+        }
+
+        // 更新买家 Buyer信息
+        function updateBuyerProfile(data) {
+            // 更新用户基本信息 Basic Information
+            updateUserProfile(data);
+
+            // 买家 Buyer不显示交易完成笔数和好评 Positive率，只显示"暂无"
+            const completedTransactions = document.getElementById('completedTransactions');
+            if (completedTransactions) {
+                completedTransactions.textContent = '暂无 N/A';
+            }
+
+            const positiveRating = document.getElementById('positiveRating');
+            if (positiveRating) {
+                positiveRating.textContent = '暂无 N/A';
+            }
+
+            // 买家 Buyer资质认证状态
+            const verificationStatus = document.getElementById('verificationStatus');
+            if (verificationStatus) {
+                verificationStatus.innerHTML = '<span class="status-item status-muted">未认证 Unverified</span>';
+            }
+        }
+
+        // 更新卖家 Seller信息到页面（兼容旧函数）
+        function updateSellerInfo(data) {
+            console.log('Received seller data:', data);
+
+            // 首先更新基础用户信息
+            updateUserProfile(data);
+
+            // 然后更新卖家 Seller特有字段
+            updateSellerSpecificFields(data);
+        }
+
+        function handlePostDetailLinkClick(e) {
+            e.preventDefault();
+            const postId = this.getAttribute('data-post-id');
+            if (postId) {
+                window.location.href = `postDetail.html?postId=${postId}`;
+            } else {
+                window.location.href = this.href;
+            }
+        }
+
+        function bindPostDetailLinks() {
+            document.querySelectorAll('.view-detail-link').forEach(link => {
+                link.removeEventListener('click', handlePostDetailLinkClick);
+                link.addEventListener('click', handlePostDetailLinkClick);
+            });
+        }
+
+        bindPostDetailLinks();
+
+        function handleViewAllLinkClick(e) {
+            e.preventDefault();
+            const userId = getTargetUserId();
+            if (this.textContent.includes('资产/需求')) {
+                const nextPageSize = Math.min(postDisplayState.total || MAX_POST_PAGE_SIZE, MAX_POST_PAGE_SIZE);
+                loadSellerPosts(userId, nextPageSize);
+            } else if (this.textContent.includes('评价记录')) {
+                const nextPageSize = Math.min(reviewDisplayState.total || MAX_REVIEW_PAGE_SIZE, MAX_REVIEW_PAGE_SIZE);
+                loadUserReviews(userId, nextPageSize);
+            }
+        }
+
+        function bindViewAllLinks() {
+            document.querySelectorAll('.view-all-link').forEach(link => {
+                link.removeEventListener('click', handleViewAllLinkClick);
+                link.addEventListener('click', handleViewAllLinkClick);
+            });
+        }
+
+        bindViewAllLinks();
+
+        // 控制区块2（在售二手工业锅炉 Boilers for Sale列表）的显示
+        function controlBoilerListSection(userType) {
+            const boilerListSection = document.getElementById('boilerListSection');
+            if (boilerListSection) {
+                if (userType === 'BUYER') {
+                    // 如果是买家 Buyer，隐藏区块2
+                    boilerListSection.style.display = 'none';
+                } else {
+                    // 如果是卖家 Seller或其他类型，显示区块2
+                    boilerListSection.style.display = 'block';
+                }
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            // 在顶部显示错误信息
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'floating-error-toast';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+
+            // 5秒后自动移除
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

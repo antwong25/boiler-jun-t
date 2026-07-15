@@ -275,11 +275,8 @@ public class PostServiceImpl implements PostService {
         requirePositive(boilerDetail.getNoxEmissions(), "氮氧化物排放");
         requirePositive(boilerDetail.getWorkingPressure(), "工作压力");
         requirePositive(boilerDetail.getFootprintArea(), "占地面积");
-        if (boilerDetail.getManufactureStartDate() == null || boilerDetail.getManufactureEndDate() == null) {
-            throw new IllegalArgumentException("生产日期范围不能为空");
-        }
-        if (boilerDetail.getManufactureEndDate().isBefore(boilerDetail.getManufactureStartDate())) {
-            throw new IllegalArgumentException("生产结束日期不能早于开始日期");
+        if (boilerDetail.getManufactureDate() == null) {
+            throw new IllegalArgumentException("生产日期不能为空");
         }
         if (!StringUtils.hasText(boilerDetail.getEquipmentCondition())) {
             throw new IllegalArgumentException("锅炉成色不能为空");
@@ -358,8 +355,7 @@ public class PostServiceImpl implements PostService {
         boilerEntity.setWorkingPressure(dto.getWorkingPressure());
         boilerEntity.setNoxEmissions(dto.getNoxEmissions());
         boilerEntity.setFootprintArea(dto.getFootprintArea());
-        // 数据库仅保留单个 manufactureDate 列，继续映射到 manufactureYear 属性以兼容现有估值逻辑。
-        boilerEntity.setManufactureYear(resolveManufactureYear(dto));
+        boilerEntity.setManufactureYear(dto.getManufactureDate());
         boilerEntity.setEvaporationCapacity(dto.getEvaporationCapacity());
         boilerEntity.setRatedThermalPower(dto.getRatedThermalPower());
         boilerEntity.setThermalEfficiency(dto.getThermalEfficiency());
@@ -403,8 +399,7 @@ public class PostServiceImpl implements PostService {
         boilerDetailVO.setWorkingPressure(boilerEntity.getWorkingPressure());
         boilerDetailVO.setNoxEmissions(boilerEntity.getNoxEmissions());
         boilerDetailVO.setFootprintArea(boilerEntity.getFootprintArea());
-        boilerDetailVO.setManufactureStartDate(boilerEntity.getManufactureYear());
-        boilerDetailVO.setManufactureEndDate(boilerEntity.getManufactureYear());
+        boilerDetailVO.setManufactureDate(boilerEntity.getManufactureYear());
         boilerDetailVO.setEvaporationCapacity(boilerEntity.getEvaporationCapacity());
         boilerDetailVO.setRatedThermalPower(boilerEntity.getRatedThermalPower());
         boilerDetailVO.setThermalEfficiency(boilerEntity.getThermalEfficiency());
@@ -928,13 +923,6 @@ public class PostServiceImpl implements PostService {
                  PostConstant.STATUS_BANNED -> normalized;
             default -> throw new IllegalArgumentException("不支持的帖子状态");
         };
-    }
-
-    private LocalDate resolveManufactureYear(BoilerDetailDTO dto) {
-        if (dto.getManufactureEndDate() != null) {
-            return dto.getManufactureEndDate();
-        }
-        return dto.getManufactureStartDate();
     }
 
     private String generateId() {

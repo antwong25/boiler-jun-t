@@ -3,6 +3,7 @@ package org.example.boilerserver.controller;
 import org.example.boilercommon.Result;
 import org.example.boilerpojo.AdminUserQueryDTO;
 import org.example.boilerpojo.AdminUserUpdateDTO;
+import org.example.boilerpojo.CreditScoreRecalculateVO;
 import org.example.boilerpojo.LoginVO;
 import org.example.boilerpojo.SellerQualificationFileUploadDTO;
 import org.example.boilerpojo.SellerProfileDTO;
@@ -104,6 +105,11 @@ public class UserController {
     @PutMapping("/admin/users")
     public Result<UserVO> adminUpdateUser(@RequestBody AdminUserUpdateDTO dto) {
         return Result.success(userService.adminUpdateUser(dto));
+    }
+
+    @PostMapping("/admin/credit-score/recalculate-all")
+    public Result<CreditScoreRecalculateVO> recalculateAllCreditScores() {
+        return Result.success(userService.recalculateAllCreditScores());
     }
 
     @PutMapping("/admin/sellers/qualification")

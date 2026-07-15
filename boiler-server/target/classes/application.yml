@@ -3,11 +3,32 @@ spring:
     name: boiler-server
   datasource:
     url: jdbc:mysql://localhost:3306/boiler-jun?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: a
-    password: a
+    username: root
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
+app:
+  file-storage:
+    seller-qualification-dir: uploads/seller-qualification
+  jwt:
+    issuer: boiler-server
+    secret: boiler-server-jwt-secret-key-change-me-2026
+    expiration-minutes: 120
+  vector:
+    table: post_embedding
+    datasource:
+      url: jdbc:postgresql://localhost:5432/vector_db
+      username: postgres
+      password: 123456
+      driver-class-name: org.postgresql.Driver
+  ai:
+    azure:
+      endpoint: "https://apim-ai-gateway-eas-prd.azure-api.net/ec6001"
+      api-key: "5fb1610d96ec4305a4fc909bd24562d6"
+      api-version: 2025-04-01-preview
+      model: gpt-small

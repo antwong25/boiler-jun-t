@@ -14,6 +14,7 @@ import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
+import org.example.boilerserver.service.UserService;
 import org.example.constant.OrderConstant;
 import org.example.constant.ReviewConstant;
 import org.example.constant.TransactionConstant;
@@ -48,6 +49,8 @@ class ReviewServiceImplTest {
     private UserMapper userMapper;
     @Mock
     private SellerMapper sellerMapper;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private ReviewServiceImpl reviewService;
@@ -130,6 +133,7 @@ class ReviewServiceImplTest {
         assertEquals("好评", result.getRatingLabel());
         verify(reviewMapper).insert(any(ReviewEntity.class));
         verify(sellerMapper).update(any(SellerEntity.class));
+        verify(userService).recalculateCreditScore("seller001");
     }
 
     @Test
@@ -150,6 +154,7 @@ class ReviewServiceImplTest {
         assertEquals("差评", result.getRatingLabel());
         verify(reviewMapper).insert(any(ReviewEntity.class));
         verify(sellerMapper, never()).update(any(SellerEntity.class));
+        verify(userService).recalculateCreditScore("buyer001");
     }
 
     @Test

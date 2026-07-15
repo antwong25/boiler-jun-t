@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI二手工业锅炉交易平台 AI Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/home.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 区块2：全局主导航栏 -->
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <ul class="nav-container">
+                    <li class="nav-item"><a href="home.html" class="nav-link active">Home</a></li>
+                    <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                    <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                    <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link">My</a></li>
+                </ul>
+
+                <div class="nav-user-info" id="userInfoBar">
+                    <span class="nav-user-name" id="userNameDisplay"></span>
+                    <span class="nav-user-type" id="userTypeDisplay"></span>
+                    <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                    <button type="button" class="logout-btn" id="logoutBtn" onclick="logout()">退出登录 Log Out</button>
+                </div>
+
+                <div class="nav-guest-actions" id="guestNavActions">
+                    <div class="login-text" id="loginUserInfo">请登录 Please Log In</div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 区块3：帖子搜索 Search区 -->
+        <div class="search-section">
+            <div class="search-bar-row">
+                <input type="text" id="postSearchInput" class="search-keyword-input" placeholder="搜索帖子标题、型号、品牌、城市... Search title, model, brand, city...">
+                <button type="button" id="postSearchBtn" class="search-btn">搜索 Search</button>
+            </div>
+        </div>
+
+        <!-- 区块4：三栏并列内容展示区 -->
+        <div class="content-grid">
+            <!-- 左栏：AI智能对话 AI Chat -->
+            <div class="content-card side-card ai-chat-card">
+                <div class="card-header">🤖 AI智能对话 AI Chat</div>
+                <div class="card-content">
+                    <div class="chat-container home-ai-chat-messages" id="homeAiChatMessages">
+                        <div class="chat-message system chat-system-message">
+                            <span class="chat-system-badge">欢迎使用AI锅炉助手 Welcome to AI Boiler Assistant</span>
+                        </div>
+                        <div class="chat-message ai chat-ai-message">
+                            <div class="chat-ai-bubble">
+                                您好！我是您的AI锅炉助手。Hello! I am your AI boiler assistant. 我可以帮您 I can help with:
+                                <ul class="chat-ai-list">
+                                    <li>推荐合适的锅炉型号 Recommend suitable boiler models</li>
+                                    <li>解答锅炉技术问题 Answer boiler technical questions</li>
+                                    <li>提供行情分析 Provide market insights</li>
+                                    <li>协助交易流程 Assist with the transaction process</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area home-ai-input-row">
+                        <input type="text" id="homeAiChatInput" class="home-ai-input" placeholder="请输入您的问题...">
+                        <button type="button" id="homeAiChatSendBtn" class="home-ai-send-btn">
+                            发送 Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间栏：最新转让 Latest Listings -->
+            <div class="content-card">
+                <div class="card-header">[最新转让 Latest Listings] 二手工业锅炉</div>
+                <div class="card-content" id="latestPostList">
+                    <div class="product-loading">加载中... Loading...</div>
+                </div>
+            </div>
+
+            <!-- 右栏：广告推广 Advertising -->
+            <div class="content-card side-card">
+                <div class="card-header">📢 广告推广 Advertising</div>
+                <div class="card-content">
+                    <div class="advertisement-item">
+                        <div class="ad-visual-card ad-theme-indigo">
+                            <div class="ad-accent-lines">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="ad-corner-mark">Static</span>
+                            <div class="ad-eyebrow">Display Block</div>
+                            <h4 class="ad-title">Example AD</h4>
+                            <p class="ad-subtitle">Placeholder</p>
+                        </div>
+                    </div>
+                    <div class="advertisement-item">
+                        <div class="ad-visual-card ad-theme-coral">
+                            <div class="ad-accent-lines">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="ad-corner-mark">Static</span>
+                            <div class="ad-eyebrow">Visual Slot</div>
+                            <h4 class="ad-title">Example AD</h4>
+                            <p class="ad-subtitle">Placeholder</p>
+                        </div>
+                    </div>
+                    <div class="advertisement-item">
+                        <div class="ad-visual-card ad-theme-cyan">
+                            <div class="ad-accent-lines">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="ad-corner-mark">Static</span>
+                            <div class="ad-eyebrow">Brand Space</div>
+                            <h4 class="ad-title">Example AD</h4>
+                            <p class="ad-subtitle">Placeholder</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 区块5：平台核心服务 Core Services板块 -->
+        <div class="services-section">
+            <h2 class="services-title">平台核心服务 Core Services</h2>
+            <div class="services-grid">
+                <div class="service-item">
+                    <div class="service-icon">📊</div>
+                    <div class="service-title">AI锅炉估价 AI Valuation</div>
+                    <div class="service-desc">免费在线评估锅炉残值 Free online residual value estimation</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon">🔍</div>
+                    <div class="service-title">第三方检测 Third-Party Inspection</div>
+                    <div class="service-desc">专业机构上门检测，出具权威报告 On-site professional inspection with authoritative reports</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon">🚚</div>
+                    <div class="service-title">物流拆装 Logistics & Dismantling</div>
+                    <div class="service-desc">全国锅炉运输、拆装一站式服务 One-stop nationwide transport and dismantling service</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon">💰</div>
+                    <div class="service-title">交易担保 Transaction Protection</div>
+                    <div class="service-desc">平台监管资金，验货后付款 Platform escrow, pay after inspection</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon">👤</div>
+                    <div class="service-title">免费咨询 Free Consultation</div>
+                    <div class="service-desc">1对1工业锅炉交易顾问服务 One-on-one industrial boiler trading consultation</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 区块7：平台保障文字栏 -->
+        <div class="guarantee-section">
+            <span class="guarantee-text">【平台保障】企业认证 Platform Assurance: Verified Business</span>
+            <span class="guarantee-text">资质核验 Qualification Check</span>
+            <span class="guarantee-text">交易担保 Transaction Protection</span>
+            <span class="guarantee-text">售后协调 After-sales Coordination</span>
+        </div>
+
+        <!-- 区块8：客服&商务联系方式栏 -->
+        <div class="contact-section">
+            <span class="contact-text">客服热线：400-XXXX-XXXX Service Hotline: 400-XXXX-XXXX</span>
+            <span class="contact-text">|</span>
+            <span class="contact-text">商务合作：138XXXX8888 Business Cooperation: 138XXXX8888</span>
+        </div>
+
+        <!-- 区块9：页面底部版权备案栏 -->
+        <footer class="footer">
+            <p>AI二手工业锅炉交易平台 AI Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved | 工业锅炉交易合规备案号：XXXX Industrial Boiler Trading Compliance Record No.: XXXX</p>
+        </footer>
+    </div>
+
+    <script>
+        // 配置
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            const token = getToken();
+            if (!token) {
+                return {};
+            }
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        async function apiRequest(path, method, body) {
+            const options = {
+                method: method,
+                headers: getUserHeaders()
+            };
+            if (body) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            const response = await fetch(BASE_URL + path, options);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const payload = await response.json();
+            if (!payload || payload.code !== 1) {
+                throw new Error((payload && payload.msg) || '请求失败');
+            }
+            return payload;
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) {
+                return '面议 Negotiable';
+            }
+            return '¥' + Number(price).toLocaleString('zh-CN');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) {
+                return '';
+            }
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            if (diffHours < 1) {
+                return '刚刚 Just now';
+            }
+            if (diffHours < 24) {
+                return diffHours + '小时前 / ' + diffHours + 'h ago';
+            }
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) {
+                return diffDays + '天前 / ' + diffDays + 'd ago';
+            }
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        function escapeHtml(str) {
+            if (!str) {
+                return '';
+            }
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function resolvePostImageUrl(mediaFiles) {
+            const fallback = 'images/boiler_img_example.jpeg';
+            if (!mediaFiles || !String(mediaFiles).trim()) {
+                return fallback;
+            }
+
+            const raw = String(mediaFiles).trim();
+            let firstItem = raw;
+
+            if (raw.startsWith('[')) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const first = parsed[0];
+                        if (typeof first === 'string') {
+                            firstItem = first;
+                        } else if (first && typeof first === 'object') {
+                            firstItem = first.url || first.path || first.name || raw;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('mediaFiles JSON 解析失败，回退为字符串处理:', error);
+                }
+            }
+
+            if (typeof firstItem === 'string' && firstItem.indexOf(',') !== -1) {
+                firstItem = firstItem.split(',')[0];
+            }
+
+            firstItem = String(firstItem || '').trim();
+            return firstItem || fallback;
+        }
+
+        let homeAiRecentMessages = [];
+        function scrollHomeAiChatToBottom() {
+            const container = document.getElementById('homeAiChatMessages');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function appendHomeAiMessage(role, html) {
+            const container = document.getElementById('homeAiChatMessages');
+            if (!container) {
+                return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chat-message ' + role;
+            wrapper.style.marginBottom = '15px';
+            wrapper.style.display = 'flex';
+            wrapper.style.justifyContent = role === 'user' ? 'flex-end' : 'flex-start';
+
+            const bubble = document.createElement('div');
+            bubble.style.padding = '10px 15px';
+            bubble.style.borderRadius = '8px';
+            bubble.style.maxWidth = '80%';
+            bubble.style.fontSize = '14px';
+            bubble.style.lineHeight = '1.6';
+            bubble.style.whiteSpace = 'normal';
+            bubble.style.wordBreak = 'break-word';
+            if (role === 'user') {
+                bubble.style.backgroundColor = '#e8f0fe';
+                bubble.style.color = '#333';
+            } else {
+                bubble.style.backgroundColor = '#667eea';
+                bubble.style.color = '#fff';
+            }
+            bubble.innerHTML = html;
+            wrapper.appendChild(bubble);
+            container.appendChild(wrapper);
+            scrollHomeAiChatToBottom();
+        }
+
+        function buildHomeAiResultHtml(results) {
+            if (!results || !results.length) {
+                return '';
+            }
+
+            let html = '<div class="home-ai-result-title">为你找到这些相关帖子 Here are some matching posts for you:</div>';
+            results.slice(0, 3).forEach(item => {
+                const post = item && item.post ? item.post : {};
+                const title = escapeHtml(post.title || '锅炉转让 Boiler Listing');
+                const price = escapeHtml(formatPrice(post.price));
+                const href = 'postDetail.html?postId=' + encodeURIComponent(post.postId || '');
+                html += '<div class="home-ai-result-item">';
+                html += '<a href="' + href + '" class="home-ai-result-link">' + title + '</a>';
+                html += '<div class="home-ai-result-price">' + price + '</div>';
+                html += '</div>';
+            });
+            return html;
+        }
+
+        async function sendHomeAiMessage() {
+            const input = document.getElementById('homeAiChatInput');
+            const sendBtn = document.getElementById('homeAiChatSendBtn');
+            if (!input || !sendBtn) {
+                return;
+            }
+
+            const content = input.value.trim();
+            if (!content) {
+                input.focus();
+                return;
+            }
+
+            const recentMessagesForRequest = homeAiRecentMessages.slice(-5);
+            appendHomeAiMessage('user', escapeHtml(content));
+            homeAiRecentMessages.push({ role: 'user', content: content });
+            homeAiRecentMessages = homeAiRecentMessages.slice(-10);
+            input.value = '';
+            sendBtn.disabled = true;
+            sendBtn.textContent = '发送中... Sending...';
+
+            try {
+                const data = await apiRequest('/post/ai-chat', 'POST', {
+                    currentUserInput: content,
+                    recentMessages: recentMessagesForRequest,
+                    limit: 3
+                });
+
+                const response = data && data.data ? data.data : {};
+                const replyText = response.assistantReply || '我先帮你看了一下，你可以再补充城市、吨位或锅炉类型。You can also add city, capacity, or boiler type.';
+                const replyHtml = escapeHtml(replyText).replace(/\n/g, '<br>') + buildHomeAiResultHtml(response.results);
+                appendHomeAiMessage('ai', replyHtml);
+                homeAiRecentMessages.push({ role: 'assistant', content: replyText });
+                homeAiRecentMessages = homeAiRecentMessages.slice(-10);
+            } catch (error) {
+                console.error('首页 AI 对话失败:', error);
+                const message = error && error.message ? error.message : 'AI 助手暂时不可用，请稍后再试。AI assistant is temporarily unavailable, please try again later.';
+                appendHomeAiMessage('ai', '抱歉，本次请求失败： Sorry, this request failed: ' + escapeHtml(message));
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送 Send';
+                input.focus();
+            }
+        }
+
+        function applyGuestNavigation() {
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            const userId = user.userId || localStorage.getItem('userId');
+            const username = user.username || localStorage.getItem('username') || '用户';
+            const userType = user.userType || localStorage.getItem('userType') || '';
+            const isSeller = userType === 'SELLER';
+
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+            const sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? `userDetail.html?userId=${userId}` : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' :
+                    userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? `qualification.html?userId=${userId}` : 'qualification.html';
+            }
+        }
+
+        // 检查用户登录 Login状态
+        async function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username') || '用户';
+            const userType = localStorage.getItem('userType') || '';
+            console.log('Checking login status - token:', token ? 'exists' : 'none', 'userId:', userId);
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: userType
+            });
+
+            try {
+                const user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新首页用户状态失败:', error);
+            }
+        }
+
+        async function loadUserProfile() {
+            const data = await apiRequest('/user/profile/me', 'GET');
+            if (data.code === 1 && data.data) {
+                const user = data.data;
+                if (user.username) {
+                    localStorage.setItem('username', user.username);
+                }
+                if (user.userType) {
+                    localStorage.setItem('userType', user.userType);
+                }
+                return user;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+
+        // 退出登录 Log Out
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadLatestPosts() {
+            const container = document.getElementById('latestPostList');
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '<div class="product-loading">加载中... Loading...</div>';
+
+            try {
+                const data = await apiRequest('/post/page?pageNum=1&pageSize=4', 'GET');
+                const page = data && data.data ? data.data : null;
+                const posts = page && Array.isArray(page.records) ? page.records : [];
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<div class="product-empty">暂无转让信息 No listings yet<br><br><small>请先登录后发布锅炉转让帖子 Please log in to publish a boiler listing</small></div>';
+                    return;
+                }
+
+                renderLatestPosts(posts);
+            } catch (error) {
+                console.error('加载首页 Home帖子失败:', error);
+                container.innerHTML = '<div class="product-empty">帖子加载失败 Failed to load posts<br><br><small>请确认后端服务已启动 Please make sure the backend service is running</small></div>';
+            }
+        }
+
+        function goToSearchResult(keyword) {
+            const normalized = (keyword || '').trim();
+            if (!normalized) {
+                window.location.href = 'boiler-list.html';
+                return;
+            }
+            window.location.href = 'boiler-list.html?keyword=' + encodeURIComponent(normalized);
+        }
+
+        function renderLatestPosts(posts) {
+            const container = document.getElementById('latestPostList');
+            let html = '';
+
+            posts.forEach(post => {
+                const boiler = post.boilerDetail || {};
+                const tag = [];
+                if (boiler.boilerType === 'STEAM') {
+                    tag.push('蒸汽锅炉 Steam Boiler');
+                } else if (boiler.boilerType === 'HOT_WATER') {
+                    tag.push('热水锅炉 Hot Water Boiler');
+                } else if (boiler.boilerType) {
+                    tag.push(boiler.boilerType);
+                }
+                if (boiler.tonnage) {
+                    tag.push(boiler.tonnage + '吨');
+                }
+
+                const tagText = tag.length ? tag.join(' ') : '锅炉 Boiler';
+                const title = escapeHtml(post.title || '锅炉转让 Boiler Listing');
+                const description = escapeHtml((post.description || '').substring(0, 50));
+                const city = escapeHtml(post.city || '未知地区 Unknown Region');
+                const publishTime = escapeHtml(formatDate(post.publishTime || post.updateTime));
+                const price = escapeHtml(formatPrice(post.price));
+                const detailHref = 'postDetail.html?postId=' + encodeURIComponent(post.postId);
+                const imageUrl = escapeHtml(resolvePostImageUrl(post.mediaFiles));
+
+                html += '<div class="product-item">';
+                html += '<div class="product-main">';
+                html += '<a href="' + detailHref + '" class="product-image-link">';
+                html += '<img src="' + imageUrl + '" alt="' + title + '" class="product-image" onerror="this.onerror=null;this.src=\'images/boiler_img_example.jpeg\'">';
+                html += '</a>';
+                html += '<div class="product-info">';
+                html += '<span class="product-tag">' + escapeHtml(tagText) + '</span>';
+                html += '<div class="product-title">' + title + '</div>';
+                if (description) {
+                    html += '<div class="product-desc">' + description + '</div>';
+                }
+                html += '<div class="product-meta">' + city + (publishTime ? ' | ' + publishTime : '') + '</div>';
+                html += '<div class="product-price">' + price + '</div>';
+                html += '<a href="' + detailHref + '" class="view-detail-btn">查看详情 View Details</a>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '<div class="section-more-wrap">';
+            html += '<a href="boiler-list.html" class="more-link">查看更多转让信息 >> View more listings >></a>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 处理顶部登录 Login区块的点击事件
+        function handleTopLoginSectionEvents() {
+            const loginUserInfo = document.getElementById('loginUserInfo');
+            console.log('Setting up click handler for loginUserInfo');
+
+            // 登录 Login信息点击事件
+            if (loginUserInfo) {
+                loginUserInfo.addEventListener('click', function() {
+                    console.log('Login info clicked');
+                    const token = localStorage.getItem('token');
+                    console.log('Token:', token);
+
+                    if (!token) {
+                        // 未登录 Login状态，跳转到login页面并记录当前页面
+                        console.log('Redirecting to login page');
+                        localStorage.setItem('redirectUrl', window.location.href);
+                        window.location.href = 'login.html';
+                    } else {
+                        // 已登录 Login状态，跳转到用户详情页
+                        console.log('Already logged in, redirecting to user detail');
+                        const userId = localStorage.getItem('userId');
+                        window.location.href = `userDetail.html?userId=${userId}`;
+                    }
+                });
+            } else {
+                console.log('loginUserInfo element not found');
+            }
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM content loaded');
+
+            // 检查登录 Login状态
+            checkLoginStatus();
+
+            // 处理顶部登录 Login区块的点击事件
+            handleTopLoginSectionEvents();
+
+            // 加载首页 Home最新帖子
+            loadLatestPosts();
+
+            const homeAiChatInput = document.getElementById('homeAiChatInput');
+            const homeAiChatSendBtn = document.getElementById('homeAiChatSendBtn');
+            const postSearchInput = document.getElementById('postSearchInput');
+            const postSearchBtn = document.getElementById('postSearchBtn');
+            if (homeAiChatSendBtn) {
+                homeAiChatSendBtn.addEventListener('click', sendHomeAiMessage);
+            }
+            if (homeAiChatInput) {
+                homeAiChatInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        sendHomeAiMessage();
+                    }
+                });
+            }
+            if (postSearchBtn) {
+                postSearchBtn.addEventListener('click', function() {
+                    goToSearchResult(postSearchInput ? postSearchInput.value : '');
+                });
+            }
+            if (postSearchInput) {
+                postSearchInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        goToSearchResult(postSearchInput.value);
+                    }
+                });
+            }
+
+
+            // 绑定事件
+
+            // 为所有内容卡片添加淡入动画
+            const cards = document.querySelectorAll('.content-card, .services-section, .guarantee-section, .contact-section');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // 为服务图标添加动画
+            const serviceIcons = document.querySelectorAll('.service-icon');
+            serviceIcons.forEach((icon, index) => {
+                icon.style.opacity = '0';
+                icon.style.transform = 'scale(0.5) rotate(-180deg)';
+                setTimeout(() => {
+                    icon.style.transition = 'all 0.5s ease-out';
+                    icon.style.opacity = '1';
+                    icon.style.transform = 'scale(1) rotate(0deg)';
+                }, index * 150);
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -18,6 +18,8 @@ public interface UserMapper {
 
     int update(UserEntity userEntity);
 
+    List<UserEntity> listAllUsers();
+
     List<UserEntity> listUsers(AdminUserQueryDTO queryDTO);
 
     int countAdministratorByUserId(String userId);

@@ -5,13 +5,16 @@ import org.example.boilercommon.Result;
 import org.example.boilerpojo.AdminPostQueryDTO;
 import org.example.boilerpojo.PostAiChatRequestDTO;
 import org.example.boilerpojo.PostAiChatResponseVO;
+import org.example.boilerpojo.BoilerDetailDTO;
 import org.example.boilerpojo.PostCreateDTO;
+import org.example.boilerpojo.PostEmbeddingRecalculateVO;
 import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostSemanticSearchDTO;
 import org.example.boilerpojo.PostSemanticSearchVO;
 import org.example.boilerpojo.PostUpdateDTO;
 import org.example.boilerpojo.PostVO;
 import org.example.boilerserver.service.PostAiChatService;
+import org.example.boilerserver.service.PostEmbeddingService;
 import org.example.boilerserver.service.PostSemanticSearchService;
 import org.example.boilerserver.service.PostService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,15 +34,18 @@ public class PostController {
     private final PostService postService;
     private final PostSemanticSearchService postSemanticSearchService;
     private final PostAiChatService postAiChatService;
+    private final PostEmbeddingService postEmbeddingService;
 
     public PostController(
             PostService postService,
             PostSemanticSearchService postSemanticSearchService,
-            PostAiChatService postAiChatService
+            PostAiChatService postAiChatService,
+            PostEmbeddingService postEmbeddingService
     ) {
         this.postService = postService;
         this.postSemanticSearchService = postSemanticSearchService;
         this.postAiChatService = postAiChatService;
+        this.postEmbeddingService = postEmbeddingService;
     }
 
     // 卖家发布帖子时同步提交锅炉详情
@@ -115,5 +121,15 @@ public class PostController {
     @PostMapping("/ai-chat")
     public Result<PostAiChatResponseVO> aiChat(@RequestBody PostAiChatRequestDTO dto) {
         return Result.success(postAiChatService.chat(dto));
+    }
+
+    @PostMapping("/admin/embedding/vectorize-all")
+    public Result<PostEmbeddingRecalculateVO> vectorizeAllPosts() {
+        return Result.success(postEmbeddingService.vectorizeAllPosts());
+    }
+
+    @PostMapping("/ai-valuation")
+    public Result<String> aiValuation(@RequestBody BoilerDetailDTO boilerDetail) {
+        return Result.success(postService.evaluateAiValuationRange(boilerDetail));
     }
 }

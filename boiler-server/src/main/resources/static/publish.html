@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布锅炉信息 - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/publish.css">
+    <style>
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .image-preview-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .delete-image-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: rgba(255, 82, 82);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-image-btn:hover {
+            background: rgba(255, 59, 48);
+        }
+    </style>
+</head>
+<body>
+    <div class="header-title">
+        <div class="header-title-inner">
+            <h1 class="main-title">发布锅炉转让信息 Publish Boiler Listing</h1>
+            <p class="sub-title">填写锅炉详情，发布转让信息 Fill in boiler details and publish your listing</p>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link active">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-section">
+            <h2 class="section-title">锅炉基本信息 Boiler Information</h2>
+            <p class="section-desc">填写锅炉的基本信息，带 * 的为必填项 Fields marked with * are required</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="boilerType"><span class="required">*</span> 锅炉类型 Boiler Type</label>
+                    <select id="boilerType" class="form-select" required>
+                        <option value="">请选择 Please select</option>
+                        <option value="STEAM">蒸汽锅炉 Steam Boiler</option>
+                        <option value="HOT_WATER">热水锅炉 Hot Water Boiler</option>
+                    </select>
+                    <div class="field-error" id="boilerTypeError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="brand"><span class="required">*</span> 品牌 Brand</label>
+                    <input type="text" id="brand" class="form-input" placeholder="如：方快锅炉、郑锅、杭锅">
+                    <div class="field-error" id="brandError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="model"><span class="required">*</span> 型号 Model</label>
+                    <input type="text" id="model" class="form-input" placeholder="如：WNS10-1.25-Q">
+                    <div class="field-error" id="modelError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="fuelType"><span class="required">*</span> 燃料类型 Fuel Type</label>
+                    <select id="fuelType" class="form-select" required>
+                        <option value="">请选择 Please select</option>
+                        <option value="天然气">天然气 Natural Gas</option>
+                        <option value="柴油">柴油 Diesel</option>
+                        <option value="煤">煤 Coal</option>
+                        <option value="生物质">生物质 Biomass</option>
+                        <option value="电">电 Electric</option>
+                        <option value="重油">重油 Heavy Oil</option>
+                    </select>
+                    <div class="field-error" id="fuelTypeError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="tonnage">吨位（吨） Capacity (ton)</label>
+                    <input type="number" id="tonnage" class="form-input" placeholder="如：10" step="0.1" min="0.1">
+                    <div class="field-error" id="tonnageError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="workingPressure"><span class="required">*</span> 工作压力（MPa） Working Pressure (MPa)</label>
+                    <input type="number" id="workingPressure" class="form-input" placeholder="如：1.25" step="0.01" min="0.01">
+                    <div class="field-error" id="workingPressureError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="noxEmissions"><span class="required">*</span> 氮氧化物排放（mg/m³） NOx Emissions (mg/m³)</label>
+                    <input type="number" id="noxEmissions" class="form-input" placeholder="如：30" step="0.1" min="0.1">
+                    <div class="field-error" id="noxEmissionsError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="footprintArea"><span class="required">*</span> 占地面积（m²） Footprint Area (m²)</label>
+                    <input type="number" id="footprintArea" class="form-input" placeholder="如：12" step="0.1" min="0.1">
+                    <div class="field-error" id="footprintAreaError"></div>
+                </div>
+
+                <div class="form-group" id="evaporationGroup">
+                    <label class="form-label" for="evaporationCapacity"><span class="required">*</span> 蒸发量（t/h） Evaporation Capacity (t/h)</label>
+                    <input type="number" id="evaporationCapacity" class="form-input" placeholder="如：10" step="0.1" min="0.1">
+                    <div class="field-error" id="evaporationCapacityError"></div>
+                </div>
+
+                <div class="form-group u-hidden" id="thermalPowerGroup">
+                    <label class="form-label" for="ratedThermalPower"><span class="required">*</span> 额定热功率（kW） Rated Thermal Power (kW)</label>
+                    <input type="number" id="ratedThermalPower" class="form-input" placeholder="如：7000" step="0.1" min="0.1">
+                    <div class="field-error" id="ratedThermalPowerError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="thermalEfficiency">热效率（%） Thermal Efficiency (%)</label>
+                    <input type="number" id="thermalEfficiency" class="form-input" placeholder="如：93.5" step="0.1" min="0.1">
+                    <div class="field-error" id="thermalEfficiencyError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="ratedOutletWaterTemperature">额定出水温度（℃） Rated Outlet Water Temperature (℃)</label>
+                    <input type="number" id="ratedOutletWaterTemperature" class="form-input" placeholder="如：95" step="0.1" min="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="equipmentCondition"><span class="required">*</span> 设备成色 Condition</label>
+                    <select id="equipmentCondition" class="form-select" required>
+                        <option value="">请选择 Please select</option>
+                        <option value="良好">良好 Good</option>
+                        <option value="优秀">优秀 Excellent</option>
+                        <option value="一般">一般 Fair</option>
+                        <option value="需维修">需维修 Needs Repair</option>
+                    </select>
+                    <div class="field-error" id="equipmentConditionError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="usageHours">使用时长（小时） Usage Hours</label>
+                    <input type="number" id="usageHours" class="form-input" placeholder="如：3000" step="1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="manufactureDate"><span class="required">*</span> 生产日期 Manufacture Date</label>
+                    <input type="date" id="manufactureDate" class="form-input">
+                    <div class="field-error" id="manufactureDateError"></div>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label" for="applicationScenario">应用场景 Application Scenario</label>
+                    <input type="text" id="applicationScenario" class="form-input" placeholder="如：化工、食品、纺织等行业 e.g. chemical, food, textile industries">
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label" for="testReport">检测报告 Test Report</label>
+                    <input type="text" id="testReport" class="form-input" placeholder="检测报告编号或链接（选填） Test report number or link (optional)">
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <h2 class="section-title">帖子信息 Listing Information</h2>
+            <p class="section-desc">设置转让价格、城市等展示信息 Set price, city, and other listing details</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="title">帖子标题 Listing Title</label>
+                    <input type="text" id="title" class="form-input" placeholder="留空则自动生成（品牌+型号+锅炉类型） Leave blank to auto-generate (brand + model + boiler type)">
+                    <div class="field-hint">不填则自动生成，如：方快WNS10-1.25-Q 蒸汽锅炉 Leave blank to auto-generate, e.g. Fangkuai WNS10-1.25-Q Steam Boiler</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="price"><span class="required">*</span> 转让价格（元） Listing Price (CNY)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="price" class="form-input" placeholder="如：185000" step="0.01" min="0.01" style="flex: 1;">
+                        <button type="button" class="btn btn-primary" id="aiValuationBtn" onclick="requestAiValuation()">
+                            <span class="btn-text">AI 估价 AI Valuation</span>
+                        </button>
+                    </div>
+                    <div class="field-error" id="priceError"></div>
+                    <div id="aiValuationResult" class="ai-valuation-result" style="display: none; margin-top: 8px; padding: 10px; background-color: #f0f9ff; border: 1px solid #91caff; border-radius: 4px; color: #003d80;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="city">所在城市 City</label>
+                    <input type="text" id="city" class="form-input" placeholder="如：江苏、浙江杭州">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="mediaFiles">图片 Images</label>
+                    <input type="file" id="imageUpload" class="form-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple>
+                    <div class="field-hint">支持上传多张图片（PNG、JPG、GIF、WEBP） Supports multiple images (PNG, JPG, GIF, WEBP)</div>
+                    <div id="imagePreviewContainer" class="image-preview-container"></div>
+                    <input type="hidden" id="mediaFiles" value="">
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label" for="description">帖子描述</label>
+                    <textarea id="description" class="form-textarea" placeholder="详细描述锅炉的设备状况、包含辅机、质保服务等信息（选填） Describe the condition, accessories, warranty, etc. (optional)"></textarea>
+                </div>
+            </div>
+
+            <div class="submit-row">
+                <button type="button" class="cancel-btn" onclick="window.location.href='home.html'">取消 Cancel</button>
+                <button type="button" class="submit-btn" id="submitBtn" onclick="submitPost()">发布信息 Publish</button>
+            </div>
+
+            <div class="result-message" id="resultMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // ======================== 配置 ========================
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        // ======================== 工具函数 ========================
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            var token = getToken();
+            if (!token) {
+                return {};
+            }
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        // ======================== 登录 Login状态 ========================
+        function applyGuestNavigation() {
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            var userId = user.userId || localStorage.getItem('userId');
+            var username = user.username || localStorage.getItem('username') || '用户';
+            var userType = user.userType || localStorage.getItem('userType') || '';
+            var isSeller = userType === 'SELLER';
+
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userNameDisplay = document.getElementById('userNameDisplay');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+            var sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? 'userDetail.html?userId=' + encodeURIComponent(userId) : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' : userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? 'qualification.html?userId=' + encodeURIComponent(userId) : 'qualification.html';
+            }
+        }
+
+        async function loadUserProfile() {
+            var response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            var data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            var token = getToken();
+            var userId = localStorage.getItem('userId');
+            var username = localStorage.getItem('username') || '用户';
+            var userType = localStorage.getItem('userType') || '';
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                localStorage.setItem('redirectUrl', window.location.href);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: userType
+            });
+
+            try {
+                var user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('redirectUrl');
+            window.location.href = 'login.html';
+        }
+
+        // ======================== 锅炉类型 Boiler Type切换 ========================
+        document.getElementById('boilerType').addEventListener('change', function () {
+            var type = this.value;
+            var evaporationGroup = document.getElementById('evaporationGroup');
+            var thermalPowerGroup = document.getElementById('thermalPowerGroup');
+
+            if (type === 'STEAM') {
+                evaporationGroup.style.display = '';
+                thermalPowerGroup.style.display = 'none';
+            } else if (type === 'HOT_WATER') {
+                evaporationGroup.style.display = 'none';
+                thermalPowerGroup.style.display = '';
+            } else {
+                evaporationGroup.style.display = '';
+                thermalPowerGroup.style.display = 'none';
+            }
+        });
+
+        // ======================== 表单验证 ========================
+        function clearAllErrors() {
+            document.querySelectorAll('.field-error').forEach(function (el) {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('.form-input.error, .form-select.error').forEach(function (el) {
+                el.classList.remove('error');
+            });
+        }
+
+        function showFieldError(fieldId, message) {
+            var field = document.getElementById(fieldId);
+            var errorEl = document.getElementById(fieldId + 'Error');
+            if (field) field.classList.add('error');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+        }
+
+        // 存储已上传的图片 ImagesURL
+        var uploadedImageUrls = [];
+
+        function validateForm() {
+            clearAllErrors();
+            var isValid = true;
+
+            var boilerType = document.getElementById('boilerType').value.trim();
+            if (!boilerType) {
+                showFieldError('boilerType', '请选择 Please select锅炉类型 Boiler Type');
+                isValid = false;
+            }
+
+            var brand = document.getElementById('brand').value.trim();
+            if (!brand) {
+                showFieldError('brand', '请输入品牌 Brand');
+                isValid = false;
+            }
+
+            var model = document.getElementById('model').value.trim();
+            if (!model) {
+                showFieldError('model', '请输入型号 Model');
+                isValid = false;
+            }
+
+            var fuelType = document.getElementById('fuelType').value.trim();
+            if (!fuelType) {
+                showFieldError('fuelType', '请选择 Please select燃料类型 Fuel Type');
+                isValid = false;
+            }
+
+            var workingPressure = parseFloat(document.getElementById('workingPressure').value);
+            if (!workingPressure || workingPressure <= 0) {
+                showFieldError('workingPressure', '工作压力必须大于 0');
+                isValid = false;
+            }
+
+            var noxEmissions = parseFloat(document.getElementById('noxEmissions').value);
+            if (!noxEmissions || noxEmissions <= 0) {
+                showFieldError('noxEmissions', '氮氧化物排放必须大于 0');
+                isValid = false;
+            }
+
+            var footprintArea = parseFloat(document.getElementById('footprintArea').value);
+            if (!footprintArea || footprintArea <= 0) {
+                showFieldError('footprintArea', '占地面积必须大于 0');
+                isValid = false;
+            }
+
+            var equipmentCondition = document.getElementById('equipmentCondition').value.trim();
+            if (!equipmentCondition) {
+                showFieldError('equipmentCondition', '请选择 Please select设备成色 Condition');
+                isValid = false;
+            }
+
+            if (boilerType === 'STEAM') {
+                var evap = parseFloat(document.getElementById('evaporationCapacity').value);
+                if (!evap || evap <= 0) {
+                    showFieldError('evaporationCapacity', '蒸发量必须大于 0');
+                    isValid = false;
+                }
+            } else if (boilerType === 'HOT_WATER') {
+                var thermalPower = parseFloat(document.getElementById('ratedThermalPower').value);
+                if (!thermalPower || thermalPower <= 0) {
+                    showFieldError('ratedThermalPower', '额定热功率必须大于 0');
+                    isValid = false;
+                }
+            }
+
+            var manufactureDate = document.getElementById('manufactureDate').value.trim();
+            if (!manufactureDate) {
+                showFieldError('manufactureDate', '请选择 Please select生产日期 Manufacture Date');
+                isValid = false;
+            }
+
+            var tonnage = parseFloat(document.getElementById('tonnage').value);
+            if (tonnage !== undefined && !isNaN(tonnage) && tonnage <= 0) {
+                showFieldError('tonnage', '吨位必须大于 0');
+                isValid = false;
+            }
+
+            var thermalEfficiency = parseFloat(document.getElementById('thermalEfficiency').value);
+            if (thermalEfficiency !== undefined && !isNaN(thermalEfficiency) && thermalEfficiency <= 0) {
+                showFieldError('thermalEfficiency', '热效率必须大于 0');
+                isValid = false;
+            }
+
+            var usageHours = parseFloat(document.getElementById('usageHours').value);
+            if (usageHours !== undefined && !isNaN(usageHours) && usageHours < 0) {
+                showFieldError('usageHours', '使用时长不能为负数');
+                isValid = false;
+            }
+
+            var price = parseFloat(document.getElementById('price').value);
+            if (!price || price <= 0) {
+                showFieldError('price', '价格必须大于 0');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // 图片 Images上传相关函数
+        async function uploadImage(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+
+            var headers = {};
+            var token = getToken();
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            var response = await fetch(BASE_URL + '/file/upload/post-image', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('上传失败');
+            }
+
+            var data = await response.json();
+            if (data.code !== 1) {
+                throw new Error(data.msg || '上传失败');
+            }
+
+            return data.data;
+        }
+
+        function addImagePreview(fileUrl, index) {
+            var container = document.getElementById('imagePreviewContainer');
+            var previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview-item';
+            previewDiv.dataset.index = index;
+            
+            var img = document.createElement('img');
+            img.src = fileUrl;
+            img.className = 'preview-image';
+            
+            var deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-image-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = function() {
+                removeImage(index);
+            };
+            
+            previewDiv.appendChild(img);
+            previewDiv.appendChild(deleteBtn);
+            container.appendChild(previewDiv);
+        }
+
+        function removeImage(index) {
+            uploadedImageUrls.splice(index, 1);
+            document.getElementById('mediaFiles').value = uploadedImageUrls.join(',');
+            renderImagePreviews();
+        }
+
+        function renderImagePreviews() {
+            var container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            uploadedImageUrls.forEach(function(url, index) {
+                addImagePreview(url, index);
+            });
+        }
+
+        // 监听文件选择
+        document.getElementById('imageUpload').addEventListener('change', async function(e) {
+            var files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            var submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '上传中...';
+
+            try {
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var result = await uploadImage(file);
+                    uploadedImageUrls.push(result.fileUrl);
+                }
+                
+                document.getElementById('mediaFiles').value = uploadedImageUrls.join(',');
+                renderImagePreviews();
+            } catch (error) {
+                alert('图片 Images上传失败: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '发布信息 Publish';
+                e.target.value = '';
+            }
+        });
+
+        // ======================== 提交帖子 ========================
+        async function submitPost() {
+            if (!validateForm()) return;
+
+            var submitBtn = document.getElementById('submitBtn');
+            var resultMessage = document.getElementById('resultMessage');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+            resultMessage.className = 'result-message';
+
+            var sellerId = localStorage.getItem('userId');
+            if (!sellerId) {
+                resultMessage.className = 'result-message error';
+                resultMessage.textContent = '未获取到卖家信息，请重新登录 Seller info not found, please log in again';
+                resultMessage.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '发布信息 Publish';
+                return;
+            }
+
+            var boilerType = document.getElementById('boilerType').value.trim();
+
+            var boilerDetail = {
+                model: document.getElementById('model').value.trim(),
+                brand: document.getElementById('brand').value.trim(),
+                boilerType: boilerType,
+                fuelType: document.getElementById('fuelType').value.trim(),
+                workingPressure: parseFloat(document.getElementById('workingPressure').value),
+                noxEmissions: parseFloat(document.getElementById('noxEmissions').value),
+                footprintArea: parseFloat(document.getElementById('footprintArea').value),
+                manufactureDate: document.getElementById('manufactureDate').value.trim(),
+                equipmentCondition: document.getElementById('equipmentCondition').value.trim()
+            };
+
+            // 吨位（选填）
+            var tonnage = parseFloat(document.getElementById('tonnage').value);
+            if (tonnage && tonnage > 0) boilerDetail.tonnage = tonnage;
+
+            // 蒸发量（蒸汽锅炉 Steam Boiler）
+            if (boilerType === 'STEAM') {
+                boilerDetail.evaporationCapacity = parseFloat(document.getElementById('evaporationCapacity').value);
+            }
+
+            // 额定热功率（热水锅炉 Hot Water Boiler）
+            if (boilerType === 'HOT_WATER') {
+                boilerDetail.ratedThermalPower = parseFloat(document.getElementById('ratedThermalPower').value);
+            }
+
+            // 可选字段
+            var thermalEfficiency = parseFloat(document.getElementById('thermalEfficiency').value);
+            if (thermalEfficiency && thermalEfficiency > 0) boilerDetail.thermalEfficiency = thermalEfficiency;
+
+            var usageHours = parseFloat(document.getElementById('usageHours').value);
+            if (usageHours !== undefined && !isNaN(usageHours) && usageHours >= 0) boilerDetail.usageHours = usageHours;
+
+            var ratedOutletWaterTemperature = parseFloat(document.getElementById('ratedOutletWaterTemperature').value);
+            if (ratedOutletWaterTemperature && ratedOutletWaterTemperature > 0) boilerDetail.ratedOutletWaterTemperature = ratedOutletWaterTemperature;
+
+            var applicationScenario = document.getElementById('applicationScenario').value.trim();
+            if (applicationScenario) boilerDetail.applicationScenario = applicationScenario;
+
+            var testReport = document.getElementById('testReport').value.trim();
+            if (testReport) boilerDetail.testReport = testReport;
+
+            var payload = {
+                sellerId: sellerId,
+                price: parseFloat(document.getElementById('price').value),
+                boilerDetail: boilerDetail
+            };
+
+            var title = document.getElementById('title').value.trim();
+            if (title) payload.title = title;
+
+            var city = document.getElementById('city').value.trim();
+            if (city) payload.city = city;
+
+            var description = document.getElementById('description').value.trim();
+            if (description) payload.description = description;
+
+            var mediaFiles = document.getElementById('mediaFiles').value.trim();
+            if (mediaFiles) payload.mediaFiles = mediaFiles;
+
+            try {
+                var response = await fetch(BASE_URL + '/post', {
+                    method: 'POST',
+                    headers: Object.assign({
+                        'Content-Type': 'application/json'
+                    }, getUserHeaders()),
+                    body: JSON.stringify(payload)
+                });
+
+                var data = await response.json();
+
+                if (data.code === 1) {
+                    resultMessage.className = 'result-message success';
+                    resultMessage.textContent = '发布成功！帖子ID：' + data.data.postId + '。状态：待审核。3秒后跳转到锅炉列表页... Published successfully! Post ID: ' + data.data.postId + '. Status: Pending review. Redirecting to the boiler list in 3 seconds...';
+                    resultMessage.style.display = 'block';
+
+                    setTimeout(function () {
+                        window.location.href = 'boiler-list.html';
+                    }, 3000);
+                } else {
+                    resultMessage.className = 'result-message error';
+                    resultMessage.textContent = '发布失败 Publish failed: ' + (data.msg || '未知错误 Unknown error');
+                    resultMessage.style.display = 'block';
+                }
+            } catch (error) {
+                resultMessage.className = 'result-message error';
+                resultMessage.textContent = '网络错误，请稍后重试 Network error, please try again later';
+                resultMessage.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '发布信息 Publish';
+            }
+        }
+
+    // ======================== AI 估值 ========================
+    async function requestAiValuation() {
+        const btn = document.getElementById('aiValuationBtn');
+        const resultDiv = document.getElementById('aiValuationResult');
+        
+        // 先验证必要字段
+        const boilerType = document.getElementById('boilerType').value.trim();
+        const brand = document.getElementById('brand').value.trim();
+        const model = document.getElementById('model').value.trim();
+        const fuelType = document.getElementById('fuelType').value.trim();
+        const workingPressure = parseFloat(document.getElementById('workingPressure').value);
+        const noxEmissions = parseFloat(document.getElementById('noxEmissions').value);
+        const footprintArea = parseFloat(document.getElementById('footprintArea').value);
+        const equipmentCondition = document.getElementById('equipmentCondition').value.trim();
+        const manufactureDate = document.getElementById('manufactureDate').value.trim();
+        
+        // 验证必填字段
+        if (!boilerType) {
+            showFieldError('boilerType', '请先选择锅炉类型 Boiler Type');
+            return;
+        }
+        if (!brand) {
+            showFieldError('brand', '请先输入品牌 Brand');
+            return;
+        }
+        if (!model) {
+            showFieldError('model', '请先输入型号 Model');
+            return;
+        }
+        if (!fuelType) {
+            showFieldError('fuelType', '请先选择燃料类型 Fuel Type');
+            return;
+        }
+        if (!workingPressure || workingPressure <= 0) {
+            showFieldError('workingPressure', '请先输入工作压力');
+            return;
+        }
+        if (!noxEmissions || noxEmissions <= 0) {
+            showFieldError('noxEmissions', '请先输入氮氧化物排放');
+            return;
+        }
+        if (!footprintArea || footprintArea <= 0) {
+            showFieldError('footprintArea', '请先输入占地面积');
+            return;
+        }
+        if (!equipmentCondition) {
+            showFieldError('equipmentCondition', '请先选择设备成色 Condition');
+            return;
+        }
+        if (!manufactureDate) {
+            showFieldError('manufactureDate', '请先选择生产日期 Manufacture Date');
+            return;
+        }
+        
+        // 清除之前的错误提示
+        clearAllErrors();
+        
+        // 禁用按钮，显示加载状态
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-text">估价中... Estimating...</span>';
+        resultDiv.style.display = 'none';
+        
+        try {
+            // 构建请求体
+            const boilerDetail = {
+                model: model,
+                brand: brand,
+                boilerType: boilerType,
+                fuelType: fuelType,
+                workingPressure: workingPressure,
+                noxEmissions: noxEmissions,
+                footprintArea: footprintArea,
+                manufactureDate: manufactureDate,
+                equipmentCondition: equipmentCondition
+            };
+            
+            // 添加可选字段
+            const tonnage = parseFloat(document.getElementById('tonnage').value);
+            if (tonnage && tonnage > 0) boilerDetail.tonnage = tonnage;
+            
+            if (boilerType === 'STEAM') {
+                const evap = parseFloat(document.getElementById('evaporationCapacity').value);
+                if (evap && evap > 0) boilerDetail.evaporationCapacity = evap;
+            } else if (boilerType === 'HOT_WATER') {
+                const thermalPower = parseFloat(document.getElementById('ratedThermalPower').value);
+                if (thermalPower && thermalPower > 0) boilerDetail.ratedThermalPower = thermalPower;
+            }
+            
+            const thermalEfficiency = parseFloat(document.getElementById('thermalEfficiency').value);
+            if (thermalEfficiency && thermalEfficiency > 0) boilerDetail.thermalEfficiency = thermalEfficiency;
+            
+            const usageHours = parseFloat(document.getElementById('usageHours').value);
+            if (usageHours !== undefined && !isNaN(usageHours) && usageHours >= 0) boilerDetail.usageHours = usageHours;
+            
+            const ratedOutletWaterTemperature = parseFloat(document.getElementById('ratedOutletWaterTemperature').value);
+            if (ratedOutletWaterTemperature && ratedOutletWaterTemperature > 0) boilerDetail.ratedOutletWaterTemperature = ratedOutletWaterTemperature;
+            
+            const applicationScenario = document.getElementById('applicationScenario').value.trim();
+            if (applicationScenario) boilerDetail.applicationScenario = applicationScenario;
+            
+            const testReport = document.getElementById('testReport').value.trim();
+            if (testReport) boilerDetail.testReport = testReport;
+            
+            const response = await fetch(BASE_URL + '/post/ai-valuation', {
+                method: 'POST',
+                headers: Object.assign({
+                    'Content-Type': 'application/json'
+                }, getUserHeaders()),
+                body: JSON.stringify(boilerDetail)
+            });
+            
+            const data = await response.json();
+            
+            if (data.code === 1 && data.data) {
+                resultDiv.innerHTML = `<strong>AI 预估价格范围： AI estimated price range: </strong>${data.data}`;
+                resultDiv.style.display = 'block';
+                
+                // 尝试解析价格范围并填入中间值
+                try {
+                    const rangeStr = data.data.replace('CNY ', '');
+                    const [minStr, maxStr] = rangeStr.split(' - ');
+                    const min = parseFloat(minStr);
+                    const max = parseFloat(maxStr);
+                    if (!isNaN(min) && !isNaN(max)) {
+                        const midValue = Math.round((min + max) / 2);
+                        document.getElementById('price').value = midValue;
+                    }
+                } catch (parseErr) {
+                    // 解析失败不影响功能
+                    console.warn('Failed to parse price range', parseErr);
+                }
+            } else {
+                resultDiv.innerHTML = `<span style="color: #d93025;">估价失败： Estimation failed: ${data.msg || '未知错误'}</span>`;
+                resultDiv.style.display = 'block';
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<span style="color: #d93025;">网络错误，请稍后重试 Network error, please try again later</span>`;
+            resultDiv.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-text">AI 估价 AI Valuation</span>';
+        }
+    }
+
+    // ======================== 初始化 ========================
+    checkLoginStatus();
+    </script>
+</body>
+</html>

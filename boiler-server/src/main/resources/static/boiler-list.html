@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>锅炉转让 - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/boiler-list.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <ul class="nav-container">
+                    <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="boiler-list.html" class="nav-link active">Boilers</a></li>
+                    <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                    <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link">My</a></li>
+                </ul>
+                <div class="nav-user-info" id="userInfoBar">
+                    <span class="nav-user-name" id="userNameDisplay"></span>
+                    <span class="nav-user-type" id="userTypeDisplay"></span>
+                    <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                    <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+                </div>
+                <div class="nav-guest-actions" id="guestNavActions">
+                    <a href="login.html" class="login-text">登录 Login</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 筛选 Filter区 -->
+        <div class="search-section">
+            <div class="search-bar-row">
+                <input type="text" id="postSearchInput" class="search-keyword-input" placeholder="搜索帖子标题、型号、品牌、城市... Search title, model, brand, city...">
+                <button type="button" id="postSearchBtn" class="search-btn">搜索 Search</button>
+            </div>
+            <div class="filter-row">
+                <span class="filter-title">筛选</span>
+                <div class="filter-selects">
+                    <div class="filter-select">
+                        <select id="filterBoilerType">
+                            <option value="">全部锅炉 All Boilers</option>
+                            <option value="STEAM">蒸汽锅炉 Steam Boiler</option>
+                            <option value="HOT_WATER">热水锅炉 Hot Water Boiler</option>
+                        </select>
+                    </div>
+                    <div class="filter-select">
+                        <select id="filterTonnage">
+                            <option value="">不限吨位 Any Capacity</option>
+                            <option value="1-4">1-4吨</option>
+                            <option value="5-10">5-10吨</option>
+                            <option value="11-20">11-20吨</option>
+                            <option value="20+">20吨以上</option>
+                        </select>
+                    </div>
+                    <div class="filter-select">
+                        <select id="filterCity">
+                            <option value="">全国 Nationwide</option>
+                            <option value="江苏">江苏</option>
+                            <option value="浙江">浙江</option>
+                            <option value="上海">上海</option>
+                            <option value="广东">广东</option>
+                            <option value="山东">山东</option>
+                            <option value="北京">北京</option>
+                            <option value="河北">河北</option>
+                            <option value="河南">河南</option>
+                            <option value="湖北">湖北</option>
+                            <option value="四川">四川</option>
+                        </select>
+                    </div>
+                    <button class="filter-btn" id="filterBtn" onclick="applyFilter()">筛选 Filter</button>
+                    <button class="filter-reset-btn" onclick="resetFilter()">重置 Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 帖子列表 -->
+        <div class="post-list-section">
+            <h2 class="section-title" id="listTitle">全部锅炉 All Boilers</h2>
+            <div id="postList">
+                <div class="post-loading">加载中... Loading... <span class="loading-spinner"></span></div>
+            </div>
+            <div id="pagination"></div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>二手工业锅炉交易平台 Used Industrial Boiler Trading Platform &copy; 2026 版权所有 All Rights Reserved | 工业锅炉交易合规备案号：XXXX Industrial Boiler Trading Compliance Record No.: XXXX</p>
+        </footer>
+    </div>
+
+    <script>
+        // ======================== 配置 ========================
+        var BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+        var PAGE_SIZE = 10;
+
+        // ======================== 工具函数 ========================
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            var token = getToken();
+            if (!token) {
+                return {};
+            }
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        async function apiRequest(path, method, body) {
+            var options = {
+                method: method,
+                headers: getUserHeaders()
+            };
+            if (body) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            var response = await fetch(BASE_URL + path, options);
+            return await response.json();
+        }
+
+        function buildQueryString(params) {
+            var searchParams = new URLSearchParams();
+            Object.keys(params).forEach(function (key) {
+                if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+                    searchParams.set(key, params[key]);
+                }
+            });
+            var queryString = searchParams.toString();
+            return queryString ? '?' + queryString : '';
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) {
+                return '面议 Negotiable';
+            }
+            return '\u00A5' + Number(price).toLocaleString('zh-CN');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) {
+                return '';
+            }
+            var date = new Date(dateStr);
+            var now = new Date();
+            var diffMs = now - date;
+            var diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            if (diffHours < 1) {
+                return '刚刚 Just now';
+            } else if (diffHours < 24) {
+                return diffHours + '小时前 / ' + diffHours + 'h ago';
+            } else {
+                var diffDays = Math.floor(diffHours / 24);
+                if (diffDays < 7) {
+                    return diffDays + '天前 / ' + diffDays + 'd ago';
+                }
+                return date.toLocaleDateString('zh-CN');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) {
+                return '';
+            }
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function getParam(name) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // ======================== 筛选 Filter功能 ========================
+        function applyFilter() {
+            var params = {};
+            var keyword = document.getElementById('postSearchInput').value.trim();
+            var boilerType = document.getElementById('filterBoilerType').value;
+            var tonnage = document.getElementById('filterTonnage').value;
+            var city = document.getElementById('filterCity').value;
+
+            if (keyword) params.keyword = keyword;
+            if (boilerType) params.boilerType = boilerType;
+            if (tonnage) params.tonnage = tonnage;
+            if (city) params.city = city;
+            params.page = 1;
+
+            var queryString = buildQueryString(params);
+            window.location.href = 'boiler-list.html' + queryString;
+        }
+
+        function resetFilter() {
+            document.getElementById('postSearchInput').value = '';
+            document.getElementById('filterBoilerType').value = '';
+            document.getElementById('filterTonnage').value = '';
+            document.getElementById('filterCity').value = '';
+            window.location.href = 'boiler-list.html';
+        }
+
+        /**
+         * 根据 URL 参数初始化筛选 Filter表单
+         */
+        function initFiltersFromUrl() {
+            var keyword = getParam('keyword');
+            var boilerType = getParam('boilerType');
+            var tonnage = getParam('tonnage');
+            var city = getParam('city');
+
+            if (keyword) document.getElementById('postSearchInput').value = keyword;
+            if (boilerType) document.getElementById('filterBoilerType').value = boilerType;
+            if (tonnage) document.getElementById('filterTonnage').value = tonnage;
+            if (city) document.getElementById('filterCity').value = city;
+
+            // 更新标题显示筛选 Filter条件
+            var title = '全部锅炉 All Boilers';
+            var conditions = [];
+            if (keyword) conditions.push('关键词: ' + keyword);
+            if (boilerType) {
+                conditions.push(boilerType === 'STEAM' ? '蒸汽锅炉 Steam Boiler' : '热水锅炉 Hot Water Boiler');
+            }
+            if (tonnage) conditions.push(tonnage + '吨');
+            if (city) conditions.push(city);
+            if (conditions.length > 0) {
+                title = conditions.join(' / ');
+            }
+            document.getElementById('listTitle').textContent = title;
+        }
+
+        // ======================== 帖子加载 ========================
+        function getCurrentPage() {
+            var page = parseInt(getParam('page') || '1', 10);
+            return isNaN(page) || page < 1 ? 1 : page;
+        }
+
+        function getCurrentFilters() {
+            return {
+                keyword: getParam('keyword'),
+                boilerType: getParam('boilerType'),
+                tonnage: getParam('tonnage'),
+                city: getParam('city'),
+                brand: getParam('brand')
+            };
+        }
+
+        function hasServerSideFilter(filters) {
+            return !!(filters && (filters.keyword || filters.boilerType || filters.city || filters.brand || filters.tonnage));
+        }
+
+        function resolveTonnageParams(tonnage) {
+            if (!tonnage) {
+                return {};
+            }
+
+            if (tonnage === '1-4') {
+                return { tonnageMin: 1, tonnageMax: 4 };
+            }
+            if (tonnage === '5-10') {
+                return { tonnageMin: 5, tonnageMax: 10 };
+            }
+            if (tonnage === '11-20') {
+                return { tonnageMin: 11, tonnageMax: 20 };
+            }
+            if (tonnage === '20+') {
+                return { tonnageMin: 20 };
+            }
+            return {};
+        }
+
+        function buildPostListApiPath(pageNum, pageSize, filters) {
+            var params = {
+                pageNum: pageNum,
+                pageSize: pageSize
+            };
+
+            if (filters) {
+                if (filters.keyword) params.keyword = filters.keyword;
+                if (filters.boilerType) params.boilerType = filters.boilerType;
+                if (filters.city) params.city = filters.city;
+                if (filters.brand) params.brand = filters.brand;
+                var tonnageParams = resolveTonnageParams(filters.tonnage);
+                if (tonnageParams.tonnageMin !== undefined) params.tonnageMin = tonnageParams.tonnageMin;
+                if (tonnageParams.tonnageMax !== undefined) params.tonnageMax = tonnageParams.tonnageMax;
+            }
+
+            var apiPath = hasServerSideFilter(filters) ? '/post/filter' : '/post/page';
+            return apiPath + buildQueryString(params);
+        }
+
+        async function fetchPostPage(pageNum, pageSize, filters) {
+            var data = await apiRequest(buildPostListApiPath(pageNum, pageSize, filters), 'GET');
+            if (!data || data.code !== 1 || !data.data) {
+                throw new Error((data && (data.msg || data.message)) || '加载帖子失败');
+            }
+            return data.data;
+        }
+
+        function buildListPageUrl(pageNum) {
+            var filters = getCurrentFilters();
+            var params = {
+                page: pageNum
+            };
+
+            if (filters.keyword) params.keyword = filters.keyword;
+            if (filters.boilerType) params.boilerType = filters.boilerType;
+            if (filters.tonnage) params.tonnage = filters.tonnage;
+            if (filters.city) params.city = filters.city;
+            if (filters.brand) params.brand = filters.brand;
+
+            return 'boiler-list.html' + buildQueryString(params);
+        }
+
+        function goToPage(pageNum) {
+            window.location.href = buildListPageUrl(pageNum);
+        }
+
+        async function loadPosts() {
+            var container = document.getElementById('postList');
+            var paginationContainer = document.getElementById('pagination');
+            var filters = getCurrentFilters();
+            var currentPage = getCurrentPage();
+
+            container.innerHTML = '<div class="post-loading">加载中... Loading... <span class="loading-spinner"></span></div>';
+            if (paginationContainer) {
+                paginationContainer.innerHTML = '';
+            }
+
+            try {
+                var pageData = await fetchPostPage(currentPage, PAGE_SIZE, filters);
+                var posts = Array.isArray(pageData.records) ? pageData.records : [];
+
+                if (pageData.totalPages && currentPage > pageData.totalPages) {
+                    window.location.href = buildListPageUrl(pageData.totalPages);
+                    return;
+                }
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<div class="post-empty">暂无符合条件的锅炉转让信息 No matching listings<br><br><small>请调整筛选条件后重试 Please adjust the filters and try again</small><br><br><a href="home.html" class="back-link">&larr; 返回首页 Back Home</a></div>';
+                    return;
+                }
+
+                renderPosts(posts);
+                renderPagination(pageData, currentPage);
+            } catch (error) {
+                console.error('加载锅炉列表失败:', error);
+                container.innerHTML = '<div class="post-empty">帖子加载失败 Failed to load posts<br><br><small>请确认后端服务已启动，且存在已发布帖子 Please make sure the backend service is running and published posts exist</small><br><br><a href="home.html" class="back-link">&larr; 返回首页 Back Home</a></div>';
+            }
+        }
+
+        function renderPosts(posts) {
+            var container = document.getElementById('postList');
+            var html = '';
+
+            for (var i = 0; i < posts.length; i++) {
+                var post = posts[i];
+                var boilerType = (post.boilerDetail && post.boilerDetail.boilerType) || '';
+                var tonnage = (post.boilerDetail && post.boilerDetail.tonnage) || '';
+                var tag = [];
+                if (boilerType === 'STEAM') tag.push('蒸汽锅炉 Steam Boiler');
+                else if (boilerType === 'HOT_WATER') tag.push('热水锅炉 Hot Water Boiler');
+                if (tonnage) tag.push(tonnage + '吨');
+                var tagText = tag.length > 0 ? tag.join(' ') : '锅炉 Boiler';
+
+                var city = post.city || '未知 Unknown';
+                var publishTime = formatDate(post.publishTime || post.updateTime);
+                var price = formatPrice(post.price);
+                var desc = (post.description || '').substring(0, 80);
+
+                html += '<div class="post-item" onclick="viewPostDetail(\'' + escapeHtml(post.postId) + '\')">';
+                html += '<span class="post-tag">' + escapeHtml(tagText) + '</span>';
+                html += '<div class="post-title">' + escapeHtml(post.title || '锅炉转让 Boiler Listing') + '</div>';
+                if (desc) {
+                    html += '<div class="post-meta post-meta-desc">' + escapeHtml(desc) + '</div>';
+                }
+                html += '<div class="post-meta">' + escapeHtml(city) + ' | ' + escapeHtml(publishTime) + '</div>';
+                html += '<div class="post-price">' + escapeHtml(price) + '</div>';
+                html += '</div>';
+            }
+
+            html += '<div class="list-back-wrap">';
+            html += '<a href="home.html" class="back-link">&larr; 返回首页 Back Home</a>';
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function getPaginationItems(totalPages, currentPage) {
+            var items = [];
+
+            if (totalPages <= 7) {
+                for (var i = 1; i <= totalPages; i++) {
+                    items.push(i);
+                }
+                return items;
+            }
+
+            items.push(1);
+
+            if (currentPage > 3) {
+                items.push('...');
+            }
+
+            var start = Math.max(2, currentPage - 1);
+            var end = Math.min(totalPages - 1, currentPage + 1);
+            for (var page = start; page <= end; page++) {
+                items.push(page);
+            }
+
+            if (currentPage < totalPages - 2) {
+                items.push('...');
+            }
+
+            items.push(totalPages);
+            return items;
+        }
+
+        function renderPagination(pageData, currentPage) {
+            var container = document.getElementById('pagination');
+            if (!container) {
+                return;
+            }
+
+            var totalPages = pageData && pageData.totalPages ? pageData.totalPages : 0;
+            var total = pageData && pageData.total ? pageData.total : 0;
+            if (totalPages <= 1) {
+                container.innerHTML = '<div class="pagination-wrap pagination-wrap-single"><span class="pagination-summary">共 ' + escapeHtml(String(total)) + ' 条结果 / results</span></div>';
+                return;
+            }
+
+            var items = getPaginationItems(totalPages, currentPage);
+            var html = '';
+
+            html += '<div class="pagination-wrap">';
+            html += '<div class="pagination-summary">第 ' + escapeHtml(String(currentPage)) + ' / ' + escapeHtml(String(totalPages)) + ' 页，共 ' + escapeHtml(String(total)) + ' 条 / Page ' + escapeHtml(String(currentPage)) + ' of ' + escapeHtml(String(totalPages)) + ', total ' + escapeHtml(String(total)) + ' items</div>';
+            html += '<div class="pagination-controls">';
+            html += '<button type="button" class="pagination-btn pagination-nav" onclick="goToPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>上一页 Prev</button>';
+
+            for (var i = 0; i < items.length; i++) {
+                if (items[i] === '...') {
+                    html += '<span class="pagination-ellipsis">...</span>';
+                    continue;
+                }
+                html += '<button type="button" class="pagination-btn' + (items[i] === currentPage ? ' active' : '') + '" onclick="goToPage(' + items[i] + ')">' + items[i] + '</button>';
+            }
+
+            html += '<button type="button" class="pagination-btn pagination-nav" onclick="goToPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>下一页 Next</button>';
+            html += '</div>';
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function viewPostDetail(postId) {
+            if (!postId) {
+                return;
+            }
+            window.location.href = 'postDetail.html?postId=' + encodeURIComponent(postId);
+        }
+
+        function applyGuestNavigation() {
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            var userId = user.userId || localStorage.getItem('userId');
+            var username = user.username || localStorage.getItem('username') || '用户';
+            var userType = user.userType || localStorage.getItem('userType') || '';
+            var isSeller = userType === 'SELLER';
+
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userNameDisplay = document.getElementById('userNameDisplay');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+            var sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? 'userDetail.html?userId=' + encodeURIComponent(userId) : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' : userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? 'qualification.html?userId=' + encodeURIComponent(userId) : 'qualification.html';
+            }
+        }
+
+        async function loadUserProfile() {
+            var response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            var data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            var token = localStorage.getItem('token');
+            var userId = localStorage.getItem('userId');
+            var username = localStorage.getItem('username') || '用户';
+            var userType = localStorage.getItem('userType') || '';
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: userType
+            });
+
+            try {
+                var user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ======================== 页面初始化 ========================
+        document.addEventListener('DOMContentLoaded', function () {
+            checkLoginStatus();
+
+            // 2. 从 URL 初始化筛选 Filter条件
+            initFiltersFromUrl();
+
+            // 2. 加载帖子列表
+            loadPosts();
+
+            // 3. 筛选 Filter按钮加载状态
+            var filterBtn = document.getElementById('filterBtn');
+            if (filterBtn) {
+                filterBtn.addEventListener('click', function () {
+                    var originalText = filterBtn.textContent;
+                    filterBtn.textContent = '筛选中... Filtering...';
+                    filterBtn.disabled = true;
+                    setTimeout(function () {
+                        filterBtn.textContent = originalText;
+                        filterBtn.disabled = false;
+                    }, 800);
+                });
+            }
+
+            var postSearchBtn = document.getElementById('postSearchBtn');
+            var postSearchInput = document.getElementById('postSearchInput');
+            if (postSearchBtn) {
+                postSearchBtn.addEventListener('click', applyFilter);
+            }
+            if (postSearchInput) {
+                postSearchInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        applyFilter();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

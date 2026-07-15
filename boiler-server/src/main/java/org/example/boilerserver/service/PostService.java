@@ -2,6 +2,7 @@ package org.example.boilerserver.service;
 
 import org.example.boilercommon.PageResult;
 import org.example.boilerpojo.AdminPostQueryDTO;
+import org.example.boilerpojo.BoilerDetailDTO;
 import org.example.boilerpojo.PostCreateDTO;
 import org.example.boilerpojo.PostPageQueryDTO;
 import org.example.boilerpojo.PostUpdateDTO;
@@ -31,4 +32,6 @@ public interface PostService {
     PageResult<PostVO> adminListPosts(AdminPostQueryDTO dto);
 
     PostVO adminGetPostDetail(String postId);
+
+    String evaluateAiValuationRange(BoilerDetailDTO boilerDetail);
 }

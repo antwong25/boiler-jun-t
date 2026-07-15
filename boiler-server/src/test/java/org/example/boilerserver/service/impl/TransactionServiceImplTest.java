@@ -19,6 +19,7 @@ import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
+import org.example.boilerserver.service.UserService;
 import org.example.constant.OrderConstant;
 import org.example.constant.PostConstant;
 import org.example.constant.TransactionConstant;
@@ -64,6 +65,8 @@ class TransactionServiceImplTest {
     private OrderMapper orderMapper;
     @Mock
     private ReviewMapper reviewMapper;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
@@ -471,6 +474,8 @@ class TransactionServiceImplTest {
                 TransactionConstant.STATUS_COMPLETED.equals(t.getTransactionStatus())));
         verify(orderMapper).insert(any(OrderEntity.class));
         verify(postMapper).updateStatus("post001", PostConstant.STATUS_SOLD);
+        verify(userService).recalculateCreditScore("buyer001");
+        verify(userService).recalculateCreditScore("seller001");
     }
 
     @Test

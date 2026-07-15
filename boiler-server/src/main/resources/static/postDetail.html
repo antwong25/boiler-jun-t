@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子详情 Post Details - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/postDetail.css">
+    <style>
+        .post-media {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .post-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== 导航栏 ===== -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link active">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== 主体内容 ===== -->
+    <div class="container">
+        <!-- 帖子详情 Post Details容器 -->
+        <div id="postDetailContainer">
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>加载中... Loading...</p>
+            </div>
+        </div>
+
+        <!-- ===== 页脚 ===== -->
+        <footer class="footer">
+            <p>二手工业锅炉交易平台 Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved | 工业锅炉交易合规备案号：XXXX Industrial Boiler Trading Compliance Record No.: XXXX</p>
+        </footer>
+    </div>
+
+    <script>
+        // ======================== 配置 ========================
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        // ======================== 工具函数 ========================
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            const token = getToken();
+            if (!token) return {};
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        function getUrlParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function buildUserDetailUrl(userId) {
+            return userId ? `userDetail.html?userId=${encodeURIComponent(userId)}` : 'userDetail.html';
+        }
+
+        function formatPrice(price) {
+            if (price === null || price === undefined) return '面议 Negotiable';
+            return '¥' + Number(price).toLocaleString('zh-CN');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderMediaFiles(mediaFiles) {
+            if (!mediaFiles) return '';
+            const files = mediaFiles.split(',').map(f => f.trim()).filter(f => f);
+            if (files.length === 0) return '';
+            
+            let html = '<div class="post-media">';
+            files.forEach(file => {
+                html += `<img src="${escapeHtml(file)}" alt="锅炉图片 Images" class="post-image" onerror="this.style.display='none'">`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // ======================== 登录 Login状态 ========================
+        function applyGuestNavigation() {
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            const userId = user.userId || localStorage.getItem('userId');
+            const username = user.username || localStorage.getItem('username') || '用户';
+            const userType = user.userType || localStorage.getItem('userType') || '';
+            const isSeller = userType === 'SELLER';
+
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+            const sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? `userDetail.html?userId=${encodeURIComponent(userId)}` : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' :
+                    userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? `qualification.html?userId=${encodeURIComponent(userId)}` : 'qualification.html';
+            }
+        }
+
+        async function loadUserProfile() {
+            const response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: {
+                    'Authorization': 'Bearer ' + getToken()
+                }
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            const token = getToken();
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username') || '用户';
+            const userType = localStorage.getItem('userType') || '';
+
+            if (!(token && userId)) {
+                applyGuestNavigation();
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: userId,
+                username: username,
+                userType: userType
+            });
+
+            try {
+                const user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ======================== API 调用 ========================
+        async function fetchPostDetail(postId) {
+            const response = await fetch(BASE_URL + '/post/' + encodeURIComponent(postId));
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            if (data.code !== 1) {
+                throw new Error(data.msg || '获取帖子失败');
+            }
+            return data.data;
+        }
+
+        async function fetchSellerProfile(sellerId) {
+            const response = await fetch(BASE_URL + '/user/seller-profile/' + encodeURIComponent(sellerId));
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            if (data.code !== 1) {
+                throw new Error(data.msg || '获取卖家 Seller信息失败');
+            }
+            return data.data;
+        }
+
+        async function fetchReviews(postId, pageNum, pageSize) {
+            pageNum = pageNum || 1;
+            pageSize = pageSize || 10;
+            const url = BASE_URL + '/review/post/' + encodeURIComponent(postId) + '?pageNum=' + pageNum + '&pageSize=' + pageSize;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            if (data.code !== 1) {
+                throw new Error(data.msg || '获取评价失败');
+            }
+            return data.data;
+        }
+
+        // ======================== 渲染 ========================
+        function renderPost(post, seller, reviews) {
+            const container = document.getElementById('postDetailContainer');
+
+            // 状态映射
+            const statusMap = {
+                'PUBLISHED': { label: '在售 On Sale', cls: '' },
+                'RESERVED': { label: '已预订 Reserved', cls: 'reserved' },
+                'SOLD': { label: '已售 Sold', cls: 'sold' },
+                'DELISTED': { label: '已下架 Delisted', cls: 'delisted' },
+                'BANNED': { label: '违规封禁 Banned', cls: 'banned' }
+            };
+            const status = statusMap[post.status] || { label: post.status || '未知 Unknown', cls: '' };
+
+            // 锅炉详情
+            const boiler = post.boilerDetail || {};
+
+            // 构建参数列表
+        const paramList = [
+            { label: '品牌 Brand', value: boiler.brand },
+            { label: '型号 Model', value: boiler.model },
+            { label: '锅炉类型 Boiler Type', value: boiler.boilerType === 'STEAM' ? '蒸汽锅炉 Steam Boiler' : boiler.boilerType === 'HOT_WATER' ? '热水锅炉 Hot Water Boiler' : boiler.boilerType },
+            { label: '燃料类型 Fuel Type', value: boiler.fuelType },
+            { label: '吨位', value: boiler.tonnage ? boiler.tonnage + ' 吨' : '-' },
+            { label: '工作压力', value: boiler.workingPressure ? boiler.workingPressure + ' MPa' : '-' },
+            { label: '氮氧化物排放', value: boiler.noxEmissions ? boiler.noxEmissions + ' mg/m³' : '-' },
+            { label: '占地面积', value: boiler.footprintArea ? boiler.footprintArea + ' m²' : '-' },
+            { label: '蒸发量', value: boiler.evaporationCapacity ? boiler.evaporationCapacity + ' t/h' : '-' },
+            { label: '额定热功率', value: boiler.ratedThermalPower ? boiler.ratedThermalPower + ' kW' : '-' },
+            { label: '热效率', value: boiler.thermalEfficiency ? boiler.thermalEfficiency + '%' : '-' },
+            { label: '设备成色 Condition', value: boiler.equipmentCondition },
+            { label: '使用时长', value: boiler.usageHours ? boiler.usageHours + ' 小时' : '-' },
+            { label: '生产日期 Manufacture Date', value: boiler.manufactureDate || '-' },
+            { label: '应用场景 Application Scenario', value: boiler.applicationScenario },
+            { label: '检测报告 Test Report', value: boiler.testReport }
+        ];
+
+            // 过滤掉空值
+            const filteredParams = paramList.filter(p => p.value && p.value !== '-');
+
+            // 评价列表
+            let reviewsHtml = '';
+            if (reviews && reviews.records && reviews.records.length > 0) {
+                reviews.records.forEach(function(r) {
+                    const stars = '★'.repeat(Math.min(5, Math.round(r.rating || 0)));
+                    const reviewerNameHtml = r.reviewerId
+                        ? `<a href="${buildUserDetailUrl(r.reviewerId)}" class="user-detail-link review-user-link">${escapeHtml(r.reviewerName || '用户')}</a>`
+                        : escapeHtml(r.reviewerName || '用户');
+                    reviewsHtml += `
+                        <div class="review-item">
+                            <div class="review-header">
+                                <div class="review-title">${reviewerNameHtml}</div>
+                                <div class="review-rating">${stars}</div>
+                            </div>
+                            <div class="review-content">${escapeHtml(r.content || '')}</div>
+                            <div class="review-meta">${formatDate(r.reviewTime)}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                reviewsHtml = '<div class="review-empty">暂无评价 No reviews yet</div>';
+            }
+
+            // 分页控制
+            let paginationHtml = '';
+            if (reviews && reviews.totalPages > 1) {
+                paginationHtml = `
+                    <div class="load-more-wrap">
+                        <button class="view-all-link" onclick="loadMoreReviews()">加载更多评价 Load More Reviews</button>
+                    </div>
+                `;
+            }
+
+            // 操作 Actions按钮
+            const token = getToken();
+            const isLoggedIn = !!token;
+            const currentUserId = localStorage.getItem('userId');
+            const currentUserType = localStorage.getItem('userType') || '';
+            const isPublished = post.status === 'PUBLISHED';
+            const isReserved = post.status === 'RESERVED';
+            const isOwnPost = !!currentUserId && currentUserId === post.sellerId;
+
+            let actionHtml = '';
+            if (isLoggedIn && isPublished && !isOwnPost) {
+                actionHtml = `
+                    <button class="action-btn primary" onclick="startChat('${post.sellerId}', '${post.postId}')">💬 私信沟通 Chat</button>
+                    <button class="action-btn success" onclick="createTransaction('${post.postId}')">📋 预约交易 Reserve</button>
+                    <button class="action-btn secondary" onclick="makePhoneCall('${seller.phone || ''}')">📞 拨打电话 Call</button>
+                `;
+            } else if (isLoggedIn && isPublished && isOwnPost) {
+                actionHtml = `<button class="action-btn secondary" disabled>这是您发布的帖子 This is your post</button>`;
+            } else if (isLoggedIn && isReserved && currentUserType === 'BUYER') {
+                actionHtml = `
+                    <button class="action-btn primary" onclick="window.location.href='my-transactions.html'">查看我的预订 View My Reservation</button>
+                    <button class="action-btn secondary" onclick="makePhoneCall('${seller.phone || ''}')">📞 拨打电话 Call</button>
+                `;
+            } else if (isLoggedIn && isReserved && currentUserType === 'SELLER' && isOwnPost) {
+                actionHtml = `
+                    <button class="action-btn primary" onclick="window.location.href='my-transactions.html'">去确认成交 Go Confirm Sale</button>
+                    <button class="action-btn secondary" onclick="makePhoneCall('${seller.phone || ''}')">📞 联系买家 Contact Buyer</button>
+                `;
+            } else if (isLoggedIn && isReserved) {
+                actionHtml = `<button class="action-btn secondary" disabled>该帖子已被预订 This post has been reserved</button>`;
+            } else if (isLoggedIn && post.status === 'SOLD') {
+                actionHtml = `<button class="action-btn secondary" disabled>已售出，不可预约 Sold, reservation unavailable</button>`;
+            } else if (isLoggedIn && post.status === 'BANNED') {
+                actionHtml = `<button class="action-btn secondary" disabled>违规封禁，不可操作 Banned and unavailable</button>`;
+            } else {
+                actionHtml = `<a href="login.html" class="action-btn login-btn">🔑 登录后联系卖家 Log in to contact seller</a>`;
+            }
+
+            // 卖家 Seller资质状态标签
+            let sellerBadge = '';
+            const qStatus = seller.qualificationStatus || 'UNVERIFIED';
+            if (qStatus === 'APPROVED') {
+                sellerBadge = '<span class="seller-badge">已认证 Verified</span>';
+            } else if (qStatus === 'PENDING') {
+                sellerBadge = '<span class="seller-badge pending">审核中 Pending</span>';
+            } else if (qStatus === 'REJECTED') {
+                sellerBadge = '<span class="seller-badge rejected">认证失败 Rejected</span>';
+            }
+
+            // 组装HTML
+            const html = `
+                <!-- 帖子主卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">锅炉信息 Boiler Information</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="post-header">
+                            <div class="post-title">${escapeHtml(post.title || '锅炉转让')}</div>
+                            <span class="post-status ${status.cls}">${status.label}</span>
+                        </div>
+                        <div class="post-price">${formatPrice(post.price)}</div>
+                        <div class="post-meta">
+                            <span>📍 ${escapeHtml(post.city || '未知 Unknown')}</span>
+                            <span>📅 发布时间 Publish Time: ${formatDate(post.publishTime)}</span>
+                            <span>👁️ 浏览次数 Views: ${post.viewCount || 0}</span>
+                        </div>
+                        ${post.mediaFiles ? renderMediaFiles(post.mediaFiles) : ''}
+                        ${post.description ? `<div class="post-description">${escapeHtml(post.description)}</div>` : ''}
+
+                        <h3 class="section-heading">锅炉参数 Boiler Parameters</h3>
+                        <div class="params-grid">
+                            ${filteredParams.map(function(p) {
+                                return `
+                                    <div class="param-item">
+                                        <div class="param-label">${p.label}</div>
+                                        <div class="param-value">${escapeHtml(p.value)}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <h3 class="section-heading">卖家信息 Seller Information</h3>
+                        <div class="seller-info-card">
+                            <div class="seller-name">
+                                <a href="${buildUserDetailUrl(seller.userId || post.sellerId)}" class="user-detail-link seller-user-link">
+                                    ${escapeHtml(seller.username || seller.shopName || '未命名用户 Unnamed User')}
+                                </a>
+                                ${sellerBadge}
+                            </div>
+                            <div class="seller-info-row">
+                                ${seller.shopName ? `<span>🏪 ${escapeHtml(seller.shopName)}</span>` : ''}
+                                <span>📍 ${escapeHtml(seller.shopAddress || '地址未填写 Address not provided')}</span>
+                                <span>⭐ 信用分 Credit Score: ${seller.creditScore !== undefined && seller.creditScore !== null ? seller.creditScore : '--'}</span>
+                                <span>📞 ${escapeHtml(seller.phone || '未公开 Not public')}</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            ${actionHtml}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 评价卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">交易评价 Review Transaction</h2>
+                    </div>
+                    <div class="card-content">
+                        ${reviewsHtml}
+                        ${paginationHtml}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // 保存 Save分页信息
+            window._reviewsData = reviews;
+            window._currentPage = reviews ? reviews.pageNum || 1 : 1;
+        }
+
+        // ======================== 加载更多评价 ========================
+        let currentPostId = null;
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
+
+        window.loadMoreReviews = async function() {
+            if (!currentPostId) return;
+            const nextPage = currentPage + 1;
+            try {
+                const data = await fetchReviews(currentPostId, nextPage, PAGE_SIZE);
+                if (data && data.records && data.records.length > 0) {
+                    // 追加评价到列表
+                    const container = document.querySelector('.card:last-child .card-content');
+                    const existingItems = container.querySelectorAll('.review-item');
+                    const emptyState = container.querySelector('.review-empty');
+
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+
+                    data.records.forEach(function(r) {
+                        const stars = '★'.repeat(Math.min(5, Math.round(r.rating || 0)));
+                        const reviewerNameHtml = r.reviewerId
+                            ? `<a href="${buildUserDetailUrl(r.reviewerId)}" class="user-detail-link review-user-link">${escapeHtml(r.reviewerName || '用户')}</a>`
+                            : escapeHtml(r.reviewerName || '用户');
+                        const item = document.createElement('div');
+                        item.className = 'review-item';
+                        item.innerHTML = `
+                            <div class="review-header">
+                                <div class="review-title">${reviewerNameHtml}</div>
+                                <div class="review-rating">${stars}</div>
+                            </div>
+                            <div class="review-content">${escapeHtml(r.content || '')}</div>
+                            <div class="review-meta">${formatDate(r.reviewTime)}</div>
+                        `;
+                        // 插入到"加载更多"按钮之前
+                        const loadMoreWrap = container.querySelector('.load-more-wrap');
+                        if (loadMoreWrap) {
+                            container.insertBefore(item, loadMoreWrap);
+                        } else {
+                            container.appendChild(item);
+                        }
+                    });
+
+                    currentPage = nextPage;
+                    window._currentPage = nextPage;
+
+                    // 更新分页按钮
+                    if (data.totalPages <= nextPage) {
+                        const loadMoreWrap = container.querySelector('.load-more-wrap');
+                        if (loadMoreWrap) {
+                            loadMoreWrap.innerHTML = '<span class="load-more-complete">已加载全部评价 All reviews loaded</span>';
+                        }
+                    }
+                } else {
+                    alert('没有更多评价了 No more reviews');
+                }
+            } catch (e) {
+                alert('加载评价失败 Failed to load reviews: ' + e.message);
+            }
+        };
+
+        // ======================== 主加载 ========================
+        async function loadAllData(postId) {
+            const container = document.getElementById('postDetailContainer');
+            container.innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>加载中... Loading...</p>
+                </div>
+            `;
+
+            try {
+                const post = await fetchPostDetail(postId);
+                const [seller, reviews] = await Promise.all([
+                    fetchSellerProfile(post.sellerId),
+                    fetchReviews(postId, 1, PAGE_SIZE)
+                ]);
+
+                currentPostId = postId;
+                currentPage = 1;
+
+                renderPost(post, seller, reviews);
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p>⚠️ 加载失败 Failed to load: ${escapeHtml(error.message)}</p>
+                        <button class="retry-btn" onclick="location.reload()">重新加载 Reload</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ======================== 交互操作 Actions ========================
+        window.startChat = function(sellerId, postId) {
+            const token = getToken();
+            if (!token) {
+                alert('请先登录 Please log in first');
+                window.location.href = 'login.html';
+                return;
+            }
+            const buyerId = localStorage.getItem('userId');
+            if (!buyerId) {
+                alert('请先登录 Please log in first');
+                return;
+            }
+
+            fetch(BASE_URL + '/api/chat/session/create', {
+                method: 'POST',
+                headers: Object.assign({
+                    'Content-Type': 'application/json'
+                }, getUserHeaders()),
+                body: JSON.stringify({
+                    buyerId: buyerId,
+                    sellerId: sellerId,
+                    postId: postId
+                })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.code === 1) {
+                    const sessionId = data.data.sessionId;
+                    window.location.href = 'chat.html?sessionId=' + sessionId;
+                } else {
+                    alert('创建聊天会话失败 Create chat session failed: ' + data.msg);
+                }
+            })
+            .catch(function(err) {
+                alert('网络错误，请重试 Network error, please retry');
+                console.error(err);
+            });
+        };
+
+        window.createTransaction = function(postId) {
+            const token = getToken();
+            if (!token) {
+                alert('请先登录 Please log in first');
+                window.location.href = 'login.html';
+                return;
+            }
+            const buyerId = localStorage.getItem('userId');
+            if (!buyerId) {
+                alert('请先登录 Please log in first');
+                return;
+            }
+
+            fetch(BASE_URL + '/transaction', {
+                method: 'POST',
+                headers: Object.assign({
+                    'Content-Type': 'application/json'
+                }, getUserHeaders()),
+                body: JSON.stringify({
+                    postId: postId,
+                    buyerId: buyerId
+                })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.code === 1) {
+                    alert('预约成功！交易ID： Reservation created successfully! Transaction ID: ' + data.data.transactionId);
+                    window.location.href = 'my-transactions.html';
+                } else {
+                    alert('预约失败 Reservation failed: ' + data.msg);
+                }
+            })
+            .catch(function(err) {
+                alert('网络错误，请重试 Network error, please retry');
+                console.error(err);
+            });
+        };
+
+        window.makePhoneCall = function(phone) {
+            if (!phone) {
+                alert('卖家未公开联系电话 Seller phone not public');
+                return;
+            }
+            if (confirm('是否拨打 ' + phone + ' ？')) {
+                window.location.href = 'tel:' + phone;
+            }
+        };
+
+        // ======================== 页面初始化 ========================
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+
+            const postId = getUrlParam('postId');
+            if (!postId) {
+                document.getElementById('postDetailContainer').innerHTML = `
+                    <div class="error-state">
+                        <p>⚠️ 缺少帖子ID参数 Missing postId parameter</p>
+                        <button class="retry-btn" onclick="window.location.href='boiler-list.html'">返回列表 Back to List</button>
+                    </div>
+                `;
+                return;
+            }
+
+            loadAllData(postId);
+        });
+    </script>
+</body>
+</html>

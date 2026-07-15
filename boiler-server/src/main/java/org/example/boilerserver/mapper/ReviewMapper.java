@@ -59,6 +59,12 @@ public interface ReviewMapper {
                                   @Param("threshold") int threshold);
 
     /**
+     * 统计用户收到的差评数（rating <= threshold）
+     */
+    int countNegativeByRevieweeId(@Param("revieweeId") String revieweeId,
+                                  @Param("threshold") int threshold);
+
+    /**
      * 计算用户收到评论的平均评分
      */
     Double avgRatingByRevieweeId(String revieweeId);

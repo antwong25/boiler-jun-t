@@ -139,8 +139,7 @@ public class PostFilterSearchServiceImpl implements PostFilterSearchService {
         boilerDetailVO.setWorkingPressure(boilerEntity.getWorkingPressure());
         boilerDetailVO.setNoxEmissions(boilerEntity.getNoxEmissions());
         boilerDetailVO.setFootprintArea(boilerEntity.getFootprintArea());
-        boilerDetailVO.setManufactureStartDate(boilerEntity.getManufactureYear());
-        boilerDetailVO.setManufactureEndDate(boilerEntity.getManufactureYear());
+        boilerDetailVO.setManufactureDate(boilerEntity.getManufactureYear());
         boilerDetailVO.setEvaporationCapacity(boilerEntity.getEvaporationCapacity());
         boilerDetailVO.setRatedThermalPower(boilerEntity.getRatedThermalPower());
         boilerDetailVO.setThermalEfficiency(boilerEntity.getThermalEfficiency());

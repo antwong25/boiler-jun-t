@@ -21,6 +21,7 @@ import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
 import org.example.boilerserver.service.TransactionService;
+import org.example.boilerserver.service.UserService;
 import org.example.constant.OrderConstant;
 import org.example.constant.PostConstant;
 import org.example.constant.TransactionConstant;
@@ -48,6 +49,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final BuyerMapper buyerMapper;
     private final OrderMapper orderMapper;
     private final ReviewMapper reviewMapper;
+    private final UserService userService;
 
     public TransactionServiceImpl(TransactionMapper transactionMapper,
                                   PostMapper postMapper,
@@ -55,7 +57,8 @@ public class TransactionServiceImpl implements TransactionService {
                                   SellerMapper sellerMapper,
                                   BuyerMapper buyerMapper,
                                   OrderMapper orderMapper,
-                                  ReviewMapper reviewMapper) {
+                                  ReviewMapper reviewMapper,
+                                  UserService userService) {
         this.transactionMapper = transactionMapper;
         this.postMapper = postMapper;
         this.userMapper = userMapper;
@@ -63,6 +66,7 @@ public class TransactionServiceImpl implements TransactionService {
         this.buyerMapper = buyerMapper;
         this.orderMapper = orderMapper;
         this.reviewMapper = reviewMapper;
+        this.userService = userService;
     }
 
     /**
@@ -225,6 +229,9 @@ public class TransactionServiceImpl implements TransactionService {
         if (StringUtils.hasText(postId)) {
             postMapper.updateStatus(postId, PostConstant.STATUS_SOLD);
         }
+
+        userService.recalculateCreditScore(transaction.getBuyerId());
+        userService.recalculateCreditScore(transaction.getSellerId());
 
         return buildTransactionVO(transactionMapper.getByTransactionId(transactionId), userId);
     }

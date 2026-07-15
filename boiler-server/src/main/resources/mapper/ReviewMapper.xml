@@ -84,6 +84,10 @@
         select count(*) from review where revieweeId = #{revieweeId} and rating &gt;= #{threshold}
     </select>
 
+    <select id="countNegativeByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId} and rating &lt;= #{threshold}
+    </select>
+
     <select id="avgRatingByRevieweeId" resultType="java.lang.Double">
         select avg(rating) from review where revieweeId = #{revieweeId}
     </select>

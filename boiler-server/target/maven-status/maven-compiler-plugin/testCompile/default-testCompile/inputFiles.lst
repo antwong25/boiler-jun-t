@@ -1,1 +1,6 @@
-/Users/wangchi/Documents/trae_projects/delme0704/boiler-jun-t/boiler-server/src/test/java/org/example/boilerserver/BoilerServerApplicationTests.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/BoilerServerApplicationTests.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/service/impl/OrderServiceImplTest.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/service/impl/PostServiceImplTest.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/service/impl/ReviewServiceImplTest.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/service/impl/TransactionServiceImplTest.java
+/Users/wangchi/Documents/trae_projects/boiler-alpha-ai-stepbystep/boiler-server/src/test/java/org/example/boilerserver/service/impl/UserServiceImplTest.java

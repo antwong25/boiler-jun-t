@@ -16,6 +16,7 @@ import org.example.boilerserver.mapper.SellerMapper;
 import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
 import org.example.boilerserver.service.ReviewService;
+import org.example.boilerserver.service.UserService;
 import org.example.constant.OrderConstant;
 import org.example.constant.ReviewConstant;
 import org.springframework.stereotype.Service;
@@ -42,17 +43,20 @@ public class ReviewServiceImpl implements ReviewService {
     private final TransactionMapper transactionMapper;
     private final UserMapper userMapper;
     private final SellerMapper sellerMapper;
+    private final UserService userService;
 
     public ReviewServiceImpl(ReviewMapper reviewMapper,
                              OrderMapper orderMapper,
                              TransactionMapper transactionMapper,
                              UserMapper userMapper,
-                             SellerMapper sellerMapper) {
+                             SellerMapper sellerMapper,
+                             UserService userService) {
         this.reviewMapper = reviewMapper;
         this.orderMapper = orderMapper;
         this.transactionMapper = transactionMapper;
         this.userMapper = userMapper;
         this.sellerMapper = sellerMapper;
+        this.userService = userService;
     }
 
     /**
@@ -116,6 +120,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (reviewerIsBuyer) {
             updateSellerPositiveRatingRate(revieweeId);
         }
+        userService.recalculateCreditScore(revieweeId);
 
         return buildReviewVO(review);
     }
