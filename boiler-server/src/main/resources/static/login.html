@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 Login - Boiler Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="tab-header">
+            <button class="tab-btn active" data-tab="login">登录 Login</button>
+            <button class="tab-btn" data-tab="register">注册 Register</button>
+        </div>
+
+        <div class="tab-content active" id="loginTab">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="loginUsername">用户名 Username</label>
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        name="username"
+                        class="form-input"
+                        placeholder="请输入用户名 Enter username"
+                        required
+                    >
+                    <div class="error-message" id="loginUsernameError">用户名不能为空 Username is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">密码 Password</label>
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        name="password"
+                        class="form-input"
+                        placeholder="请输入密码 Enter password"
+                        required
+                    >
+                    <div class="error-message" id="loginPasswordError">密码不能为空 Password is required</div>
+                </div>
+
+                <div class="error-message show" id="loginError"></div>
+
+                <button type="submit" class="submit-btn">登录 Login</button>
+            </form>
+        </div>
+
+        <div class="tab-content" id="registerTab">
+            <form id="registerForm">
+                <div class="form-group">
+                    <label class="form-label" for="registerUsername">用户名 Username</label>
+                    <input
+                        type="text"
+                        id="registerUsername"
+                        name="username"
+                        class="form-input"
+                        placeholder="请输入用户名 Enter username"
+                        required
+                    >
+                    <div class="error-message" id="registerUsernameError">用户名不能为空 Username is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerPassword">密码 Password</label>
+                    <input
+                        type="password"
+                        id="registerPassword"
+                        name="password"
+                        class="form-input"
+                        placeholder="请输入密码 Enter password"
+                        required
+                    >
+                    <div class="error-message" id="registerPasswordError">密码不能为空 Password is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerPhone">手机号 Phone <span class="required-mark">*</span></label>
+                    <input
+                        type="text"
+                        id="registerPhone"
+                        name="phone"
+                        class="form-input"
+                        placeholder="请输入手机号 Enter phone number"
+                        required
+                    >
+                    <div class="error-message" id="registerPhoneError">手机号不能为空 Phone number is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerEmail">邮箱（选填） Email (Optional)</label>
+                    <input
+                        type="email"
+                        id="registerEmail"
+                        name="email"
+                        class="form-input"
+                        placeholder="请输入邮箱 Enter email"
+                    >
+                    <div class="error-message" id="registerEmailError">邮箱格式不正确 Invalid email format</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">用户类型 User Type</label>
+                    <div class="user-type-group">
+                        <label class="radio-label">
+                            <input type="radio" name="userType" value="BUYER" checked>
+                            买家 Buyer
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="userType" value="SELLER">
+                            卖家 Seller
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group hidden" id="sellerRegisterFields">
+                    <div class="form-group">
+                        <label class="form-label" for="registerShopName">店铺名称 Shop Name <span class="required-mark">*</span></label>
+                        <input
+                            type="text"
+                            id="registerShopName"
+                            name="shopName"
+                            class="form-input"
+                            placeholder="请输入店铺名称 Enter shop name"
+                        >
+                        <div class="error-message" id="registerShopNameError">店铺名称不能为空 Shop name is required</div>
+                        <p class="hint">卖家注册时店铺名称不能为空 Shop name is required for seller registration</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="registerShopAddress">店铺地址 Shop Address（选填）</label>
+                        <input
+                            type="text"
+                            id="registerShopAddress"
+                            name="shopAddress"
+                            class="form-input"
+                            placeholder="请输入店铺地址 Enter shop address"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="registerBusinessLicense">营业执照编号 Business License No.（选填）</label>
+                        <input
+                            type="text"
+                            id="registerBusinessLicense"
+                            name="businessLicense"
+                            class="form-input"
+                            placeholder="请输入营业执照编号 Enter business license number"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="registerLegalPersonId">法人身份证号 Legal Person ID No.（选填）</label>
+                        <input
+                            type="text"
+                            id="registerLegalPersonId"
+                            name="legalPersonId"
+                            class="form-input"
+                            placeholder="请输入法人身份证号 Enter legal person ID number"
+                        >
+                    </div>
+                </div>
+
+                <div class="error-message show" id="registerError"></div>
+
+                <button type="submit" class="submit-btn">注册 Register</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        // DOM 元素
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const sellerRegisterFields = document.getElementById('sellerRegisterFields');
+
+        // 切换标签页
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+
+                // 移除所有活动状态
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // 添加活动状态
+                button.classList.add('active');
+
+                // 显示对应的内容
+                if (tabName === 'login') {
+                    loginTab.classList.add('active');
+                } else {
+                    registerTab.classList.add('active');
+                }
+            });
+        });
+
+        // 用户类型 User Type切换
+        const userTypeRadios = document.querySelectorAll('input[name="userType"]');
+        userTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'SELLER') {
+                    sellerRegisterFields.classList.remove('hidden');
+                } else {
+                    sellerRegisterFields.classList.add('hidden');
+                }
+            });
+        });
+
+        // 表单验证函数
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePhone(phone) {
+            const re = /^1[3-9]\d{9}$/;
+            return re.test(phone);
+        }
+
+        function showError(inputId, errorId, message) {
+            const input = document.getElementById(inputId);
+            const errorEl = document.getElementById(errorId);
+
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        function clearError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const errorEl = document.getElementById(errorId);
+
+            input.classList.remove('error');
+            errorEl.classList.remove('show');
+        }
+
+        function clearAllErrors(formId) {
+            const form = document.getElementById(formId);
+            form.querySelectorAll('.form-input').forEach(input => {
+                input.classList.remove('error');
+            });
+            form.querySelectorAll('.error-message').forEach(error => {
+                if (!error.id.includes('loginError') && !error.id.includes('registerError')) {
+                    error.classList.remove('show');
+                }
+            });
+        }
+
+        // 登录 Login表单提交
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAllErrors('loginForm');
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginError = document.getElementById('loginError');
+
+            let isValid = true;
+
+            if (!username) {
+                showError('loginUsername', 'loginUsernameError', '用户名不能为空 Username is required');
+                isValid = false;
+            }
+
+            if (!password) {
+                showError('loginPassword', 'loginPasswordError', '密码不能为空 Password is required');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                loginError.classList.remove('show');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/user/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.code === 1) {
+                    loginError.classList.remove('show');
+
+                    // 保存 Save token 和用户信息
+                    if (data.data && data.data.token) {
+                        localStorage.setItem('token', data.data.token);
+                        localStorage.setItem('userId', data.data.userInfo.userId);
+                        localStorage.setItem('username', data.data.userInfo.username || '用户');
+
+                        // 如果是管理员 Admin，保存 Save admin_token
+                        if (data.data.userInfo.userType === 'ADMIN') {
+                            localStorage.setItem('admin_token', data.data.token);
+                        }
+                    }
+
+                    // 根据用户类型 User Type跳转到不同页面
+                    setTimeout(() => {
+                        if (data.data.userInfo.userType === 'ADMIN') {
+                            // 使用绝对路径确保跳转正确，跳转到无分页版本
+                            window.location.href = window.location.origin + '/admin-user-management-no-pagination.html';
+                        } else {
+                            // 检查是否有重定向URL
+                            const redirectUrl = localStorage.getItem('redirectUrl');
+                            if (redirectUrl && redirectUrl !== window.location.href) {
+                                // 清除重定向URL
+                                localStorage.removeItem('redirectUrl');
+                                // 跳转到之前的页面
+                                window.location.href = redirectUrl;
+                            } else {
+                                // 没有重定向URL，跳转到主页
+                                window.location.href = 'home.html';
+                            }
+                        }
+                    }, 500);
+                } else {
+                    console.log('登录 Login失败:', data);
+                    loginError.textContent = data.msg || '登录 Login失败，请检查用户名 Username和密码 Password';
+                    loginError.classList.add('show');
+                    console.log('错误信息已显示:', loginError.textContent);
+                }
+            } catch (error) {
+                loginError.textContent = '网络错误，请稍后重试 Network error, please try again later';
+                loginError.classList.add('show');
+            }
+        });
+
+        // 注册 Register表单提交
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAllErrors('registerForm');
+
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const phone = document.getElementById('registerPhone').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const userType = document.querySelector('input[name="userType"]:checked').value;
+            const shopName = document.getElementById('registerShopName').value.trim();
+            const registerError = document.getElementById('registerError');
+
+            let isValid = true;
+
+            if (!username) {
+                showError('registerUsername', 'registerUsernameError', '用户名不能为空 Username is required');
+                isValid = false;
+            }
+
+            if (!password) {
+                showError('registerPassword', 'registerPasswordError', '密码不能为空 Password is required');
+                isValid = false;
+            }
+
+            if (!phone) {
+                showError('registerPhone', 'registerPhoneError', '手机号不能为空 Phone number is required');
+                isValid = false;
+            } else if (!validatePhone(phone)) {
+                showError('registerPhone', 'registerPhoneError', '手机号 Phone格式不正确');
+                isValid = false;
+            }
+
+            if (email && !validateEmail(email)) {
+                showError('registerEmail', 'registerEmailError', '邮箱格式不正确 Invalid email format');
+                isValid = false;
+            }
+
+            if (userType === 'SELLER' && !shopName) {
+                showError('registerShopName', 'registerShopNameError', '店铺名称不能为空 Shop name is required');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                registerError.classList.remove('show');
+                return;
+            }
+
+            try {
+                const requestBody = {
+                    username: username,
+                    password: password,
+                    userType: userType,
+                    phone: phone
+                };
+
+                if (email) requestBody.email = email;
+
+                if (userType === 'SELLER') {
+                    requestBody.shopName = shopName;
+                    if (document.getElementById('registerShopAddress').value.trim()) {
+                        requestBody.shopAddress = document.getElementById('registerShopAddress').value.trim();
+                    }
+                    if (document.getElementById('registerBusinessLicense').value.trim()) {
+                        requestBody.businessLicense = document.getElementById('registerBusinessLicense').value.trim();
+                    }
+                    if (document.getElementById('registerLegalPersonId').value.trim()) {
+                        requestBody.legalPersonId = document.getElementById('registerLegalPersonId').value.trim();
+                    }
+                }
+
+                const response = await fetch(`${BASE_URL}/user/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (data.code === 1) {
+                    registerError.classList.remove('show');
+                    alert('注册 Register成功！请登录 Please Log In');
+
+                    // 切换到登录 Login标签页
+                    document.querySelector('[data-tab="login"]').click();
+                    document.getElementById('loginUsername').value = username;
+                } else {
+                    registerError.textContent = data.msg || '注册 Register失败，请稍后重试';
+                    registerError.classList.add('show');
+                }
+            } catch (error) {
+                registerError.textContent = '网络错误，请稍后重试 Network error, please try again later';
+                registerError.classList.add('show');
+            }
+        });
+
+        // 清除错误提示
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const inputId = e.target.id;
+                const errorId = inputId + 'Error';
+                if (document.getElementById(errorId)) {
+                    e.target.classList.remove('error');
+                    document.getElementById(errorId).classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -36,6 +36,7 @@ curl -X POST "$BASE_URL/user/register" \
     "email": "seller003@example.com",
     "userType": "SELLER",
     "shopName": "Alpha Boiler Shop 3",
+    "shopAddress": "Guangzhou Tianhe District",
     "businessLicense": "BL-003",
     "legalPersonId": "440100199901011237"
   }'
@@ -45,7 +46,8 @@ curl -X POST "$BASE_URL/user/register" \
 
 - `userType` 目前只支持 `BUYER` 和 `SELLER`
 - 卖家注册时，`shopName` 必填
-- `shippingAddress` 和 `shopAddress` 虽然 DTO 中有字段，但当前数据库表结构未支持持久化，测试时可先不传
+- `shippingAddress` 字段当前仍不会落库
+- `shopAddress` 现已支持持久化
 
 ## 2. 用户登录
 
@@ -58,9 +60,37 @@ curl -X POST "$BASE_URL/user/login" \
   }'
 ```
 
+登录成功后会返回类似下面的数据：
+
+```json
+{
+  "code": 1,
+  "msg": null,
+  "data": {
+    "token": "eyJ...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 7200,
+    "userInfo": {
+      "userId": "真实用户ID",
+      "username": "seller_test_003",
+      "userType": "SELLER"
+    }
+  }
+}
+```
+
+建议先把 token 保存到变量中，后续所有需要鉴权的接口都通过 `Authorization` 请求头传递：
+
+```bash
+USER_TOKEN="请替换为登录返回的data.token"
+USER_AUTH_HEADER="Authorization: Bearer $USER_TOKEN"
+```
+
 ## 3. 查询用户个人信息
 
-将下面的 `USER_ID` 替换为注册成功后返回的 `data.userId`。
+### 3.1 按用户 ID 查询公开资料
+
+将下面的 `USER_ID` 替换为注册成功后返回的 `data.userId` 或登录返回的 `data.userInfo.userId`。
 
 ```bash
 USER_ID="请替换为真实userId"
@@ -68,13 +98,20 @@ USER_ID="请替换为真实userId"
 curl "$BASE_URL/user/profile/$USER_ID"
 ```
 
+### 3.2 查询当前登录用户资料
+
+```bash
+curl "$BASE_URL/user/profile/me" \
+  -H "$USER_AUTH_HEADER"
+```
+
 ## 4. 更新用户个人信息
 
 ```bash
 curl -X PUT "$BASE_URL/user/profile" \
   -H "Content-Type: application/json" \
+  -H "$USER_AUTH_HEADER" \
   -d '{
-    "userId": "请替换为真实userId",
     "phone": "13800009999",
     "email": "buyer003_new@example.com"
   }'
@@ -87,7 +124,9 @@ curl -X PUT "$BASE_URL/user/profile" \
 
 ## 5. 查询卖家资料
 
-将下面的 `SELLER_USER_ID` 替换为卖家注册成功后返回的 `data.userId`。
+### 5.1 按卖家用户 ID 查询资料
+
+将下面的 `SELLER_USER_ID` 替换为卖家注册成功后返回的 `data.userId` 或登录返回的 `data.userInfo.userId`。
 
 ```bash
 SELLER_USER_ID="请替换为卖家userId"
@@ -95,14 +134,22 @@ SELLER_USER_ID="请替换为卖家userId"
 curl "$BASE_URL/user/seller-profile/$SELLER_USER_ID"
 ```
 
+### 5.2 查询当前登录卖家资料
+
+```bash
+curl "$BASE_URL/user/seller-profile/me" \
+  -H "$USER_AUTH_HEADER"
+```
+
 ## 6. 更新卖家资料
 
 ```bash
 curl -X PUT "$BASE_URL/user/seller-profile" \
   -H "Content-Type: application/json" \
+  -H "$USER_AUTH_HEADER" \
   -d '{
-    "userId": "请替换为卖家userId",
     "shopName": "Alpha Boiler Shop 3 Updated",
+    "shopAddress": "Guangzhou Pazhou",
     "businessLicense": "BL-003-NEW",
     "legalPersonId": "440100199901011238"
   }'
@@ -110,8 +157,38 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
 
 说明：
 
-- 当前接口实际会更新 `shopName`、`businessLicense`、`legalPersonId`
-- `shopAddress` 字段当前不会落库
+- 当前接口实际会更新 `shopName`、`shopAddress`、`businessLicense`、`legalPersonId`
+- 如卖家资质已经审核，通过或驳回后再次修改这些资料，资质状态会自动回到 `PENDING`
+
+## 6.1 上传卖家资质文件
+
+支持通过 `multipart/form-data` 上传卖家资质文件，文件类型仅支持：
+
+- `BUSINESS_LICENSE`
+- `LEGAL_PERSON_ID`
+
+```bash
+curl -X POST "$BASE_URL/user/seller-profile/files" \
+  -H "$USER_AUTH_HEADER" \
+  -F "fileType=BUSINESS_LICENSE" \
+  -F "file=@/绝对路径/营业执照.png"
+```
+
+上传法人身份证示例：
+
+```bash
+curl -X POST "$BASE_URL/user/seller-profile/files" \
+  -H "$USER_AUTH_HEADER" \
+  -F "fileType=LEGAL_PERSON_ID" \
+  -F "file=@/绝对路径/法人身份证.jpg"
+```
+
+上传说明：
+
+- 成功后返回 `fileUrl`，可通过 `$BASE_URL$fileUrl` 直接访问
+- 文件会保存到项目本地 `uploads/seller-qualification/<userId>/`
+- 目前仅支持 `png`、`jpg`、`jpeg`、`pdf`
+- 若卖家当前资质状态不是 `PENDING`，上传新文件后会自动重置为 `PENDING`
 
 ## 7. 一组可直接测试的顺序
 
@@ -119,10 +196,12 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
 
 1. 先调用“卖家注册”或“买家注册”
 2. 从返回结果中取出 `data.userId`
-3. 调用“用户登录”
-4. 调用“查询用户个人信息”
+3. 调用“用户登录”，取出 `data.token`
+4. 调用“查询当前登录用户资料”或“查询用户个人信息”
 5. 如是买家，调用“更新用户个人信息”
 6. 如是卖家，调用“查询卖家资料”和“更新卖家资料”
+7. 上传卖家资质文件
+8. 用管理员身份查询待审核卖家并执行审核
 
 ## 8. 返回格式说明
 
@@ -276,7 +355,7 @@ curl "$BASE_URL/user/profile/not-exist-user-id"
 - `code = 0`
 - `msg` 类似：`用户不存在`
 
-### 9.9 更新个人信息时缺少 userId
+### 9.9 更新个人信息时缺少 JWT
 
 ```bash
 curl -X PUT "$BASE_URL/user/profile" \
@@ -290,7 +369,7 @@ curl -X PUT "$BASE_URL/user/profile" \
 预期：
 
 - `code = 0`
-- `msg` 类似：`用户ID不能为空`
+- `msg` 类似：`未登录，请在 Authorization 请求头中携带 Bearer token`
 
 ### 9.10 用买家 ID 查询卖家资料
 
@@ -316,8 +395,8 @@ BUYER_USER_ID="请替换为真实买家userId"
 
 curl -X PUT "$BASE_URL/user/seller-profile" \
   -H "Content-Type: application/json" \
+  -H "$USER_AUTH_HEADER" \
   -d '{
-    "userId": "'"$BUYER_USER_ID"'",
     "shopName": "Should Fail Shop",
     "businessLicense": "FAIL-001",
     "legalPersonId": "440100199901019999"
@@ -344,34 +423,34 @@ curl -X PUT "$BASE_URL/user/seller-profile" \
 预期：
 
 - `code = 0`
-- `msg` 类似：`用户ID不能为空`
+- `msg` 类似：`未登录，请在 Authorization 请求头中携带 Bearer token`
 
 ## 10. 管理员接口
 
-以下接口都需要在请求头中传入管理员身份：
+以下接口都需要在请求头中传入管理员 JWT：
 
 ```bash
-ADMIN_USER_ID="请替换为真实管理员userId"
-ADMIN_HEADER="-H X-Admin-User-Id:$ADMIN_USER_ID"
+ADMIN_TOKEN="请替换为管理员登录返回的data.token"
+ADMIN_AUTH_HEADER="Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 说明：
 
-- 后台接口统一要求请求头 `X-Admin-User-Id`
-- 只有 `administrator` 表中存在的用户才能调用
+- 后台接口统一要求请求头 `Authorization: Bearer <token>`
+- 只有 `administrator` 表中存在的用户，且登录拿到的 token 才能调用
 
 ### 10.1 管理员查看用户列表
 
 ```bash
 curl "$BASE_URL/user/admin/users" \
-  $ADMIN_HEADER
+  -H "$ADMIN_AUTH_HEADER"
 ```
 
 按条件筛选：
 
 ```bash
 curl "$BASE_URL/user/admin/users?userType=SELLER&qualificationStatus=PENDING" \
-  $ADMIN_HEADER
+  -H "$ADMIN_AUTH_HEADER"
 ```
 
 支持的筛选参数：
@@ -387,7 +466,7 @@ curl "$BASE_URL/user/admin/users?userType=SELLER&qualificationStatus=PENDING" \
 TARGET_USER_ID="请替换为真实userId"
 
 curl "$BASE_URL/user/admin/users/$TARGET_USER_ID" \
-  $ADMIN_HEADER
+  -H "$ADMIN_AUTH_HEADER"
 ```
 
 ### 10.3 管理员更新用户信息
@@ -395,7 +474,7 @@ curl "$BASE_URL/user/admin/users/$TARGET_USER_ID" \
 ```bash
 curl -X PUT "$BASE_URL/user/admin/users" \
   -H "Content-Type: application/json" \
-  $ADMIN_HEADER \
+  -H "$ADMIN_AUTH_HEADER" \
   -d '{
     "userId": "请替换为真实userId",
     "phone": "13800008888",
@@ -410,7 +489,7 @@ curl -X PUT "$BASE_URL/user/admin/users" \
 ```bash
 curl -X PUT "$BASE_URL/user/admin/users" \
   -H "Content-Type: application/json" \
-  $ADMIN_HEADER \
+  -H "$ADMIN_AUTH_HEADER" \
   -d '{
     "userId": "请替换为真实卖家userId",
     "qualificationStatus": "REJECTED"
@@ -422,10 +501,11 @@ curl -X PUT "$BASE_URL/user/admin/users" \
 ```bash
 curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
   -H "Content-Type: application/json" \
-  $ADMIN_HEADER \
+  -H "$ADMIN_AUTH_HEADER" \
   -d '{
-    "sellerId": "请替换为真实卖家sellerId",
-    "targetStatus": "APPROVED"
+    "sellerId": "请替换为真实卖家userId",
+    "targetStatus": "APPROVED",
+    "auditRemark": "资料齐全，审核通过"
   }'
 ```
 
@@ -433,11 +513,43 @@ curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
 
 - 只允许对 `PENDING` 状态卖家执行审核
 - 审核结果仅支持 `APPROVED` 或 `REJECTED`
-- 卖家资质审核通过后，信用分会按初始化规则提升到不低于 `80`
+- 审核接口不会再按旧规则直接把信用分抬到固定值，信用分统一按平台规则重算
+- 会记录审核备注、审核管理员 ID、审核时间
+
+驳回示例：
+
+```bash
+curl -X PUT "$BASE_URL/user/admin/sellers/qualification" \
+  -H "Content-Type: application/json" \
+  -H "$ADMIN_AUTH_HEADER" \
+  -d '{
+    "sellerId": "请替换为真实卖家userId",
+    "targetStatus": "REJECTED",
+    "auditRemark": "营业执照照片不清晰，请重新上传"
+  }'
+```
 
 ## 11. 信用分规则
 
-- 新注册用户默认信用分为 `60`
+- 新注册用户默认信用分为 `75`
 - 信用分允许管理员在 `0-100` 范围内调整
-- 卖家资质审核通过后，信用分会提升到不低于 `80`
+- 信用分统一按以下规则计算：
+  - 信息完善：`40`
+  - 互评：初始 `15`，每个好评 `+3`，每个差评 `-5`，该项最高 `30`
+  - 交易行为：初始 `10`，每完成一次交易 `+2`，该项最高 `20`
+  - 平台合规、社区氛围：默认 `10`，如账号被平台处于 `SUSPENDED` 状态则该项记为 `0`
 - 已审核卖家更新资质资料后，资质状态会重新回到 `PENDING`
+- 已审核卖家重新上传资质文件后，资质状态也会重新回到 `PENDING`
+
+## 12. 管理员一键重算所有用户信用分
+
+```bash
+curl -X POST "$BASE_URL/user/admin/credit-score/recalculate-all" \
+  -H "$ADMIN_AUTH_HEADER"
+```
+
+返回结果会包含：
+
+- `totalUserCount`：本次扫描的用户总数
+- `updatedUserCount`：本次实际被更新信用分的用户数
+- `users`：重算后的用户列表及最新信用分

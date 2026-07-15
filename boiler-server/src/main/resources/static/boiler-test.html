@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>锅炉帖子测试页</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .module-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .module-card {
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) minmax(360px, 1fr);
+      gap: 20px;
+    }
+
+    .module-result {
+      padding-left: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      font-size: 14px;
+    }
+
+    pre {
+      min-height: 96px;
+      max-height: 320px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    textarea,
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .sub-title {
+      margin: 18px 0 10px;
+      font-size: 16px;
+    }
+
+    .nav-links {
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .module-card {
+        grid-template-columns: 1fr;
+      }
+
+      .module-result {
+        padding-left: 0;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="nav-links">
+      <a href="/">用户测试页</a>
+    </div>
+
+    <section class="config-card">
+      <h1>锅炉帖子测试页</h1>
+      <p class="hint">用于测试 Post Module 中与锅炉详情相关的接口。页面会自动回填最近一次成功返回的帖子 ID 和卖家 ID。</p>
+      <div class="config-grid">
+        <div>
+          <label for="baseUrl"><strong>后端地址</strong></label>
+          <input id="baseUrl" type="text" value="http://127.0.0.1:8080">
+        </div>
+        <div>
+          <label for="sharedSellerId"><strong>默认卖家 ID</strong></label>
+          <input id="sharedSellerId" type="text" placeholder="创建、更新、删除时可复用">
+        </div>
+        <div>
+          <label for="sharedPostId"><strong>默认帖子 ID</strong></label>
+          <input id="sharedPostId" type="text" placeholder="查询、更新、删除时可复用">
+        </div>
+      </div>
+      <p class="hint">
+        业务规则：仅卖家可以发帖；<code>boilerType</code> 仅支持 <code>HOT_WATER</code> / <code>STEAM</code>；
+        热水锅炉必填 <code>ratedThermalPower</code>，蒸汽锅炉必填 <code>evaporationCapacity</code>。
+      </p>
+    </section>
+
+    <div class="module-list">
+      <section class="module-card">
+        <div class="module-form">
+          <h2>1. 创建锅炉帖子</h2>
+          <form id="createPostForm">
+            <div class="field-row">
+              <label for="createSellerId">卖家 ID</label>
+              <input id="createSellerId" name="sellerId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createTitle">标题</label>
+              <input id="createTitle" name="title" type="text" placeholder="可留空，后端自动生成">
+            </div>
+            <div class="field-row">
+              <label for="createPrice">价格</label>
+              <input id="createPrice" name="price" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createCity">城市</label>
+              <input id="createCity" name="city" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createMediaFiles">媒体文件</label>
+              <textarea id="createMediaFiles" name="mediaFiles" placeholder="可填图片 URL、文件名或 JSON 字符串"></textarea>
+            </div>
+            <div class="field-row">
+              <label for="createDescription">帖子描述</label>
+              <textarea id="createDescription" name="description"></textarea>
+            </div>
+
+            <h3 class="sub-title">锅炉详情</h3>
+            <div class="field-row">
+              <label for="createModel">锅炉型号</label>
+              <input id="createModel" name="model" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createBrand">品牌</label>
+              <input id="createBrand" name="brand" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createBoilerType">锅炉类型</label>
+              <select id="createBoilerType" name="boilerType">
+                <option value="HOT_WATER">HOT_WATER</option>
+                <option value="STEAM">STEAM</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="createTonnage">吨位</label>
+              <input id="createTonnage" name="tonnage" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createFuelType">燃料类型</label>
+              <input id="createFuelType" name="fuelType" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createWorkingPressure">工作压力</label>
+              <input id="createWorkingPressure" name="workingPressure" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createNoxEmissions">氮氧化物排放</label>
+              <input id="createNoxEmissions" name="noxEmissions" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createFootprintArea">占地面积</label>
+              <input id="createFootprintArea" name="footprintArea" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createManufactureStartDate">生产开始日期</label>
+              <input id="createManufactureStartDate" name="manufactureStartDate" type="date">
+            </div>
+            <div class="field-row">
+              <label for="createManufactureEndDate">生产结束日期</label>
+              <input id="createManufactureEndDate" name="manufactureEndDate" type="date">
+            </div>
+            <div class="field-row">
+              <label for="createRatedThermalPower">额定热功率</label>
+              <input id="createRatedThermalPower" name="ratedThermalPower" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createEvaporationCapacity">蒸发量</label>
+              <input id="createEvaporationCapacity" name="evaporationCapacity" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createThermalEfficiency">热效率</label>
+              <input id="createThermalEfficiency" name="thermalEfficiency" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createRatedOutletWaterTemperature">额定出水温度</label>
+              <input id="createRatedOutletWaterTemperature" name="ratedOutletWaterTemperature" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createEquipmentCondition">设备成色</label>
+              <input id="createEquipmentCondition" name="equipmentCondition" type="text" placeholder="例如：良好 / GOOD">
+            </div>
+            <div class="field-row">
+              <label for="createUsageHours">使用时长</label>
+              <input id="createUsageHours" name="usageHours" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="createApplicationScenario">应用场景</label>
+              <input id="createApplicationScenario" name="applicationScenario" type="text">
+            </div>
+            <div class="field-row">
+              <label for="createTestReport">检测报告</label>
+              <input id="createTestReport" name="testReport" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">创建帖子</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="createPostMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="createPostRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>2. 查询锅炉帖子详情</h2>
+          <form id="getPostForm">
+            <div class="field-row">
+              <label for="getPostId">帖子 ID</label>
+              <input id="getPostId" name="postId" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询详情</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="getPostMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="getPostRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>3. 更新锅炉帖子</h2>
+          <form id="updatePostForm">
+            <div class="field-row">
+              <label for="updatePostId">帖子 ID</label>
+              <input id="updatePostId" name="postId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateSellerId">卖家 ID</label>
+              <input id="updateSellerId" name="sellerId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateTitle">标题</label>
+              <input id="updateTitle" name="title" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updatePrice">价格</label>
+              <input id="updatePrice" name="price" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateCity">城市</label>
+              <input id="updateCity" name="city" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateMediaFiles">媒体文件</label>
+              <textarea id="updateMediaFiles" name="mediaFiles"></textarea>
+            </div>
+            <div class="field-row">
+              <label for="updateDescription">帖子描述</label>
+              <textarea id="updateDescription" name="description"></textarea>
+            </div>
+
+            <h3 class="sub-title">锅炉详情</h3>
+            <div class="field-row">
+              <label for="updateModel">锅炉型号</label>
+              <input id="updateModel" name="model" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateBrand">品牌</label>
+              <input id="updateBrand" name="brand" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateBoilerType">锅炉类型</label>
+              <select id="updateBoilerType" name="boilerType">
+                <option value="HOT_WATER">HOT_WATER</option>
+                <option value="STEAM">STEAM</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="updateTonnage">吨位</label>
+              <input id="updateTonnage" name="tonnage" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateFuelType">燃料类型</label>
+              <input id="updateFuelType" name="fuelType" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateWorkingPressure">工作压力</label>
+              <input id="updateWorkingPressure" name="workingPressure" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateNoxEmissions">氮氧化物排放</label>
+              <input id="updateNoxEmissions" name="noxEmissions" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateFootprintArea">占地面积</label>
+              <input id="updateFootprintArea" name="footprintArea" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateManufactureStartDate">生产开始日期</label>
+              <input id="updateManufactureStartDate" name="manufactureStartDate" type="date">
+            </div>
+            <div class="field-row">
+              <label for="updateManufactureEndDate">生产结束日期</label>
+              <input id="updateManufactureEndDate" name="manufactureEndDate" type="date">
+            </div>
+            <div class="field-row">
+              <label for="updateRatedThermalPower">额定热功率</label>
+              <input id="updateRatedThermalPower" name="ratedThermalPower" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateEvaporationCapacity">蒸发量</label>
+              <input id="updateEvaporationCapacity" name="evaporationCapacity" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateThermalEfficiency">热效率</label>
+              <input id="updateThermalEfficiency" name="thermalEfficiency" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateRatedOutletWaterTemperature">额定出水温度</label>
+              <input id="updateRatedOutletWaterTemperature" name="ratedOutletWaterTemperature" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateEquipmentCondition">设备成色</label>
+              <input id="updateEquipmentCondition" name="equipmentCondition" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateUsageHours">使用时长</label>
+              <input id="updateUsageHours" name="usageHours" type="number" step="0.01" min="0">
+            </div>
+            <div class="field-row">
+              <label for="updateApplicationScenario">应用场景</label>
+              <input id="updateApplicationScenario" name="applicationScenario" type="text">
+            </div>
+            <div class="field-row">
+              <label for="updateTestReport">检测报告</label>
+              <input id="updateTestReport" name="testReport" type="text">
+            </div>
+            <div class="button-row">
+              <button type="submit">更新帖子</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="updatePostMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="updatePostRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="module-card">
+        <div class="module-form">
+          <h2>4. 删除锅炉帖子</h2>
+          <form id="deletePostForm">
+            <div class="field-row">
+              <label for="deletePostId">帖子 ID</label>
+              <input id="deletePostId" name="postId" type="text">
+            </div>
+            <div class="field-row">
+              <label for="deleteSellerId">卖家 ID</label>
+              <input id="deleteSellerId" name="sellerId" type="text">
+            </div>
+            <p class="hint">删除接口会同时删除帖子和关联的锅炉详情。</p>
+            <div class="button-row">
+              <button type="submit">删除帖子</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="deletePostMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="deletePostRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="rule-card">
+        <h2>5. 测试建议</h2>
+        <ul>
+          <li>先在用户测试页创建一个卖家账号，拿到 <code>sellerId</code> 再来这里发帖。</li>
+          <li>先执行“创建锅炉帖子”，页面会自动回填最近一次成功返回的 <code>postId</code> 和 <code>sellerId</code>。</li>
+          <li>详情接口每调用一次，后端会自动增加一次 <code>viewCount</code>。</li>
+          <li>更新帖子后，状态会自动回到 <code>PENDING_REVIEW</code>。</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const baseUrlEl = document.getElementById("baseUrl");
+    const sharedSellerIdEl = document.getElementById("sharedSellerId");
+    const sharedPostIdEl = document.getElementById("sharedPostId");
+
+    const createFieldMap = {
+      sellerId: "createSellerId",
+      title: "createTitle",
+      price: "createPrice",
+      city: "createCity",
+      mediaFiles: "createMediaFiles",
+      description: "createDescription",
+      model: "createModel",
+      brand: "createBrand",
+      boilerType: "createBoilerType",
+      tonnage: "createTonnage",
+      fuelType: "createFuelType",
+      workingPressure: "createWorkingPressure",
+      noxEmissions: "createNoxEmissions",
+      footprintArea: "createFootprintArea",
+      manufactureStartDate: "createManufactureStartDate",
+      manufactureEndDate: "createManufactureEndDate",
+      ratedThermalPower: "createRatedThermalPower",
+      evaporationCapacity: "createEvaporationCapacity",
+      thermalEfficiency: "createThermalEfficiency",
+      ratedOutletWaterTemperature: "createRatedOutletWaterTemperature",
+      equipmentCondition: "createEquipmentCondition",
+      usageHours: "createUsageHours",
+      applicationScenario: "createApplicationScenario",
+      testReport: "createTestReport"
+    };
+
+    const updateFieldMap = {
+      postId: "updatePostId",
+      sellerId: "updateSellerId",
+      title: "updateTitle",
+      price: "updatePrice",
+      city: "updateCity",
+      mediaFiles: "updateMediaFiles",
+      description: "updateDescription",
+      model: "updateModel",
+      brand: "updateBrand",
+      boilerType: "updateBoilerType",
+      tonnage: "updateTonnage",
+      fuelType: "updateFuelType",
+      workingPressure: "updateWorkingPressure",
+      noxEmissions: "updateNoxEmissions",
+      footprintArea: "updateFootprintArea",
+      manufactureStartDate: "updateManufactureStartDate",
+      manufactureEndDate: "updateManufactureEndDate",
+      ratedThermalPower: "updateRatedThermalPower",
+      evaporationCapacity: "updateEvaporationCapacity",
+      thermalEfficiency: "updateThermalEfficiency",
+      ratedOutletWaterTemperature: "updateRatedOutletWaterTemperature",
+      equipmentCondition: "updateEquipmentCondition",
+      usageHours: "updateUsageHours",
+      applicationScenario: "updateApplicationScenario",
+      testReport: "updateTestReport"
+    };
+
+    function getBaseUrl() {
+      return baseUrlEl.value.trim().replace(/\/$/, "");
+    }
+
+    function setIfPresent(id, value) {
+      const el = document.getElementById(id);
+      if (!el || value === undefined || value === null) {
+        return;
+      }
+      el.value = value;
+    }
+
+    function fillSharedIds(postId, sellerId) {
+      if (sellerId) {
+        sharedSellerIdEl.value = sellerId;
+        setIfPresent("createSellerId", sellerId);
+        setIfPresent("updateSellerId", sellerId);
+        setIfPresent("deleteSellerId", sellerId);
+      }
+      if (postId) {
+        sharedPostIdEl.value = postId;
+        setIfPresent("getPostId", postId);
+        setIfPresent("updatePostId", postId);
+        setIfPresent("deletePostId", postId);
+      }
+    }
+
+    function toNumberIfPresent(value) {
+      if (value === undefined || value === null || value === "") {
+        return undefined;
+      }
+      return Number(value);
+    }
+
+    function getDisplayResult(data) {
+      if (!data) {
+        return "无返回内容";
+      }
+      if (data.code === 1) {
+        return data.data ? JSON.stringify(data.data, null, 2) : "操作成功";
+      }
+      return data.msg || data.error || "操作失败";
+    }
+
+    function showResult(moduleKey, title, data) {
+      const mainResultEl = document.getElementById(moduleKey + "MainResult");
+      const rawResultEl = document.getElementById(moduleKey + "RawResult");
+      mainResultEl.textContent = getDisplayResult(data);
+      rawResultEl.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
+    }
+
+    async function request(path, method, body) {
+      const options = { method: method, headers: {} };
+      if (body) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(getBaseUrl() + path, options);
+      const data = await response.json();
+      if (data && data.code === 1 && data.data) {
+        fillSharedIds(data.data.postId, data.data.sellerId);
+      }
+      return data;
+    }
+
+    function collectBoilerDetail(prefix) {
+      return {
+        model: document.getElementById(prefix + "Model").value.trim(),
+        brand: document.getElementById(prefix + "Brand").value.trim(),
+        boilerType: document.getElementById(prefix + "BoilerType").value.trim(),
+        tonnage: toNumberIfPresent(document.getElementById(prefix + "Tonnage").value.trim()),
+        fuelType: document.getElementById(prefix + "FuelType").value.trim(),
+        workingPressure: toNumberIfPresent(document.getElementById(prefix + "WorkingPressure").value.trim()),
+        noxEmissions: toNumberIfPresent(document.getElementById(prefix + "NoxEmissions").value.trim()),
+        footprintArea: toNumberIfPresent(document.getElementById(prefix + "FootprintArea").value.trim()),
+        manufactureStartDate: document.getElementById(prefix + "ManufactureStartDate").value.trim(),
+        manufactureEndDate: document.getElementById(prefix + "ManufactureEndDate").value.trim(),
+        ratedThermalPower: toNumberIfPresent(document.getElementById(prefix + "RatedThermalPower").value.trim()),
+        evaporationCapacity: toNumberIfPresent(document.getElementById(prefix + "EvaporationCapacity").value.trim()),
+        thermalEfficiency: toNumberIfPresent(document.getElementById(prefix + "ThermalEfficiency").value.trim()),
+        ratedOutletWaterTemperature: toNumberIfPresent(document.getElementById(prefix + "RatedOutletWaterTemperature").value.trim()),
+        equipmentCondition: document.getElementById(prefix + "EquipmentCondition").value.trim(),
+        usageHours: toNumberIfPresent(document.getElementById(prefix + "UsageHours").value.trim()),
+        applicationScenario: document.getElementById(prefix + "ApplicationScenario").value.trim(),
+        testReport: document.getElementById(prefix + "TestReport").value.trim()
+      };
+    }
+
+    function removeEmptyValues(obj) {
+      const result = {};
+      Object.keys(obj).forEach(function (key) {
+        const value = obj[key];
+        if (value !== "" && value !== undefined && value !== null) {
+          result[key] = value;
+        }
+      });
+      return result;
+    }
+
+    function buildCreatePayload() {
+      return removeEmptyValues({
+        sellerId: document.getElementById("createSellerId").value.trim() || sharedSellerIdEl.value.trim(),
+        title: document.getElementById("createTitle").value.trim(),
+        price: toNumberIfPresent(document.getElementById("createPrice").value.trim()),
+        city: document.getElementById("createCity").value.trim(),
+        mediaFiles: document.getElementById("createMediaFiles").value.trim(),
+        description: document.getElementById("createDescription").value.trim(),
+        boilerDetail: removeEmptyValues(collectBoilerDetail("create"))
+      });
+    }
+
+    function buildUpdatePayload() {
+      return removeEmptyValues({
+        postId: document.getElementById("updatePostId").value.trim() || sharedPostIdEl.value.trim(),
+        sellerId: document.getElementById("updateSellerId").value.trim() || sharedSellerIdEl.value.trim(),
+        title: document.getElementById("updateTitle").value.trim(),
+        price: toNumberIfPresent(document.getElementById("updatePrice").value.trim()),
+        city: document.getElementById("updateCity").value.trim(),
+        mediaFiles: document.getElementById("updateMediaFiles").value.trim(),
+        description: document.getElementById("updateDescription").value.trim(),
+        boilerDetail: removeEmptyValues(collectBoilerDetail("update"))
+      });
+    }
+
+    function fillFieldsFromData(fieldMap, data) {
+      Object.keys(fieldMap).forEach(function (key) {
+        if (data[key] !== undefined && data[key] !== null) {
+          setIfPresent(fieldMap[key], data[key]);
+        }
+      });
+    }
+
+    document.getElementById("createSellerId").addEventListener("blur", function () {
+      if (this.value.trim()) {
+        sharedSellerIdEl.value = this.value.trim();
+      }
+    });
+
+    document.getElementById("getPostId").addEventListener("blur", function () {
+      if (this.value.trim()) {
+        sharedPostIdEl.value = this.value.trim();
+      }
+    });
+
+    document.getElementById("createPostForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/post", "POST", buildCreatePayload());
+        showResult("createPost", "创建锅炉帖子结果", data);
+      } catch (error) {
+        showResult("createPost", "创建失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("getPostForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const postId = document.getElementById("getPostId").value.trim() || sharedPostIdEl.value.trim();
+        const data = await request("/post/" + encodeURIComponent(postId), "GET");
+        if (data && data.code === 1 && data.data) {
+          fillSharedIds(data.data.postId, data.data.sellerId);
+          fillFieldsFromData(updateFieldMap, data.data);
+          if (data.data.boilerDetail) {
+            fillFieldsFromData(updateFieldMap, data.data.boilerDetail);
+          }
+        }
+        showResult("getPost", "锅炉帖子详情", data);
+      } catch (error) {
+        showResult("getPost", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("updatePostForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/post", "PUT", buildUpdatePayload());
+        showResult("updatePost", "更新锅炉帖子结果", data);
+      } catch (error) {
+        showResult("updatePost", "更新失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("deletePostForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const postId = document.getElementById("deletePostId").value.trim() || sharedPostIdEl.value.trim();
+        const sellerId = document.getElementById("deleteSellerId").value.trim() || sharedSellerIdEl.value.trim();
+        const data = await request(
+          "/post/" + encodeURIComponent(postId) + "?sellerId=" + encodeURIComponent(sellerId),
+          "DELETE"
+        );
+        showResult("deletePost", "删除锅炉帖子结果", data);
+      } catch (error) {
+        showResult("deletePost", "删除失败", { error: String(error) });
+      }
+    });
+
+    // 初始时把共享卖家 ID 自动同步给创建和更新表单
+    sharedSellerIdEl.addEventListener("input", function () {
+      setIfPresent("createSellerId", this.value.trim());
+      setIfPresent("updateSellerId", this.value.trim());
+      setIfPresent("deleteSellerId", this.value.trim());
+    });
+
+    // 初始时把共享帖子 ID 自动同步给查询、更新和删除表单
+    sharedPostIdEl.addEventListener("input", function () {
+      setIfPresent("getPostId", this.value.trim());
+      setIfPresent("updatePostId", this.value.trim());
+      setIfPresent("deletePostId", this.value.trim());
+    });
+  </script>
+</body>
+</html>

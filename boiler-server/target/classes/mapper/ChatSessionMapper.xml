@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.boilerserver.mapper.ChatSessionMapper">
+
+    <!-- ==================== ResultMap 定义 ==================== -->
+
+    <!--
+        ChatSessionResultMap：映射 chatSession 表所有字段。
+        messageList 字段通过自定义 JsonListTypeHandler 将数据库 TEXT(JSON)
+        与 Java List<MessageItem> 双向转换。
+    -->
+    <resultMap id="ChatSessionResultMap" type="org.example.boilerpojo.ChatSessionDO">
+        <id     column="sessionId"        property="sessionId"        javaType="String"/>
+        <result column="sellerId"         property="sellerId"         javaType="String"/>
+        <result column="buyerId"          property="buyerId"          javaType="String"/>
+        <result column="postId"           property="postId"           javaType="String"/>
+        <result column="createTime"       property="createTime"       javaType="java.time.LocalDateTime"/>
+        <result column="lastMessageTime"  property="lastMessageTime"  javaType="java.time.LocalDateTime"/>
+        <result column="isArchived"       property="isArchived"       javaType="Boolean"/>
+        <result column="messageList"      property="messageList"
+                javaType="java.util.List"
+                typeHandler="org.example.boilerpojo.JsonListTypeHandler"/>
+    </resultMap>
+
+    <!-- ==================== SQL 语句定义 ==================== -->
+
+    <!--
+        精准匹配唯一未归档会话。
+        以 buyerId + sellerId + postId 三元组为唯一性约束，仅查询未归档记录。
+    -->
+    <select id="selectUniqueSession" resultMap="ChatSessionResultMap">
+        SELECT sessionId, sellerId, buyerId, postId,
+               createTime, lastMessageTime, isArchived, messageList
+        FROM chatSession
+        WHERE buyerId   = #{buyerId}
+          AND sellerId  = #{sellerId}
+          AND postId    = #{postId}
+          AND isArchived = false
+        LIMIT 1
+    </select>
+
+    <!--
+        查询当前用户所有未归档会话（兼容买家/卖家双重身份），
+        按 lastMessageTime 倒序排列。
+    -->
+    <select id="selectUserUnArchiveSession" resultMap="ChatSessionResultMap">
+        SELECT sessionId, sellerId, buyerId, postId,
+               createTime, lastMessageTime, isArchived, messageList
+        FROM chatSession
+        WHERE isArchived = false
+          AND (buyerId = #{userId} OR sellerId = #{userId})
+        ORDER BY lastMessageTime DESC
+    </select>
+
+    <!-- 按主键 sessionId 查询单条会话记录，不区分归档状态 -->
+    <select id="selectBySessionId" resultMap="ChatSessionResultMap">
+        SELECT sessionId, sellerId, buyerId, postId,
+               createTime, lastMessageTime, isArchived, messageList
+        FROM chatSession
+        WHERE sessionId = #{sessionId}
+    </select>
+
+    <!--
+        按主键 sessionId 查询并加行锁。
+        用于 sendMessage 事务内串行化同一会话的消息追加，避免整体覆盖写回时丢消息。
+    -->
+    <select id="selectBySessionIdForUpdate" resultMap="ChatSessionResultMap">
+        SELECT sessionId, sellerId, buyerId, postId,
+               createTime, lastMessageTime, isArchived, messageList
+        FROM chatSession
+        WHERE sessionId = #{sessionId}
+        FOR UPDATE
+    </select>
+
+    <!--
+        插入一条新的聊天会话记录。
+        messageList 通过 typeHandler 将 Java List<MessageItem> 序列化为 JSON 字符串入库。
+    -->
+    <insert id="insert" parameterType="org.example.boilerpojo.ChatSessionDO">
+        INSERT INTO chatSession (
+            sessionId, sellerId, buyerId, postId,
+            createTime, lastMessageTime, isArchived, messageList
+        ) VALUES (
+            #{sessionId}, #{sellerId}, #{buyerId}, #{postId},
+            #{createTime}, #{lastMessageTime}, #{isArchived},
+            #{messageList, typeHandler=org.example.boilerpojo.JsonListTypeHandler}
+        )
+    </insert>
+
+    <!--
+        更新指定会话的消息列表与最后消息时间。
+        此处 messageList 参数为 List<MessageItem>，通过 typeHandler 序列化为 JSON。
+    -->
+    <update id="updateMessageList">
+        UPDATE chatSession
+        SET messageList      = #{messageList, typeHandler=org.example.boilerpojo.JsonListTypeHandler},
+            lastMessageTime = #{lastMessageTime}
+        WHERE sessionId = #{sessionId}
+    </update>
+
+</mapper>

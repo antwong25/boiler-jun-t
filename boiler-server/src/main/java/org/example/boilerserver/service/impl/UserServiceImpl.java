@@ -4,7 +4,9 @@ import org.example.constant.UserConstant;
 import org.example.boilerpojo.AdminUserQueryDTO;
 import org.example.boilerpojo.AdminUserUpdateDTO;
 import org.example.boilerpojo.BuyerEntity;
+import org.example.boilerpojo.CreditScoreRecalculateVO;
 import org.example.boilerpojo.SellerEntity;
+import org.example.boilerpojo.SellerQualificationFileUploadDTO;
 import org.example.boilerpojo.SellerProfileDTO;
 import org.example.boilerpojo.SellerQualificationAuditDTO;
 import org.example.boilerpojo.UserDTO;
@@ -12,16 +14,30 @@ import org.example.boilerpojo.UserEntity;
 import org.example.boilerpojo.UserProfileUpdateDTO;
 import org.example.boilerpojo.UserRegisterDTO;
 import org.example.boilerpojo.UserVO;
+import org.example.boilerserver.config.FileStorageProperties;
 import org.example.boilerserver.mapper.BuyerMapper;
+import org.example.boilerserver.mapper.ReviewMapper;
 import org.example.boilerserver.mapper.SellerMapper;
+import org.example.boilerserver.mapper.TransactionMapper;
 import org.example.boilerserver.mapper.UserMapper;
 import org.example.boilerserver.service.UserService;
+import org.example.constant.ReviewConstant;
+import org.example.constant.TransactionConstant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -30,14 +46,30 @@ import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserService {
+    private static final Set<String> QUALIFICATION_FILE_TYPES = Set.of("BUSINESS_LICENSE", "LEGAL_PERSON_ID");
+    private static final Set<String> ALLOWED_FILE_EXTENSIONS = Set.of(".png", ".jpg", ".jpeg", ".pdf");
+
     private final UserMapper userMapper;
     private final BuyerMapper buyerMapper;
     private final SellerMapper sellerMapper;
+    private final TransactionMapper transactionMapper;
+    private final ReviewMapper reviewMapper;
+    private final FileStorageProperties fileStorageProperties;
 
-    public UserServiceImpl(UserMapper userMapper, BuyerMapper buyerMapper, SellerMapper sellerMapper) {
+    public UserServiceImpl(
+            UserMapper userMapper,
+            BuyerMapper buyerMapper,
+            SellerMapper sellerMapper,
+            TransactionMapper transactionMapper,
+            ReviewMapper reviewMapper,
+            FileStorageProperties fileStorageProperties
+    ) {
         this.userMapper = userMapper;
         this.buyerMapper = buyerMapper;
         this.sellerMapper = sellerMapper;
+        this.transactionMapper = transactionMapper;
+        this.reviewMapper = reviewMapper;
+        this.fileStorageProperties = fileStorageProperties;
     }
 
     @Override
@@ -70,6 +102,7 @@ public class UserServiceImpl implements UserService {
             SellerEntity sellerEntity = new SellerEntity();
             sellerEntity.setSellerId(userId);
             sellerEntity.setShopName(dto.getShopName().trim());
+            sellerEntity.setShopAddress(trimToNull(dto.getShopAddress()));
             sellerEntity.setBusinessLicense(trimToNull(dto.getBusinessLicense()));
             sellerEntity.setLegalPersonId(trimToNull(dto.getLegalPersonId()));
             sellerEntity.setQualificationStatus(UserConstant.DEFAULT_QUALIFICATION_STATUS);
@@ -79,7 +112,7 @@ public class UserServiceImpl implements UserService {
             sellerMapper.insert(sellerEntity);
         }
 
-        return buildUserVO(userMapper.getByUserId(userId));
+        return recalculateCreditScore(userId);
     }
 
     @Override
@@ -105,10 +138,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO updateProfile(UserProfileUpdateDTO dto) {
-        if (dto == null || !StringUtils.hasText(dto.getUserId())) {
+    public UserVO updateProfile(String currentUserId, UserProfileUpdateDTO dto) {
+        if (!StringUtils.hasText(currentUserId)) {
             throw new IllegalArgumentException("用户ID不能为空");
         }
+        if (dto == null) {
+            throw new IllegalArgumentException("用户资料不能为空");
+        }
+        dto.setUserId(currentUserId.trim());
 
         UserEntity userEntity = getExistingUser(dto.getUserId());
         userEntity.setPhone(trimToNull(dto.getPhone()));
@@ -129,10 +166,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO upsertSellerProfile(SellerProfileDTO dto) {
-        if (dto == null || !StringUtils.hasText(dto.getUserId())) {
+    public UserVO upsertSellerProfile(String currentUserId, SellerProfileDTO dto) {
+        if (!StringUtils.hasText(currentUserId)) {
             throw new IllegalArgumentException("用户ID不能为空");
         }
+        if (dto == null) {
+            throw new IllegalArgumentException("卖家资料不能为空");
+        }
+        dto.setUserId(currentUserId.trim());
         UserEntity userEntity = getExistingUser(dto.getUserId());
         if (!UserConstant.USER_TYPE_SELLER.equalsIgnoreCase(userEntity.getUserType())) {
             throw new IllegalArgumentException("当前用户不是卖家");
@@ -145,8 +186,11 @@ public class UserServiceImpl implements UserService {
             sellerEntity = new SellerEntity();
             sellerEntity.setSellerId(dto.getUserId());
             sellerEntity.setShopName(dto.getShopName().trim());
+            sellerEntity.setShopAddress(trimToNull(dto.getShopAddress()));
             sellerEntity.setBusinessLicense(trimToNull(dto.getBusinessLicense()));
             sellerEntity.setLegalPersonId(trimToNull(dto.getLegalPersonId()));
+            sellerEntity.setBusinessLicenseFileUrl(trimToNull(dto.getBusinessLicenseFileUrl()));
+            sellerEntity.setLegalPersonIdFileUrl(trimToNull(dto.getLegalPersonIdFileUrl()));
             sellerEntity.setQualificationStatus(UserConstant.DEFAULT_QUALIFICATION_STATUS);
             sellerEntity.setGuaranteeDeposit(BigDecimal.ZERO);
             sellerEntity.setCompletedTransactionCount(0);
@@ -157,14 +201,59 @@ public class UserServiceImpl implements UserService {
             if (StringUtils.hasText(dto.getShopName())) {
                 sellerEntity.setShopName(dto.getShopName().trim());
             }
+            sellerEntity.setShopAddress(trimToNull(dto.getShopAddress()));
             sellerEntity.setBusinessLicense(trimToNull(dto.getBusinessLicense()));
             sellerEntity.setLegalPersonId(trimToNull(dto.getLegalPersonId()));
-            if (qualificationChanged && !UserConstant.QUALIFICATION_STATUS_PENDING.equals(sellerEntity.getQualificationStatus())) {
-                sellerEntity.setQualificationStatus(UserConstant.QUALIFICATION_STATUS_PENDING);
-            }
+            sellerEntity.setBusinessLicenseFileUrl(trimToNull(dto.getBusinessLicenseFileUrl()));
+            sellerEntity.setLegalPersonIdFileUrl(trimToNull(dto.getLegalPersonIdFileUrl()));
+            resetQualificationIfNeeded(sellerEntity, qualificationChanged);
             sellerMapper.update(sellerEntity);
         }
         return buildUserVO(userEntity);
+    }
+
+    @Override
+    @Transactional
+    public SellerQualificationFileUploadDTO uploadSellerQualificationFile(String userId, String fileType, MultipartFile file) {
+        UserEntity userEntity = getExistingUser(userId);
+        if (!UserConstant.USER_TYPE_SELLER.equalsIgnoreCase(userEntity.getUserType())) {
+            throw new IllegalArgumentException("当前用户不是卖家");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("上传文件不能为空");
+        }
+
+        String normalizedFileType = normalizeQualificationFileType(fileType);
+        SellerEntity sellerEntity = getExistingSeller(userId);
+        String originalFileName = StringUtils.hasText(file.getOriginalFilename()) ? file.getOriginalFilename() : "qualification-file";
+        String safeExtension = extractSafeExtension(originalFileName);
+        validateQualificationFileExtension(safeExtension);
+        String storedFileName = normalizedFileType.toLowerCase(Locale.ROOT) + "-" + UUID.randomUUID().toString().replace("-", "") + safeExtension;
+        Path targetDirectory = resolveSellerQualificationDirectory(userId);
+        Path targetFile = targetDirectory.resolve(storedFileName).normalize();
+
+        try {
+            Files.createDirectories(targetDirectory);
+            Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            throw new IllegalStateException("保存资质文件失败");
+        }
+
+        String relativeUrl = "/uploads/seller-qualification/" + userId.trim() + "/" + storedFileName;
+        if ("BUSINESS_LICENSE".equals(normalizedFileType)) {
+            sellerEntity.setBusinessLicenseFileUrl(relativeUrl);
+        } else {
+            sellerEntity.setLegalPersonIdFileUrl(relativeUrl);
+        }
+        resetQualificationIfNeeded(sellerEntity, true);
+        sellerMapper.update(sellerEntity);
+
+        SellerQualificationFileUploadDTO result = new SellerQualificationFileUploadDTO();
+        result.setUserId(userId.trim());
+        result.setFileType(normalizedFileType);
+        result.setFileName(storedFileName);
+        result.setFileUrl(relativeUrl);
+        return result;
     }
 
     @Override
@@ -213,10 +302,54 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserVO auditSellerQualification(SellerQualificationAuditDTO dto) {
+    public UserVO recalculateCreditScore(String userId) {
+        UserEntity userEntity = getExistingUser(userId);
+        int recalculatedCreditScore = calculateCreditScore(userEntity);
+        if (!Objects.equals(userEntity.getCreditScore(), recalculatedCreditScore)) {
+            userEntity.setCreditScore(recalculatedCreditScore);
+            userMapper.update(userEntity);
+        } else {
+            userEntity.setCreditScore(recalculatedCreditScore);
+        }
+        return buildUserVO(userEntity);
+    }
+
+    @Override
+    @Transactional
+    public CreditScoreRecalculateVO recalculateAllCreditScores() {
+        List<UserEntity> userEntities = userMapper.listAllUsers();
+        List<UserVO> users = new ArrayList<>(userEntities.size());
+        int updatedUserCount = 0;
+
+        for (UserEntity userEntity : userEntities) {
+            int recalculatedCreditScore = calculateCreditScore(userEntity);
+            if (!Objects.equals(userEntity.getCreditScore(), recalculatedCreditScore)) {
+                userEntity.setCreditScore(recalculatedCreditScore);
+                userMapper.update(userEntity);
+                updatedUserCount++;
+            } else {
+                userEntity.setCreditScore(recalculatedCreditScore);
+            }
+            users.add(buildUserVO(userEntity));
+        }
+
+        CreditScoreRecalculateVO result = new CreditScoreRecalculateVO();
+        result.setTotalUserCount(userEntities.size());
+        result.setUpdatedUserCount(updatedUserCount);
+        result.setUsers(users);
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public UserVO auditSellerQualification(String adminUserId, SellerQualificationAuditDTO dto) {
+        if (!StringUtils.hasText(adminUserId)) {
+            throw new IllegalArgumentException("管理员ID不能为空");
+        }
         if (dto == null || !StringUtils.hasText(dto.getSellerId())) {
             throw new IllegalArgumentException("卖家ID不能为空");
         }
+        dto.setAdminUserId(adminUserId.trim());
 
         String targetStatus = normalizeQualificationStatus(dto.getTargetStatus());
         if (UserConstant.QUALIFICATION_STATUS_PENDING.equals(targetStatus)) {
@@ -233,15 +366,12 @@ public class UserServiceImpl implements UserService {
         }
 
         sellerEntity.setQualificationStatus(targetStatus);
+        sellerEntity.setQualificationAuditRemark(trimToNull(dto.getAuditRemark()));
+        sellerEntity.setQualificationAuditedBy(trimToNull(dto.getAdminUserId()));
+        sellerEntity.setQualificationAuditTime(LocalDateTime.now());
         sellerMapper.update(sellerEntity);
 
-        UserEntity userEntity = getExistingUser(dto.getSellerId());
-        if (UserConstant.QUALIFICATION_STATUS_APPROVED.equals(targetStatus)) {
-            applySellerApprovedCreditRule(userEntity);
-            userMapper.update(userEntity);
-        }
-
-        return buildUserVO(userMapper.getByUserId(dto.getSellerId()));
+        return recalculateCreditScore(dto.getSellerId());
     }
 
     @Override
@@ -320,12 +450,33 @@ public class UserServiceImpl implements UserService {
             }
             userVO.setSellerId(sellerEntity.getSellerId());
             userVO.setShopName(sellerEntity.getShopName());
+            userVO.setShopAddress(sellerEntity.getShopAddress());
             userVO.setBusinessLicense(sellerEntity.getBusinessLicense());
             userVO.setLegalPersonId(sellerEntity.getLegalPersonId());
+            userVO.setBusinessLicenseFileUrl(sellerEntity.getBusinessLicenseFileUrl());
+            userVO.setLegalPersonIdFileUrl(sellerEntity.getLegalPersonIdFileUrl());
             userVO.setQualificationStatus(sellerEntity.getQualificationStatus());
+            userVO.setQualificationAuditRemark(sellerEntity.getQualificationAuditRemark());
+            userVO.setQualificationAuditedBy(sellerEntity.getQualificationAuditedBy());
+            userVO.setQualificationAuditTime(sellerEntity.getQualificationAuditTime());
             userVO.setGuaranteeDeposit(sellerEntity.getGuaranteeDeposit());
-            userVO.setCompletedTransactionCount(sellerEntity.getCompletedTransactionCount());
-            userVO.setPositiveRatingRate(sellerEntity.getPositiveRatingRate());
+            userVO.setCompletedTransactionCount(transactionMapper.countCompletedBySellerId(
+                    userEntity.getUserId(),
+                    TransactionConstant.STATUS_COMPLETED
+            ));
+
+            int totalReviews = reviewMapper.countByRevieweeId(userEntity.getUserId());
+            if (totalReviews == 0) {
+                userVO.setPositiveRatingRate(BigDecimal.ZERO);
+            } else {
+                int positiveCount = reviewMapper.countPositiveByRevieweeId(
+                        userEntity.getUserId(),
+                        ReviewConstant.POSITIVE_RATING_THRESHOLD
+                );
+                userVO.setPositiveRatingRate(BigDecimal.valueOf(positiveCount)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(totalReviews), 2, RoundingMode.HALF_UP));
+            }
             return userVO;
         }
 
@@ -409,23 +560,112 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void applySellerApprovedCreditRule(UserEntity userEntity) {
-        int currentCreditScore = userEntity.getCreditScore() == null
-                ? UserConstant.DEFAULT_CREDIT_SCORE
-                : userEntity.getCreditScore();
-        userEntity.setCreditScore(Math.max(currentCreditScore, UserConstant.SELLER_APPROVAL_CREDIT_SCORE));
+    private int calculateCreditScore(UserEntity userEntity) {
+        int informationCompletenessScore = calculateInformationCompletenessScore(userEntity);
+        int mutualReviewScore = calculateMutualReviewScore(userEntity.getUserId());
+        int transactionBehaviorScore = calculateTransactionBehaviorScore(userEntity.getUserId());
+        int communityConductScore = calculateCommunityConductScore(userEntity);
+        int totalScore = informationCompletenessScore + mutualReviewScore + transactionBehaviorScore + communityConductScore;
+        return Math.max(UserConstant.MIN_CREDIT_SCORE, Math.min(totalScore, UserConstant.MAX_CREDIT_SCORE));
+    }
+
+    private int calculateInformationCompletenessScore(UserEntity userEntity) {
+        return userEntity != null && StringUtils.hasText(userEntity.getUserId())
+                ? UserConstant.INFORMATION_COMPLETENESS_SCORE
+                : 0;
+    }
+
+    private int calculateMutualReviewScore(String userId) {
+        int positiveReviewCount = reviewMapper.countPositiveByRevieweeId(userId, ReviewConstant.POSITIVE_RATING_THRESHOLD);
+        int negativeReviewCount = reviewMapper.countNegativeByRevieweeId(userId, 2);
+        int score = UserConstant.MUTUAL_REVIEW_BASE_SCORE
+                + positiveReviewCount * UserConstant.MUTUAL_REVIEW_POSITIVE_BONUS
+                - negativeReviewCount * UserConstant.MUTUAL_REVIEW_NEGATIVE_PENALTY;
+        return Math.max(0, Math.min(score, UserConstant.MUTUAL_REVIEW_MAX_SCORE));
+    }
+
+    private int calculateTransactionBehaviorScore(String userId) {
+        int completedTransactionCount = transactionMapper.countByUserIdAndStatus(
+                userId,
+                TransactionConstant.STATUS_COMPLETED
+        );
+        int score = UserConstant.TRANSACTION_BEHAVIOR_BASE_SCORE
+                + completedTransactionCount * UserConstant.TRANSACTION_BEHAVIOR_COMPLETED_BONUS;
+        return Math.min(score, UserConstant.TRANSACTION_BEHAVIOR_MAX_SCORE);
+    }
+
+    private int calculateCommunityConductScore(UserEntity userEntity) {
+        return UserConstant.VERIFICATION_STATUS_SUSPENDED.equalsIgnoreCase(userEntity.getVerificationStatus())
+                ? 0
+                : UserConstant.COMMUNITY_CONDUCT_SCORE;
     }
 
     private boolean hasSellerQualificationChanged(SellerEntity sellerEntity, SellerProfileDTO dto) {
         if (StringUtils.hasText(dto.getShopName()) && !dto.getShopName().trim().equals(sellerEntity.getShopName())) {
             return true;
         }
+        if (dto.getShopAddress() != null
+                && !Objects.equals(trimToNull(dto.getShopAddress()), sellerEntity.getShopAddress())) {
+            return true;
+        }
         if (dto.getBusinessLicense() != null
                 && !Objects.equals(trimToNull(dto.getBusinessLicense()), sellerEntity.getBusinessLicense())) {
             return true;
         }
-        return dto.getLegalPersonId() != null
-                && !Objects.equals(trimToNull(dto.getLegalPersonId()), sellerEntity.getLegalPersonId());
+        if (dto.getLegalPersonId() != null
+                && !Objects.equals(trimToNull(dto.getLegalPersonId()), sellerEntity.getLegalPersonId())) {
+            return true;
+        }
+        if (dto.getBusinessLicenseFileUrl() != null
+                && !Objects.equals(trimToNull(dto.getBusinessLicenseFileUrl()), sellerEntity.getBusinessLicenseFileUrl())) {
+            return true;
+        }
+        return dto.getLegalPersonIdFileUrl() != null
+                && !Objects.equals(trimToNull(dto.getLegalPersonIdFileUrl()), sellerEntity.getLegalPersonIdFileUrl());
+    }
+
+    private void resetQualificationIfNeeded(SellerEntity sellerEntity, boolean qualificationChanged) {
+        if (!qualificationChanged || UserConstant.QUALIFICATION_STATUS_PENDING.equals(sellerEntity.getQualificationStatus())) {
+            return;
+        }
+        sellerEntity.setQualificationStatus(UserConstant.QUALIFICATION_STATUS_PENDING);
+        sellerEntity.setQualificationAuditRemark(null);
+        sellerEntity.setQualificationAuditedBy(null);
+        sellerEntity.setQualificationAuditTime(null);
+    }
+
+    private String normalizeQualificationFileType(String fileType) {
+        if (!StringUtils.hasText(fileType)) {
+            throw new IllegalArgumentException("文件类型不能为空");
+        }
+        String normalized = fileType.trim().toUpperCase(Locale.ROOT);
+        if (!QUALIFICATION_FILE_TYPES.contains(normalized)) {
+            throw new IllegalArgumentException("文件类型仅支持 BUSINESS_LICENSE 或 LEGAL_PERSON_ID");
+        }
+        return normalized;
+    }
+
+    private Path resolveSellerQualificationDirectory(String userId) {
+        return Paths.get(fileStorageProperties.getSellerQualificationDir())
+                .toAbsolutePath()
+                .normalize()
+                .resolve(userId.trim())
+                .normalize();
+    }
+
+    private String extractSafeExtension(String fileName) {
+        int index = fileName.lastIndexOf('.');
+        if (index < 0 || index == fileName.length() - 1) {
+            return "";
+        }
+        String extension = fileName.substring(index).toLowerCase(Locale.ROOT);
+        return extension.matches("\\.[a-z0-9]{1,10}") ? extension : "";
+    }
+
+    private void validateQualificationFileExtension(String extension) {
+        if (!ALLOWED_FILE_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("资质文件仅支持 png、jpg、jpeg 或 pdf");
+        }
     }
 
     private String trimToNull(String value) {

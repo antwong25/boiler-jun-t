@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.ReviewMapper">
+    <resultMap id="ReviewResultMap" type="org.example.boilerpojo.ReviewEntity">
+        <id property="reviewId" column="reviewId"/>
+        <result property="reviewerId" column="reviewerId"/>
+        <result property="revieweeId" column="revieweeId"/>
+        <result property="postId" column="postId"/>
+        <result property="orderId" column="orderId"/>
+        <result property="rating" column="rating"/>
+        <result property="content" column="content"/>
+        <result property="reviewTime" column="reviewTime"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.ReviewEntity">
+        insert into review (
+            reviewId, reviewerId, revieweeId, postId, orderId, rating, content, reviewTime
+        )
+        values (
+            #{reviewId}, #{reviewerId}, #{revieweeId}, #{postId}, #{orderId}, #{rating}, #{content}, #{reviewTime}
+        )
+    </insert>
+
+    <select id="getByOrderIdAndReviewerId" resultMap="ReviewResultMap">
+        select * from review where orderId = #{orderId} and reviewerId = #{reviewerId}
+    </select>
+
+    <select id="listByPostId" resultMap="ReviewResultMap">
+        select * from review where postId = #{postId}
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by ${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by reviewTime desc, reviewId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByPostId" resultType="java.lang.Integer">
+        select count(*) from review where postId = #{postId}
+    </select>
+
+    <select id="listByOrderId" resultMap="ReviewResultMap">
+        select * from review where orderId = #{orderId}
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by ${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by reviewTime desc, reviewId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByOrderId" resultType="java.lang.Integer">
+        select count(*) from review where orderId = #{orderId}
+    </select>
+
+    <select id="listByRevieweeId" resultMap="ReviewResultMap">
+        select *
+        from review
+        where revieweeId = #{revieweeId}
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by ${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by reviewTime desc, reviewId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId}
+    </select>
+
+    <select id="countPositiveByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId} and rating &gt;= #{threshold}
+    </select>
+
+    <select id="countNegativeByRevieweeId" resultType="java.lang.Integer">
+        select count(*) from review where revieweeId = #{revieweeId} and rating &lt;= #{threshold}
+    </select>
+
+    <select id="avgRatingByRevieweeId" resultType="java.lang.Double">
+        select avg(rating) from review where revieweeId = #{revieweeId}
+    </select>
+</mapper>

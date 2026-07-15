@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.OrderMapper">
+    <resultMap id="OrderResultMap" type="org.example.boilerpojo.OrderEntity">
+        <id property="orderId" column="orderId"/>
+        <result property="transactionId" column="transactionId"/>
+        <result property="orderStatus" column="orderStatus"/>
+        <result property="createTime" column="createTime"/>
+        <result property="updateTime" column="updateTime"/>
+    </resultMap>
+
+    <select id="getByOrderId" resultMap="OrderResultMap">
+        select * from `order` where orderId = #{orderId}
+    </select>
+
+    <select id="getByTransactionId" resultMap="OrderResultMap">
+        select * from `order` where transactionId = #{transactionId} limit 1
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.OrderEntity">
+        insert into `order` (
+            orderId, transactionId, orderStatus, createTime, updateTime
+        )
+        values (
+            #{orderId}, #{transactionId}, #{orderStatus}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.OrderEntity">
+        update `order`
+        <set>
+            <if test="orderStatus != null and orderStatus != ''">orderStatus = #{orderStatus},</if>
+            <if test="updateTime != null">updateTime = #{updateTime},</if>
+        </set>
+        where orderId = #{orderId}
+    </update>
+
+    <select id="listByUserIdAndStatus" resultMap="OrderResultMap">
+        select o.*
+        from `order` o
+        inner join transaction t on o.transactionId = t.transactionId
+        <where>
+            (t.buyerId = #{userId} or t.sellerId = #{userId})
+            <if test="orderStatus != null and orderStatus != ''">
+                and o.orderStatus = #{orderStatus}
+            </if>
+        </where>
+        <choose>
+            <when test="sortField != null and sortField != ''">
+                order by o.${sortField} ${sortOrder}
+            </when>
+            <otherwise>
+                order by o.createTime desc, o.orderId desc
+            </otherwise>
+        </choose>
+        limit #{offset}, #{size}
+    </select>
+
+    <select id="countByUserIdAndStatus" resultType="java.lang.Integer">
+        select count(*)
+        from `order` o
+        inner join transaction t on o.transactionId = t.transactionId
+        <where>
+            (t.buyerId = #{userId} or t.sellerId = #{userId})
+            <if test="orderStatus != null and orderStatus != ''">
+                and o.orderStatus = #{orderStatus}
+            </if>
+        </where>
+    </select>
+</mapper>

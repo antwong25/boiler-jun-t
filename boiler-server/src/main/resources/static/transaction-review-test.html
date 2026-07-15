@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction & Review 接口测试页</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .module-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .nav-links {
+      margin-bottom: 16px;
+    }
+
+    .module-card {
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+      gap: 20px;
+    }
+
+    .module-result {
+      padding-left: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      margin-top: 16px;
+    }
+
+    .hint {
+      font-size: 14px;
+      color: #666;
+    }
+
+    pre {
+      min-height: 96px;
+      max-height: 320px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid #eee;
+      padding: 8px;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+
+    h2 {
+      border-bottom: 2px solid #2196F3;
+      padding-bottom: 8px;
+      margin-top: 0;
+    }
+
+    h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    input, select, button, textarea {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      width: auto;
+    }
+
+    button:hover {
+      background: #1976D2;
+    }
+
+    .result-block {
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      background: #f5f5f5;
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 24px 0 16px 0;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .info-banner {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .enum-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .enum-card {
+      background: #fafafa;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .enum-card h4 {
+      margin: 0 0 8px 0;
+      color: #333;
+    }
+
+    .enum-card code {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 6px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 960px) {
+      .module-card {
+        grid-template-columns: 1fr;
+      }
+
+      .module-result {
+        padding-left: 0;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="nav-links">
+      <a href="/index.html">前往用户管理测试页</a>
+    </div>
+
+    <section class="config-card">
+      <h1>Transaction & Review 接口测试页</h1>
+      <p class="hint">左侧填写请求参数，右侧保留当前模块的主要结果和原始响应，便于多接口并行测试。</p>
+
+      <div class="info-banner">
+        <strong>📝 使用说明：</strong>
+        <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+          <li>所有输入框已预填默认值，可直接点击按钮测试</li>
+          <li>测试账号：test_buyer_001 / 123456（买家），test_seller_001 / 123456（卖家）</li>
+          <li>推荐测试顺序：创建交易 → 创建订单 → 确认订单 → 完成订单 → 提交评论 → 查询评论</li>
+          <li>创建交易成功后，<code>transactionId</code> 会自动填充到后续相关表单</li>
+          <li>创建订单成功后，<code>orderId</code> 会自动填充到后续相关表单</li>
+        </ul>
+      </div>
+
+      <div class="config-grid">
+        <div>
+          <label for="baseUrl"><strong>后端地址</strong></label>
+          <input id="baseUrl" type="text" value="http://127.0.0.1:8080">
+        </div>
+        <div>
+          <label for="globalBuyerId"><strong>全局买家 ID</strong></label>
+          <input id="globalBuyerId" type="text" value="test_buyer_001">
+        </div>
+        <div>
+          <label for="globalSellerId"><strong>全局卖家 ID</strong></label>
+          <input id="globalSellerId" type="text" value="test_seller_001">
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================== -->
+    <!-- Transaction 模块 -->
+    <!-- ====================================== -->
+    <div class="section-title">📦 Transaction 模块（4 个接口）</div>
+
+    <div class="module-list">
+      <!-- 1. 创建交易 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>1. 创建交易（买家预约帖子）</h2>
+          <form id="createTransactionForm">
+            <div class="field-row">
+              <label for="ctBuyerId">买家 ID</label>
+              <input id="ctBuyerId" name="buyerId" type="text" value="test_buyer_001">
+            </div>
+            <div class="field-row">
+              <label for="ctPostId">帖子 ID</label>
+              <input id="ctPostId" name="postId" type="text" value="test_post_001">
+            </div>
+            <p class="hint">买家必须是 BUYER 类型，帖子状态必须为 PUBLISHED。成功后 transactionId 自动填充到后续表单。</p>
+            <div class="button-row">
+              <button type="submit">创建交易</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="createTransactionMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="createTransactionRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 查询交易详情 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>2. 查询交易详情</h2>
+          <form id="getTransactionForm">
+            <div class="field-row">
+              <label for="gtTransactionId">交易 ID</label>
+              <input id="gtTransactionId" name="transactionId" type="text" placeholder="创建交易后自动填充">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询详情</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="getTransactionMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="getTransactionRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 我的交易列表 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>3. 我的交易列表（分页+排序）</h2>
+          <form id="listMyTransactionsForm">
+            <div class="field-row">
+              <label for="lmtUserId">用户 ID</label>
+              <input id="lmtUserId" name="userId" type="text" value="test_buyer_001">
+            </div>
+            <div class="field-row">
+              <label for="lmtStatus">交易状态</label>
+              <select id="lmtStatus" name="transactionStatus">
+                <option value="">全部</option>
+                <option value="PENDING">PENDING</option>
+                <option value="ONGOING">ONGOING</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lmtPageNum">页码</label>
+              <input id="lmtPageNum" name="pageNum" type="number" value="1" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lmtPageSize">每页条数</label>
+              <input id="lmtPageSize" name="pageSize" type="number" value="10" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lmtSortField">排序字段</label>
+              <select id="lmtSortField" name="sortField">
+                <option value="">默认</option>
+                <option value="transactionTime">transactionTime</option>
+                <option value="transactionAmount">transactionAmount</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lmtSortOrder">排序方向</label>
+              <select id="lmtSortOrder" name="sortOrder">
+                <option value="desc">desc</option>
+                <option value="asc">asc</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询列表</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listMyTransactionsMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listMyTransactionsRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 取消交易 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>4. 取消交易</h2>
+          <form id="cancelTransactionForm">
+            <div class="field-row">
+              <label for="cancelTId">交易 ID</label>
+              <input id="cancelTId" name="transactionId" type="text" placeholder="创建交易后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="cancelTUserId">操作人 ID</label>
+              <input id="cancelTUserId" name="userId" type="text" value="test_buyer_001">
+            </div>
+            <p class="hint">只有买家本人可取消，交易状态必须为 PENDING 或 ONGOING。</p>
+            <div class="button-row">
+              <button type="submit">取消交易</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="cancelTransactionMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="cancelTransactionRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================== -->
+    <!-- Order 模块 -->
+    <!-- ====================================== -->
+    <div class="section-title">📋 Order 模块（6 个接口）</div>
+
+    <div class="module-list">
+      <!-- 5. 创建订单 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>5. 创建订单</h2>
+          <form id="createOrderForm">
+            <div class="field-row">
+              <label for="coTransactionId">交易 ID</label>
+              <input id="coTransactionId" name="transactionId" type="text" placeholder="创建交易后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="coOperatorId">操作人 ID</label>
+              <input id="coOperatorId" name="operatorId" type="text" value="test_buyer_001">
+            </div>
+            <p class="hint">买家发起订单，交易状态必须为 PENDING。成功后 orderId 自动填充到后续表单。</p>
+            <div class="button-row">
+              <button type="submit">创建订单</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="createOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="createOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. 确认订单 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>6. 确认订单（卖家确认）</h2>
+          <form id="confirmOrderForm">
+            <div class="field-row">
+              <label for="cfOrderId">订单 ID</label>
+              <input id="cfOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="cfOperatorId">操作人 ID</label>
+              <input id="cfOperatorId" name="operatorId" type="text" value="test_seller_001">
+            </div>
+            <p class="hint">只有卖家可确认，订单状态从 PENDING_CONFIRM 流转为 IN_PROGRESS。</p>
+            <div class="button-row">
+              <button type="submit">确认订单</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="confirmOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="confirmOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. 完成订单 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>7. 完成订单</h2>
+          <form id="completeOrderForm">
+            <div class="field-row">
+              <label for="cpOrderId">订单 ID</label>
+              <input id="cpOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="cpOperatorId">操作人 ID</label>
+              <input id="cpOperatorId" name="operatorId" type="text" value="test_buyer_001">
+            </div>
+            <p class="hint">订单状态必须为 IN_PROGRESS，完成后变为 COMPLETED，可发起评论。</p>
+            <div class="button-row">
+              <button type="submit">完成订单</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="completeOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="completeOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. 取消订单 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>8. 取消订单</h2>
+          <form id="cancelOrderForm">
+            <div class="field-row">
+              <label for="cancelOrderId">订单 ID</label>
+              <input id="cancelOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="cancelOrderOperator">操作人 ID</label>
+              <input id="cancelOrderOperator" name="operatorId" type="text" value="test_buyer_001">
+            </div>
+            <p class="hint">订单状态必须为 PENDING_CONFIRM 或 IN_PROGRESS。</p>
+            <div class="button-row">
+              <button type="submit">取消订单</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="cancelOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="cancelOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. 订单详情 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>9. 查询订单详情</h2>
+          <form id="getOrderForm">
+            <div class="field-row">
+              <label for="goOrderId">订单 ID</label>
+              <input id="goOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="button-row">
+              <button type="submit">查询详情</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="getOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="getOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. 我的订单列表 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>10. 我的订单列表（分页+排序）</h2>
+          <form id="listMyOrdersForm">
+            <div class="field-row">
+              <label for="lmoUserId">用户 ID</label>
+              <input id="lmoUserId" name="userId" type="text" value="test_buyer_001">
+            </div>
+            <div class="field-row">
+              <label for="lmoStatus">订单状态</label>
+              <select id="lmoStatus" name="orderStatus">
+                <option value="">全部</option>
+                <option value="PENDING_CONFIRM">PENDING_CONFIRM</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lmoPageNum">页码</label>
+              <input id="lmoPageNum" name="pageNum" type="number" value="1" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lmoPageSize">每页条数</label>
+              <input id="lmoPageSize" name="pageSize" type="number" value="10" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lmoSortField">排序字段</label>
+              <select id="lmoSortField" name="sortField">
+                <option value="">默认</option>
+                <option value="createTime">createTime</option>
+                <option value="updateTime">updateTime</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lmoSortOrder">排序方向</label>
+              <select id="lmoSortOrder" name="sortOrder">
+                <option value="desc">desc</option>
+                <option value="asc">asc</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询列表</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listMyOrdersMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listMyOrdersRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================== -->
+    <!-- Review 模块 -->
+    <!-- ====================================== -->
+    <div class="section-title">⭐ Review 模块（5 个接口）</div>
+
+    <div class="module-list">
+      <!-- 11. 提交评论 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>11. 提交评论（买家评价卖家）</h2>
+          <form id="submitReviewForm">
+            <div class="field-row">
+              <label for="srOrderId">订单 ID</label>
+              <input id="srOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="srReviewerId">评价人 ID</label>
+              <input id="srReviewerId" name="reviewerId" type="text" value="test_buyer_001">
+            </div>
+            <div class="field-row">
+              <label for="srRating">评分</label>
+              <select id="srRating" name="rating">
+                <option value="1">1 (差评)</option>
+                <option value="2">2 (差评)</option>
+                <option value="3">3 (中评)</option>
+                <option value="4">4 (好评)</option>
+                <option value="5" selected>5 (好评)</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="srContent">评价内容</label>
+              <textarea id="srContent" name="content" rows="3" placeholder="选填">锅炉质量很好，卖家服务态度不错</textarea>
+            </div>
+            <p class="hint">订单状态必须为 COMPLETED。4-5星好评(+3信用分)，1-2星差评(-5信用分)。</p>
+            <div class="button-row">
+              <button type="submit">提交评论</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="submitReviewMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="submitReviewRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. 按帖子查询评论 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>12. 按帖子查询评论（分页+排序）</h2>
+          <form id="listByPostForm">
+            <div class="field-row">
+              <label for="lbpPostId">帖子 ID</label>
+              <input id="lbpPostId" name="postId" type="text" value="test_post_001">
+            </div>
+            <div class="field-row">
+              <label for="lbpPageNum">页码</label>
+              <input id="lbpPageNum" name="pageNum" type="number" value="1" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lbpPageSize">每页条数</label>
+              <input id="lbpPageSize" name="pageSize" type="number" value="10" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lbpSortField">排序字段</label>
+              <select id="lbpSortField" name="sortField">
+                <option value="">默认</option>
+                <option value="reviewTime">reviewTime</option>
+                <option value="rating">rating</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lbpSortOrder">排序方向</label>
+              <select id="lbpSortOrder" name="sortOrder">
+                <option value="desc">desc</option>
+                <option value="asc">asc</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询评论</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listByPostMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listByPostRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. 按订单查询评论 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>13. 按订单查询评论（分页+排序）</h2>
+          <form id="listByOrderForm">
+            <div class="field-row">
+              <label for="lboOrderId">订单 ID</label>
+              <input id="lboOrderId" name="orderId" type="text" placeholder="创建订单后自动填充">
+            </div>
+            <div class="field-row">
+              <label for="lboPageNum">页码</label>
+              <input id="lboPageNum" name="pageNum" type="number" value="1" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lboPageSize">每页条数</label>
+              <input id="lboPageSize" name="pageSize" type="number" value="10" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lboSortField">排序字段</label>
+              <select id="lboSortField" name="sortField">
+                <option value="">默认</option>
+                <option value="reviewTime">reviewTime</option>
+                <option value="rating">rating</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lboSortOrder">排序方向</label>
+              <select id="lboSortOrder" name="sortOrder">
+                <option value="desc">desc</option>
+                <option value="asc">asc</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询评论</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listByOrderMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listByOrderRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. 查询用户收到的评论 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>14. 查询用户收到的评论（分页+排序）</h2>
+          <form id="listReceivedByUserForm">
+            <div class="field-row">
+              <label for="lrbuUserId">卖家 ID</label>
+              <input id="lrbuUserId" name="userId" type="text" value="test_seller_001">
+            </div>
+            <div class="field-row">
+              <label for="lrbuPageNum">页码</label>
+              <input id="lrbuPageNum" name="pageNum" type="number" value="1" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lrbuPageSize">每页条数</label>
+              <input id="lrbuPageSize" name="pageSize" type="number" value="10" min="1">
+            </div>
+            <div class="field-row">
+              <label for="lrbuSortField">排序字段</label>
+              <select id="lrbuSortField" name="sortField">
+                <option value="">默认</option>
+                <option value="reviewTime">reviewTime</option>
+                <option value="rating">rating</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="lrbuSortOrder">排序方向</label>
+              <select id="lrbuSortOrder" name="sortOrder">
+                <option value="desc">desc</option>
+                <option value="asc">asc</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button type="submit">查询评论</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="listReceivedByUserMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="listReceivedByUserRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15. 卖家评分统计 -->
+      <section class="module-card">
+        <div class="module-form">
+          <h2>15. 卖家评分统计</h2>
+          <form id="getSellerRatingForm">
+            <div class="field-row">
+              <label for="gsrSellerId">卖家 ID</label>
+              <input id="gsrSellerId" name="sellerId" type="text" value="test_seller_001">
+            </div>
+            <p class="hint">返回平均评分、评论总数、好评率。</p>
+            <div class="button-row">
+              <button type="submit">查询评分</button>
+            </div>
+          </form>
+        </div>
+        <div class="module-result">
+          <h3>响应结果</h3>
+          <div class="result-block">
+            <strong>主要结果：</strong>
+            <pre id="getSellerRatingMainResult">暂未执行</pre>
+          </div>
+          <div class="result-block">
+            <strong>原始响应：</strong>
+            <pre id="getSellerRatingRawResult">暂未执行</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================== -->
+    <!-- 状态枚举参考 -->
+    <!-- ====================================== -->
+    <div class="section-title">📋 状态枚举参考</div>
+    <div class="enum-grid">
+      <div class="enum-card">
+        <h4>交易状态 (transactionStatus)</h4>
+        <code>PENDING</code> <code>ONGOING</code> <code>COMPLETED</code> <code>CANCELLED</code>
+      </div>
+      <div class="enum-card">
+        <h4>订单状态 (orderStatus)</h4>
+        <code>PENDING_CONFIRM</code> <code>IN_PROGRESS</code> <code>COMPLETED</code> <code>CANCELLED</code>
+      </div>
+      <div class="enum-card">
+        <h4>帖子状态 (post.status)</h4>
+        <code>PUBLISHED</code> <code>SOLD</code> <code>OFF_SHELF</code>
+      </div>
+      <div class="enum-card">
+        <h4>评分 (rating)</h4>
+        <code>1-2</code> 差评 <code>3</code> 中评 <code>4-5</code> 好评
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======================================
+    // 核心工具函数（与 index.html 保持一致）
+    // ======================================
+    const baseUrlEl = document.getElementById("baseUrl");
+
+    function getBaseUrl() {
+      return baseUrlEl.value.trim().replace(/\/$/, "");
+    }
+
+    function formToObject(form) {
+      const formData = new FormData(form);
+      const data = {};
+      for (const [key, value] of formData.entries()) {
+        const trimmed = String(value).trim();
+        if (trimmed !== "") {
+          data[key] = trimmed;
+        }
+      }
+      return data;
+    }
+
+    function buildQueryString(params) {
+      const searchParams = new URLSearchParams();
+      Object.keys(params).forEach(function (key) {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
+          searchParams.set(key, params[key]);
+        }
+      });
+      const queryString = searchParams.toString();
+      return queryString ? "?" + queryString : "";
+    }
+
+    function getDisplayResult(data) {
+      if (!data) {
+        return "无返回内容";
+      }
+      if (data.code === 1) {
+        return data.data ? JSON.stringify(data.data, null, 2) : "操作成功";
+      }
+      return data.msg || data.error || "操作失败";
+    }
+
+    function showResult(moduleKey, title, data) {
+      const mainResultEl = document.getElementById(moduleKey + "MainResult");
+      const rawResultEl = document.getElementById(moduleKey + "RawResult");
+      mainResultEl.textContent = getDisplayResult(data);
+      rawResultEl.textContent = title + "\n\n" + JSON.stringify(data, null, 2);
+    }
+
+    async function request(path, method, body, extraHeaders) {
+      const options = { method: method, headers: extraHeaders ? { ...extraHeaders } : {} };
+      if (body) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+      }
+      const response = await fetch(getBaseUrl() + path, options);
+      return await response.json();
+    }
+
+    // ======================================
+    // 自动填充函数（创建交易/订单后联动）
+    // ======================================
+    function fillTransactionId(transactionId) {
+      if (!transactionId) return;
+      const targets = [
+        "gtTransactionId",      // 查询交易详情
+        "cancelTId",            // 取消交易
+        "coTransactionId"       // 创建订单
+      ];
+      targets.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.value = transactionId;
+      });
+    }
+
+    function fillOrderId(orderId) {
+      if (!orderId) return;
+      const targets = [
+        "cfOrderId",            // 确认订单
+        "cpOrderId",            // 完成订单
+        "cancelOrderId",        // 取消订单
+        "goOrderId",            // 订单详情
+        "srOrderId",            // 提交评论
+        "lboOrderId"            // 按订单查询评论
+      ];
+      targets.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.value = orderId;
+      });
+    }
+
+    // ======================================
+    // Transaction 模块事件绑定
+    // ======================================
+    document.getElementById("createTransactionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/transaction", "POST", formToObject(event.target));
+        showResult("createTransaction", "创建交易结果", data);
+        if (data.code === 1 && data.data && data.data.transactionId) {
+          fillTransactionId(data.data.transactionId);
+        }
+      } catch (error) {
+        showResult("createTransaction", "创建交易失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("getTransactionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const transactionId = document.getElementById("gtTransactionId").value.trim();
+      try {
+        const data = await request("/transaction/" + encodeURIComponent(transactionId), "GET");
+        showResult("getTransaction", "交易详情", data);
+      } catch (error) {
+        showResult("getTransaction", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("listMyTransactionsForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const params = formToObject(event.target);
+      try {
+        const data = await request("/transaction/my" + buildQueryString(params), "GET");
+        showResult("listMyTransactions", "我的交易列表", data);
+      } catch (error) {
+        showResult("listMyTransactions", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("cancelTransactionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const transactionId = document.getElementById("cancelTId").value.trim();
+      const userId = document.getElementById("cancelTUserId").value.trim();
+      try {
+        const data = await request(
+          "/transaction/" + encodeURIComponent(transactionId) + "/cancel?userId=" + encodeURIComponent(userId),
+          "PUT"
+        );
+        showResult("cancelTransaction", "取消交易结果", data);
+      } catch (error) {
+        showResult("cancelTransaction", "取消失败", { error: String(error) });
+      }
+    });
+
+    // ======================================
+    // Order 模块事件绑定
+    // ======================================
+    document.getElementById("createOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/order", "POST", formToObject(event.target));
+        showResult("createOrder", "创建订单结果", data);
+        if (data.code === 1 && data.data && data.data.orderId) {
+          fillOrderId(data.data.orderId);
+        }
+      } catch (error) {
+        showResult("createOrder", "创建订单失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("confirmOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const orderId = document.getElementById("cfOrderId").value.trim();
+      const operatorId = document.getElementById("cfOperatorId").value.trim();
+      try {
+        const data = await request(
+          "/order/" + encodeURIComponent(orderId) + "/confirm?operatorId=" + encodeURIComponent(operatorId),
+          "PUT"
+        );
+        showResult("confirmOrder", "确认订单结果", data);
+      } catch (error) {
+        showResult("confirmOrder", "确认失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("completeOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const orderId = document.getElementById("cpOrderId").value.trim();
+      const operatorId = document.getElementById("cpOperatorId").value.trim();
+      try {
+        const data = await request(
+          "/order/" + encodeURIComponent(orderId) + "/complete?operatorId=" + encodeURIComponent(operatorId),
+          "PUT"
+        );
+        showResult("completeOrder", "完成订单结果", data);
+      } catch (error) {
+        showResult("completeOrder", "完成失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("cancelOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const orderId = document.getElementById("cancelOrderId").value.trim();
+      const operatorId = document.getElementById("cancelOrderOperator").value.trim();
+      try {
+        const data = await request(
+          "/order/" + encodeURIComponent(orderId) + "/cancel?operatorId=" + encodeURIComponent(operatorId),
+          "PUT"
+        );
+        showResult("cancelOrder", "取消订单结果", data);
+      } catch (error) {
+        showResult("cancelOrder", "取消失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("getOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const orderId = document.getElementById("goOrderId").value.trim();
+      try {
+        const data = await request("/order/" + encodeURIComponent(orderId), "GET");
+        showResult("getOrder", "订单详情", data);
+      } catch (error) {
+        showResult("getOrder", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("listMyOrdersForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const params = formToObject(event.target);
+      try {
+        const data = await request("/order/my" + buildQueryString(params), "GET");
+        showResult("listMyOrders", "我的订单列表", data);
+      } catch (error) {
+        showResult("listMyOrders", "查询失败", { error: String(error) });
+      }
+    });
+
+    // ======================================
+    // Review 模块事件绑定
+    // ======================================
+    document.getElementById("submitReviewForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = await request("/review", "POST", formToObject(event.target));
+        showResult("submitReview", "提交评论结果", data);
+      } catch (error) {
+        showResult("submitReview", "提交失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("listByPostForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const postId = document.getElementById("lbpPostId").value.trim();
+      const params = formToObject(event.target);
+      delete params.postId;
+      try {
+        const data = await request(
+          "/review/post/" + encodeURIComponent(postId) + buildQueryString(params),
+          "GET"
+        );
+        showResult("listByPost", "帖子评论列表", data);
+      } catch (error) {
+        showResult("listByPost", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("listByOrderForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const orderId = document.getElementById("lboOrderId").value.trim();
+      const params = formToObject(event.target);
+      delete params.orderId;
+      try {
+        const data = await request(
+          "/review/order/" + encodeURIComponent(orderId) + buildQueryString(params),
+          "GET"
+        );
+        showResult("listByOrder", "订单评论列表", data);
+      } catch (error) {
+        showResult("listByOrder", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("listReceivedByUserForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const userId = document.getElementById("lrbuUserId").value.trim();
+      const params = formToObject(event.target);
+      delete params.userId;
+      try {
+        const data = await request(
+          "/review/user/" + encodeURIComponent(userId) + buildQueryString(params),
+          "GET"
+        );
+        showResult("listReceivedByUser", "用户收到的评论", data);
+      } catch (error) {
+        showResult("listReceivedByUser", "查询失败", { error: String(error) });
+      }
+    });
+
+    document.getElementById("getSellerRatingForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const sellerId = document.getElementById("gsrSellerId").value.trim();
+      try {
+        const data = await request("/review/seller/" + encodeURIComponent(sellerId) + "/rating", "GET");
+        showResult("getSellerRating", "卖家评分统计", data);
+      } catch (error) {
+        showResult("getSellerRating", "查询失败", { error: String(error) });
+      }
+    });
+  </script>
+</body>
+</html>

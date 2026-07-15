@@ -1,0 +1,6 @@
+org/example/boilerserver/service/impl/PostServiceImplTest.class
+org/example/boilerserver/service/impl/TransactionServiceImplTest.class
+org/example/boilerserver/BoilerServerApplicationTests.class
+org/example/boilerserver/service/impl/ReviewServiceImplTest.class
+org/example/boilerserver/service/impl/UserServiceImplTest.class
+org/example/boilerserver/service/impl/OrderServiceImplTest.class

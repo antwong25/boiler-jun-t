@@ -1,0 +1,779 @@
+        /* ===== 全局样式（与 home.html 完全一致） ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e3eaf2 100%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ===== 区块1：顶部标题栏（完全一致） ===== */
+        .header-title {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--color-accent-start) 0%, var(--color-accent-end) 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-title::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-accent-start), var(--color-accent-end), #f093fb, var(--color-danger));
+            background-size: 400% 400%;
+            animation: gradientHeader 15s ease infinite;
+        }
+
+        @keyframes gradientHeader {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .main-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .sub-title {
+            font-size: 16px;
+            opacity: 0.95;
+            letter-spacing: 1px;
+        }
+
+        /* ===== 区块2：导航栏（完全一致） ===== */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 30px;
+        }
+
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .nav-container {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item {
+            padding: 18px 30px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(74, 144, 226, 0.1);
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 17px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .nav-item.hidden {
+            display: none;
+        }
+
+        .nav-user-info {
+            display: none;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .nav-user-info.visible {
+            display: flex;
+        }
+
+        .nav-user-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .nav-user-type {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-user-link {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-user-link:hover {
+            color: var(--color-primary-dark);
+            text-decoration: underline;
+        }
+
+        .logout-btn {
+            padding: 8px 14px;
+            border: 1px solid rgba(245, 87, 108, 0.28);
+            border-radius: 8px;
+            background: rgba(245, 87, 108, 0.08);
+            color: var(--color-danger);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 4px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(245, 87, 108, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .nav-guest-actions {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            padding: 12px 0;
+        }
+
+        .login-text {
+            font-size: 16px;
+            color: var(--color-primary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        .login-text:hover {
+            color: var(--color-primary-dark);
+            background-color: rgba(74, 144, 226, 0.1);
+        }
+
+        /* ===== 用户信息条（完全一致） ===== */
+        .user-info-bar {
+            display: none;
+            background-color: white;
+            padding: 15px 30px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .user-info-bar.visible {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-info-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info-left .welcome-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .user-info-left .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .user-info-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        .user-info-right a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .user-info-right a:hover {
+            color: var(--color-primary-dark);
+            text-decoration: underline;
+        }
+
+        .logout-link {
+            color: var(--text-muted) !important;
+            cursor: pointer;
+        }
+
+        .logout-link:hover {
+            color: #e53935 !important;
+        }
+
+        /* ===== 卡片样式（与 userDetail.html 完全一致） ===== */
+        .card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        /* 卡片顶部装饰条（与 userDetail 的 search-section 风格一致） */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+            background-size: 200% 200%;
+            animation: gradientBar 8s ease infinite;
+        }
+
+        @keyframes gradientBar {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .card-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .card-title {
+            font-size: 21px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            display: inline-block;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .card-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+        }
+
+        .card-content {
+            padding: 24px 30px;
+        }
+
+        /* ===== 帖子详情样式 ===== */
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .post-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .post-status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            background: var(--color-success);
+            white-space: nowrap;
+            margin-left: 16px;
+        }
+
+        .post-status.sold { background: #6c757d; }
+        .post-status.reserved { background: #ffc107; color: var(--text-primary); }
+        .post-status.delisted { background: #dc3545; }
+        .post-status.banned { background: #dc3545; }
+
+        .post-price {
+            font-size: 32px;
+            font-weight: 700;
+            color: #e53935;
+            margin: 10px 0 16px;
+        }
+
+        .post-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .post-meta span {
+            margin-right: 20px;
+        }
+
+        .post-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin: 16px 0 24px;
+            padding: 16px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        /* ===== 参数网格（与 qualification 的 form-grid 风格一致） ===== */
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0 24px;
+        }
+
+        .param-item {
+            background: #f8f9fa;
+            padding: 14px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        .param-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .param-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .param-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        /* ===== 卖家信息卡片（与 userDetail 风格一致） ===== */
+        .seller-info-card {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(53, 122, 189, 0.05) 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 16px 0 24px;
+            border: 1px solid rgba(74, 144, 226, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .seller-info-card:hover {
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.08);
+        }
+
+        .seller-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-detail-link {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .user-detail-link:hover {
+            color: var(--color-primary-dark);
+            text-decoration: underline;
+        }
+
+        .seller-user-link {
+            color: var(--color-primary);
+        }
+
+        .seller-badge {
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: var(--color-success);
+            color: white;
+            font-weight: 500;
+        }
+
+        .seller-badge.pending { background: #ffc107; color: var(--text-primary); }
+        .seller-badge.rejected { background: #dc3545; }
+
+        .seller-info-row {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .seller-info-row span {
+            margin-right: 20px;
+        }
+
+        /* ===== 操作按钮（与 userDetail 的 action-buttons 一致） ===== */
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .action-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .action-btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, var(--color-success) 0%, #218838 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .action-btn.success:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: rgba(149, 165, 166, 0.8);
+            color: white;
+        }
+
+        .action-btn.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .action-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .action-btn.login-btn {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .action-btn.login-btn:hover {
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        /* ===== 评价列表（与 userDetail 的 review-item 一致） ===== */
+        .review-item {
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .review-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .review-user-link {
+            color: var(--text-primary);
+        }
+
+        .review-rating {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .review-content {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .review-meta {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .review-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .load-more-wrap {
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .view-all-link {
+            display: inline-block;
+            color: var(--color-primary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 8px 20px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .view-all-link:hover {
+            background-color: rgba(74, 144, 226, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* ===== 加载/错误状态 ===== */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(74, 144, 226, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--color-primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #c62828;
+            background: #ffebee;
+            border-radius: 12px;
+        }
+
+        .error-state .retry-btn {
+            margin-top: 16px;
+            padding: 10px 28px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .error-state .retry-btn:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* ===== 页脚（与 home.html 一致） ===== */
+        .footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+            color: #ffffff;
+            padding: 30px 0;
+            text-align: center;
+            font-size: 14px;
+            border-radius: 16px 16px 0 0;
+            margin-top: 40px;
+        }
+
+        .footer p {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* ===== 响应式（与已有页面一致） ===== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .card-content {
+                padding: 20px 16px;
+            }
+
+            .card-header {
+                padding: 16px 20px;
+            }
+
+            .post-title {
+                font-size: 22px;
+            }
+
+            .post-header {
+                flex-direction: column;
+            }
+
+            .post-status {
+                margin-left: 0;
+                margin-top: 8px;
+                align-self: flex-start;
+            }
+
+            .post-price {
+                font-size: 24px;
+            }
+
+            .params-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .seller-info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .seller-info-row span {
+                margin-right: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .params-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-title {
+                font-size: 28px;
+            }
+
+            .sub-title {
+                font-size: 14px;
+            }
+
+            .nav-item {
+                padding: 12px 16px;
+            }
+
+            .nav-link {
+                font-size: 14px;
+            }
+
+            .user-info-bar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+        }

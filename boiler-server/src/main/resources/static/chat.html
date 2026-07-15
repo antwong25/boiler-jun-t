@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的消息 My Messages - 二手工业锅炉交易平台 Used Industrial Boiler Trading Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/chat.css">
+</head>
+<body>
+    
+    <div class="container">
+        <div class="chat-layout">
+            <aside class="session-sidebar">
+                <div class="sidebar-header">
+                    <div>
+                        <button type="button" class="back-btn" id="backBtn">← 返回</button>
+                        <h2>会话列表 Sessions</h2>
+                        <p>按最近消息排序 Sorted by latest message</p>
+                    </div>
+                    <button type="button" class="sidebar-refresh-btn" id="refreshSessionBtn">刷新 Refresh</button>
+                </div>
+                <div class="session-list" id="sessionList">
+                    <div class="loading-state sidebar-loading">
+                        <div class="loading-spinner"></div>
+                        <p>会话加载中... Loading sessions...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="chat-card">
+                <div class="chat-header" id="chatHeader">
+                    <div class="chat-avatar" id="chatAvatar">?</div>
+                    <div class="chat-partner-info">
+                        <div class="chat-partner-name" id="chatPartnerName">请选择一个会话 Please select a session</div>
+                        <div class="chat-partner-detail" id="chatPartnerDetail">左侧可切换不同聊天对象 Choose a chat from the left sidebar</div>
+                    </div>
+                    <a class="chat-user-link chat-profile-link hidden" id="chatProfileLink" href="userDetail.html">查看资料 View Profile</a>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-chat empty-chat-card">请先从左侧选择一个会话。 Please select a session from the left first.</div>
+                </div>
+
+                <div class="chat-input-area">
+                    <textarea
+                        id="messageInput"
+                        class="chat-input"
+                        placeholder="请输入消息内容，Enter 发送，Shift + Enter 换行 Enter message, press Enter to send, Shift + Enter for newline"
+                        rows="1"
+                        disabled
+                    ></textarea>
+                    <button type="button" class="send-btn" id="sendBtn" disabled>发送 Send</button>
+                </div>
+            </section>
+        </div>
+
+        <footer class="footer">
+            <p>二手工业锅炉交易平台 Used Industrial Boiler Trading Platform © 2026 版权所有 All Rights Reserved</p>
+        </footer>
+    </div>
+
+    <script>
+        var BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+
+        var currentUser = null;
+        var sessionList = [];
+        var activeSessionId = '';
+        var userProfileCache = {};
+        var sessionPollTimer = null;
+        var sessionLoadInFlight = false;
+        var SESSION_POLL_INTERVAL = 2000;
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getUserHeaders() {
+            var token = getToken();
+            if (!token) return {};
+            return { 'Authorization': 'Bearer ' + token };
+        }
+
+        function getCurrentUserId() {
+            return localStorage.getItem('userId') || '';
+        }
+
+        function getCurrentUserType() {
+            return localStorage.getItem('userType') || '';
+        }
+
+        function getUrlParam(name) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function buildPostDetailUrl(postId) {
+            return postId
+                ? ('postDetail.html?postId=' + encodeURIComponent(postId))
+                : '';
+        }
+
+        function setUrlSessionId(sessionId) {
+            var url = new URL(window.location.href);
+            if (sessionId) {
+                url.searchParams.set('sessionId', sessionId);
+            } else {
+                url.searchParams.delete('sessionId');
+            }
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            var div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
+
+        function formatPreviewTime(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            var now = new Date();
+            var sameDay = date.toDateString() === now.toDateString();
+            if (sameDay) {
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }
+            return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+        }
+
+        function formatMessageTime(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDateDivider(dateStr) {
+            if (!dateStr) return '';
+            var date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function normalizeSenderType(userType) {
+            if (userType === 'SELLER') return 'seller';
+            return 'buyer';
+        }
+
+        function getPartnerRoleLabel(session) {
+            var currentUserId = getCurrentUserId();
+            if (!session || !currentUserId) return '聊天对象 Chat Partner';
+            return session.sellerId === currentUserId ? '买家 Buyer' : '卖家 Seller';
+        }
+
+        function getPartnerId(session) {
+            var currentUserId = getCurrentUserId();
+            if (!session || !currentUserId) return '';
+            return session.sellerId === currentUserId ? session.buyerId : session.sellerId;
+        }
+
+        function getPartnerName(session) {
+            return session && session.partnerName ? session.partnerName : '未命名用户 Unnamed User';
+        }
+
+        function getSessionPreview(session) {
+            if (!session || !session.messageList || !session.messageList.length) {
+                return '还没有消息，发一条开始吧 No messages yet, send one to start';
+            }
+            var lastMessage = session.messageList[session.messageList.length - 1];
+            if (lastMessage.msgType === 'image') {
+                return '[图片 Image]';
+            }
+            return lastMessage.content || '[空消息 Empty message]';
+        }
+
+        function buildMessageContent(message) {
+            if (message.msgType === 'image') {
+                var safeUrl = escapeHtml(message.content || '');
+                if (!safeUrl) {
+                    return '<span>[图片 Image]</span>';
+                }
+                return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">查看图片 View Image</a>';
+            }
+            return '<span>' + escapeHtml(message.content || '') + '</span>';
+        }
+
+        function buildPostLinkHtml(postId) {
+            if (!postId) {
+                return '-';
+            }
+            return '<a href="' + buildPostDetailUrl(postId) + '">帖子ID / Post ID ' + escapeHtml(postId) + '</a>';
+        }
+
+        function buildSessionMetaHtml(session) {
+            return escapeHtml(getPartnerRoleLabel(session)) + ' · ' + buildPostLinkHtml(session.postId);
+        }
+
+        function buildChatDetailHtml(session) {
+            return escapeHtml(getPartnerRoleLabel(session)) + ' · 关联 Linked ' + buildPostLinkHtml(session.postId);
+        }
+
+        function updateComposerState(enabled) {
+            var input = document.getElementById('messageInput');
+            var sendBtn = document.getElementById('sendBtn');
+            input.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+            if (!enabled) {
+                input.value = '';
+                input.style.height = 'auto';
+            }
+        }
+
+        function autoResizeTextarea() {
+            var input = document.getElementById('messageInput');
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        }
+
+        function showSidebarLoading() {
+            var sessionListEl = document.getElementById('sessionList');
+            sessionListEl.innerHTML = ''
+                + '<div class="loading-state sidebar-loading">'
+                + '  <div class="loading-spinner"></div>'
+                + '  <p>会话加载中... Loading sessions...</p>'
+                + '</div>';
+        }
+
+        function showSidebarEmpty(message) {
+            var sessionListEl = document.getElementById('sessionList');
+            sessionListEl.innerHTML = '<div class="empty-sidebar">' + escapeHtml(message) + '</div>';
+        }
+
+        function showMainEmpty(message) {
+            var chatMessagesEl = document.getElementById('chatMessages');
+            chatMessagesEl.innerHTML = '<div class="empty-chat empty-chat-card">' + escapeHtml(message) + '</div>';
+            document.getElementById('chatAvatar').textContent = '?';
+            document.getElementById('chatPartnerName').textContent = '暂无会话 No session yet';
+            document.getElementById('chatPartnerDetail').textContent = '开始联系卖家 Seller后，这里会显示聊天内容';
+            document.getElementById('chatProfileLink').classList.add('hidden');
+            updateComposerState(false);
+        }
+
+        function renderSessionList() {
+            var sessionListEl = document.getElementById('sessionList');
+            if (!sessionList.length) {
+                showSidebarEmpty('暂无聊天会话 No chat sessions yet');
+                showMainEmpty('暂无聊天会话 No chat sessions yet，您可以先去帖子详情 Post Details页联系对方。');
+                return;
+            }
+
+            sessionListEl.innerHTML = sessionList.map(function(session) {
+                var isActive = session.sessionId === activeSessionId;
+                var partnerName = escapeHtml(getPartnerName(session));
+                var preview = escapeHtml(getSessionPreview(session));
+                var timeText = escapeHtml(formatPreviewTime(session.lastMessageTime || session.createTime));
+                var metaHtml = buildSessionMetaHtml(session);
+                return ''
+                    + '<div class="session-item' + (isActive ? ' active' : '') + '" data-session-id="' + escapeHtml(session.sessionId) + '" role="button" tabindex="0" aria-label="打开与 ' + partnerName + ' 的会话 Session">'
+                    + '  <div class="session-item-top">'
+                    + '    <span class="session-name">' + partnerName + '</span>'
+                    + '    <span class="session-time">' + timeText + '</span>'
+                    + '  </div>'
+                    + '  <div class="session-meta">' + metaHtml + '</div>'
+                    + '  <div class="session-preview">' + preview + '</div>'
+                    + '</div>';
+            }).join('');
+        }
+
+        function renderChatHeader(session) {
+            var partnerName = getPartnerName(session);
+            var partnerId = getPartnerId(session);
+            var avatar = document.getElementById('chatAvatar');
+            var nameEl = document.getElementById('chatPartnerName');
+            var detailEl = document.getElementById('chatPartnerDetail');
+            var profileLink = document.getElementById('chatProfileLink');
+
+            avatar.textContent = partnerName ? partnerName.charAt(0).toUpperCase() : '?';
+            nameEl.textContent = partnerName;
+            detailEl.innerHTML = buildChatDetailHtml(session);
+
+            if (partnerId) {
+                profileLink.href = 'userDetail.html?userId=' + encodeURIComponent(partnerId);
+                profileLink.classList.remove('hidden');
+            } else {
+                profileLink.classList.add('hidden');
+            }
+        }
+
+        function renderMessages(session) {
+            var chatMessagesEl = document.getElementById('chatMessages');
+            var currentUserId = getCurrentUserId();
+            var messages = Array.isArray(session.messageList) ? session.messageList : [];
+
+            if (!messages.length) {
+                chatMessagesEl.innerHTML = '<div class="empty-chat">还没有消息，先打个招呼吧。</div>';
+                return;
+            }
+
+            var html = [];
+            var lastDivider = '';
+
+            messages.forEach(function(message) {
+                var divider = formatDateDivider(message.sendTime);
+                if (divider && divider !== lastDivider) {
+                    html.push('<div class="date-divider">' + escapeHtml(divider) + '</div>');
+                    lastDivider = divider;
+                }
+
+                var mine = message.senderId === currentUserId;
+                html.push(
+                    '<div class="msg-row ' + (mine ? 'mine' : 'other') + '">'
+                    + '  <div class="msg-bubble-wrap">'
+                    + '    <div class="msg-bubble">' + buildMessageContent(message) + '</div>'
+                    + '    <div class="msg-time">' + escapeHtml(formatMessageTime(message.sendTime)) + '</div>'
+                    + '  </div>'
+                    + '</div>'
+                );
+            });
+
+            chatMessagesEl.innerHTML = html.join('');
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        function getSessionById(sessionId) {
+            return sessionList.find(function(session) {
+                return session.sessionId === sessionId;
+            }) || null;
+        }
+
+        function getMessageSignature(session) {
+            if (!session || !Array.isArray(session.messageList) || !session.messageList.length) {
+                return '0';
+            }
+            var lastMessage = session.messageList[session.messageList.length - 1] || {};
+            return [
+                session.messageList.length,
+                lastMessage.senderId || '',
+                lastMessage.sendTime || '',
+                lastMessage.content || '',
+                lastMessage.msgType || ''
+            ].join('|');
+        }
+
+        function selectSession(sessionId, options) {
+            var opts = options || {};
+            var session = getSessionById(sessionId);
+
+            if (!session) {
+                if (!sessionList.length) {
+                    activeSessionId = '';
+                    renderSessionList();
+                    showMainEmpty('暂无聊天会话 No chat sessions yet，您可以先去帖子详情 Post Details页联系对方。');
+                }
+                return;
+            }
+
+            activeSessionId = session.sessionId;
+            renderSessionList();
+            renderChatHeader(session);
+            renderMessages(session);
+            updateComposerState(true);
+
+            if (opts.focusInput) {
+                document.getElementById('messageInput').focus();
+            }
+            if (opts.updateUrl !== false) {
+                setUrlSessionId(session.sessionId);
+            }
+        }
+
+        async function fetchUserProfile(userId) {
+            if (!userId) {
+                return null;
+            }
+            if (userProfileCache[userId]) {
+                return userProfileCache[userId];
+            }
+            try {
+                var response = await fetch(BASE_URL + '/user/profile/' + encodeURIComponent(userId), {
+                    headers: getUserHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                var data = await response.json();
+                if (data.code === 1 && data.data) {
+                    userProfileCache[userId] = data.data;
+                    return data.data;
+                }
+            } catch (error) {
+                console.warn('加载用户信息失败:', userId, error);
+            }
+            return null;
+        }
+
+        async function enrichSessionPartnerNames(sessions) {
+            var partnerIds = [];
+            sessions.forEach(function(session) {
+                var partnerId = getPartnerId(session);
+                if (partnerId && partnerIds.indexOf(partnerId) === -1) {
+                    partnerIds.push(partnerId);
+                }
+            });
+
+            await Promise.all(partnerIds.map(fetchUserProfile));
+
+            return sessions.map(function(session) {
+                var partnerId = getPartnerId(session);
+                var partnerProfile = partnerId ? userProfileCache[partnerId] : null;
+                session.partnerId = partnerId;
+                session.partnerName = partnerProfile && partnerProfile.username
+                    ? partnerProfile.username
+                    : (partnerId || '未命名用户 Unnamed User');
+                return session;
+            });
+        }
+
+        async function loadSessions(preferredSessionId, options) {
+            var opts = options || {};
+            var userId = getCurrentUserId();
+            if (!userId) {
+                showSidebarEmpty('请先登录 Please log in first后查看 View消息');
+                showMainEmpty('请先登录 Please log in first后查看 View聊天会话 Session。');
+                return;
+            }
+
+            if (sessionLoadInFlight) {
+                return;
+            }
+
+            var previousActiveSession = getSessionById(activeSessionId);
+            sessionLoadInFlight = true;
+
+            if (!opts.silent) {
+                showSidebarLoading();
+            }
+
+            try {
+                var response = await fetch(BASE_URL + '/api/chat/session/list?userId=' + encodeURIComponent(userId), {
+                    headers: getUserHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                var data = await response.json();
+                if (data.code !== 1) {
+                    throw new Error(data.msg || '加载会话失败 Session failed');
+                }
+
+                sessionList = await enrichSessionPartnerNames(data.data || []);
+                renderSessionList();
+
+                if (!sessionList.length) {
+                    return;
+                }
+
+                var targetSessionId = preferredSessionId || activeSessionId || getUrlParam('sessionId');
+                var targetSession = getSessionById(targetSessionId) || sessionList[0];
+                var shouldRefreshActiveSession = !opts.silent
+                    || activeSessionId !== targetSession.sessionId
+                    || getMessageSignature(previousActiveSession) !== getMessageSignature(targetSession);
+
+                if (shouldRefreshActiveSession) {
+                    selectSession(targetSession.sessionId, { updateUrl: true });
+                }
+            } catch (error) {
+                if (opts.silent) {
+                    console.warn('静默刷新会话失败:', error);
+                    return;
+                }
+                document.getElementById('sessionList').innerHTML = ''
+                    + '<div class="error-state sidebar-error">'
+                    + '  <p>加载会话失败 Session failed：' + escapeHtml(error.message) + '</p>'
+                    + '  <button type="button" class="retry-btn" onclick="loadSessions()">重试</button>'
+                    + '</div>';
+                showMainEmpty('会话加载失败 Session load failed，请稍后重试。');
+            } finally {
+                sessionLoadInFlight = false;
+            }
+        }
+
+        function stopSessionPolling() {
+            if (sessionPollTimer) {
+                clearInterval(sessionPollTimer);
+                sessionPollTimer = null;
+            }
+        }
+
+        function startSessionPolling() {
+            stopSessionPolling();
+            sessionPollTimer = window.setInterval(function() {
+                if (document.hidden) {
+                    return;
+                }
+                loadSessions(activeSessionId || getUrlParam('sessionId'), { silent: true });
+            }, SESSION_POLL_INTERVAL);
+        }
+
+        async function sendMessage() {
+            var session = getSessionById(activeSessionId);
+            var input = document.getElementById('messageInput');
+            var sendBtn = document.getElementById('sendBtn');
+            var content = input.value.trim();
+
+            if (!session || !content) {
+                return;
+            }
+
+            var senderId = getCurrentUserId();
+            if (!senderId) {
+                alert('请先登录 Please log in first后发送 Send消息');
+                return;
+            }
+
+            sendBtn.disabled = true;
+
+            try {
+                var response = await fetch(BASE_URL + '/api/chat/message/send', {
+                    method: 'POST',
+                    headers: Object.assign({
+                        'Content-Type': 'application/json'
+                    }, getUserHeaders()),
+                    body: JSON.stringify({
+                        sessionId: session.sessionId,
+                        senderId: senderId,
+                        senderType: normalizeSenderType(getCurrentUserType()),
+                        content: content,
+                        msgType: 'text'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                var data = await response.json();
+                if (data.code !== 1) {
+                    throw new Error(data.msg || '发送 Send失败');
+                }
+
+                input.value = '';
+                autoResizeTextarea();
+                await loadSessions(session.sessionId);
+                document.getElementById('messageInput').focus();
+            } catch (error) {
+                alert('发送 Send失败：' + error.message);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        function applyGuestNavigation() {
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+            renderQuickNav('');
+        }
+
+        function applyLoggedInNavigation(user) {
+            var userId = user.userId || getCurrentUserId();
+            var username = user.username || localStorage.getItem('username') || '用户';
+            var userType = Object.prototype.hasOwnProperty.call(user, 'userType')
+                ? (user.userType || '')
+                : (localStorage.getItem('userType') || '');
+            var isSeller = userType === 'SELLER';
+
+            var userInfoBar = document.getElementById('userInfoBar');
+            var guestNavActions = document.getElementById('guestNavActions');
+            var publishNavItem = document.getElementById('publishNavItem');
+            var publishLink = document.getElementById('publishLink');
+            var myNavLink = document.getElementById('myNavLink');
+            var userNameDisplay = document.getElementById('userNameDisplay');
+            var userTypeDisplay = document.getElementById('userTypeDisplay');
+            var sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? 'userDetail.html?userId=' + encodeURIComponent(userId) : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' : userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? 'qualification.html?userId=' + encodeURIComponent(userId) : 'qualification.html';
+            }
+            renderQuickNav(userType);
+        }
+
+        function renderQuickNav(userType) {
+            var quickNav = document.getElementById('quickNav');
+            if (!quickNav) {
+                return;
+            }
+
+            var links = [
+                { href: 'my-transactions.html', label: '我的交易 My Transactions', key: 'transactions' },
+                { href: 'chat.html', label: '我的消息 My Messages', key: 'messages' }
+            ];
+
+            if (userType === 'SELLER') {
+                links.push({ href: 'my-posts.html', label: '我的帖子 My Posts', key: 'posts' });
+            }
+
+            quickNav.innerHTML = links.map(function(link) {
+                var activeClass = link.key === 'messages' ? ' class="here"' : '';
+                return '<a href="' + link.href + '"' + activeClass + '>' + link.label + '</a>';
+            }).join('');
+        }
+
+        async function loadUserProfile() {
+            var response = await fetch(BASE_URL + '/user/profile/me', {
+                headers: getUserHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            var data = await response.json();
+            if (data.code === 1 && data.data) {
+                if (data.data.username) {
+                    localStorage.setItem('username', data.data.username);
+                }
+                if (data.data.userType) {
+                    localStorage.setItem('userType', data.data.userType);
+                }
+                currentUser = data.data;
+                return data.data;
+            }
+            throw new Error(data.msg || '加载用户信息失败');
+        }
+
+        async function checkLoginStatus() {
+            var token = getToken();
+            var userId = getCurrentUserId();
+            var username = localStorage.getItem('username') || '用户';
+            var userType = getCurrentUserType();
+
+            if (!(token && userId)) {
+                currentUser = null;
+                applyGuestNavigation();
+                return false;
+            }
+
+            currentUser = {
+                userId: userId,
+                username: username,
+                userType: userType
+            };
+            applyLoggedInNavigation(currentUser);
+
+            try {
+                var user = await loadUserProfile();
+                if (user) {
+                    applyLoggedInNavigation(user);
+                }
+            } catch (error) {
+                console.error('刷新用户状态失败:', error);
+            }
+
+            return true;
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        function bindEvents() {
+            document.getElementById('backBtn').addEventListener('click', function() {
+                window.history.back();
+            });
+
+            document.getElementById('refreshSessionBtn').addEventListener('click', function() {
+                loadSessions(activeSessionId || getUrlParam('sessionId'));
+            });
+
+            document.getElementById('sessionList').addEventListener('click', function(event) {
+                var button = event.target.closest('.session-item');
+                if (!button) {
+                    return;
+                }
+                selectSession(button.getAttribute('data-session-id'), {
+                    updateUrl: true,
+                    focusInput: false
+                });
+            });
+
+            document.getElementById('sessionList').addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+                var item = event.target.closest('.session-item');
+                if (!item) {
+                    return;
+                }
+                event.preventDefault();
+                selectSession(item.getAttribute('data-session-id'), {
+                    updateUrl: true,
+                    focusInput: false
+                });
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+            document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
+            document.getElementById('messageInput').addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    loadSessions(activeSessionId || getUrlParam('sessionId'), { silent: true });
+                }
+            });
+
+            window.addEventListener('beforeunload', stopSessionPolling);
+        }
+
+        async function initPage() {
+            bindEvents();
+            autoResizeTextarea();
+            var loggedIn = await checkLoginStatus();
+            if (!loggedIn) {
+                showSidebarEmpty('请先登录 Please log in first后查看 View消息');
+                showMainEmpty('请先登录 Please log in first后查看 View聊天会话 Session。');
+                return;
+            }
+            await loadSessions(getUrlParam('sessionId'));
+            startSessionPolling();
+        }
+
+        initPage();
+    </script>
+</body>
+</html>

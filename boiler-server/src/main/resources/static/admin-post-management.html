@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员帖子管理 Admin Post Management - Boiler Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/admin-post-management.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="admin-header-row">
+                <h1>管理员帖子管理 Admin Post Management</h1>
+                <div class="nav-buttons">
+                    <a href="admin-user-management-no-pagination.html" class="back-btn">← 返回用户管理 Back to User Management</a>
+                </div>
+            </div>
+            <div class="user-info">
+                <span id="adminUsername">管理员 Admin</span>
+                <button class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="cityFilter">城市</label>
+                    <input type="text" id="cityFilter" class="filter-input" placeholder="输入城市名称">
+                </div>
+                <div class="filter-group">
+                    <label for="boilerTypeFilter">锅炉类型 Boiler Type</label>
+                    <select id="boilerTypeFilter" class="filter-select">
+                        <option value="">全部 All类型</option>
+                        <option value="HOT_WATER">热水锅炉 Hot Water Boiler</option>
+                        <option value="STEAM">蒸汽锅炉 Steam Boiler</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="brandFilter">品牌 Brand</label>
+                    <input type="text" id="brandFilter" class="filter-input" placeholder="输入锅炉品牌 Brand">
+                </div>
+                <div class="filter-group">
+                    <label for="sellerFilter">卖家 SellerID</label>
+                    <input type="text" id="sellerFilter" class="filter-input" placeholder="输入卖家 SellerID">
+                </div>
+                <div class="filter-group">
+                    <label for="fuelTypeFilter">燃料类型 Fuel Type</label>
+                    <select id="fuelTypeFilter" class="filter-select">
+                        <option value="">全部 All燃料</option>
+                        <option value="GAS">燃气</option>
+                        <option value="OIL">燃油 Oil</option>
+                        <option value="COAL">燃煤 Coal</option>
+                        <option value="BIOMASS">生物质 Biomass</option>
+                        <option value="ELECTRIC">电 Electric</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="statusFilter">帖子状态</label>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">全部 All状态</option>
+                        <option value="PUBLISHED">已发布</option>
+                        <option value="RESERVED">已预订</option>
+                        <option value="SOLD">已售出</option>
+                        <option value="DELISTED">已下架</option>
+                        <option value="BANNED">已封禁</option>
+                    </select>
+                </div>
+                <div class="filter-buttons">
+                    <button class="btn btn-primary" onclick="searchPosts()">查询 Search</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">重置 Reset</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="table-info" id="postCountDisplay">
+                加载中... Loading...
+                <div class="pagination-controls">
+                    <span>第 <span id="currentPageNum">1</span> 页，共 <span id="totalPages">1</span> 页</span>
+                    <button class="btn btn-secondary btn-small" id="prevPageBtn" onclick="changePage(-1)">上一页</button>
+                    <button class="btn btn-secondary btn-small" id="nextPageBtn" onclick="changePage(1)">下一页</button>
+                </div>
+            </div>
+            <table class="table" id="postTable">
+                <thead>
+                    <tr>
+                        <th>帖子ID</th>
+                        <th>标题</th>
+                        <th>价格</th>
+                        <th>城市</th>
+                        <th>锅炉类型 Boiler Type</th>
+                        <th>品牌 Brand</th>
+                        <th>状态</th>
+                        <th>发布时间</th>
+                        <th>浏览量</th>
+                        <th>操作 Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="postTableBody">
+                    <!-- Table content will be inserted here -->
+                </tbody>
+            </table>
+            <div class="empty-state u-hidden" id="emptyState">
+                <i>📋</i>
+                <p>暂无帖子数据</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ban Post Modal -->
+    <div class="modal" id="banPostModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">封禁帖子</h2>
+                <button class="modal-close" onclick="closeBanModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="banPostForm">
+                    <div class="form-group">
+                        <label>帖子ID</label>
+                        <input type="text" class="form-control" id="banPostId" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>帖子标题 Listing Title</label>
+                        <input type="text" class="form-control" id="banPostTitle" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>当前状态</label>
+                        <input type="text" class="form-control" id="banPostCurrentStatus" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>封禁原因 <span class="required-mark">*</span></label>
+                        <textarea class="form-control" id="banReason" rows="3" required placeholder="请输入封禁原因"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBanModal()">取消 Cancel</button>
+                <button class="btn btn-danger" onclick="confirmBan()">确认封禁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Post Detail Modal -->
+    <div class="modal" id="viewPostModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">帖子详情 Post Details</h2>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="postDetailContent">
+                    <!-- Post details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeViewModal()">关闭 Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+        let currentUser = null;
+        let postList = [];
+        let currentPage = 1;
+                let totalPages = 1;
+        let currentFilters = {};
+        let currentSort = { field: 'updateTime', order: 'desc' };
+        let postToBan = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+            resetFilters();
+            loadPosts();
+
+            // Add enter key support for search
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.target.closest('.filter-toolbar')) {
+                    searchPosts();
+                }
+            });
+        });
+
+        // Check admin authentication
+        function checkAdminAuth() {
+            const token = localStorage.getItem('admin_token');
+            console.log('检查 admin_token:', token ? '存在' : '不存在');
+
+            if (!token) {
+                console.log('没有 admin_token，跳转到登录 Login页');
+                window.location.href = window.location.origin + '/login.html';
+                return;
+            }
+
+            // Verify admin token and get user info
+            fetch(`${BASE_URL}/user/profile/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('管理员 Admin验证返回数据:', data);
+                if (data.code === 1 && data.data && data.data.userType === 'ADMIN') {
+                    currentUser = data.data;
+                    document.getElementById('adminUsername').textContent = data.data.username + ' (管理员 Admin)';
+                } else {
+                    console.log('不是管理员 Admin用户，跳转到登录 Login页');
+                    alert('您不是管理员 Admin用户，请重新登录 Login');
+                    window.location.href = window.location.origin + '/login.html';
+                }
+            })
+            .catch(error => {
+                console.error('管理员 Admin验证失败:', error);
+                window.location.href = window.location.origin + '/login.html';
+            });
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            document.getElementById('cityFilter').value = '';
+            document.getElementById('boilerTypeFilter').value = '';
+            document.getElementById('brandFilter').value = '';
+            document.getElementById('fuelTypeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('sellerFilter').value = '';
+
+            currentFilters = {};
+            currentPage = 1;
+
+            loadPosts();
+        }
+
+        // Search posts
+        function searchPosts() {
+            currentFilters = {};
+
+            const city = document.getElementById('cityFilter').value;
+            const boilerType = document.getElementById('boilerTypeFilter').value;
+            const brand = document.getElementById('brandFilter').value;
+            const fuelType = document.getElementById('fuelTypeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const sellerId = document.getElementById('sellerFilter').value;
+
+            if (city) currentFilters.city = city;
+            if (boilerType) currentFilters.boilerType = boilerType;
+            if (brand) currentFilters.brand = brand;
+            if (fuelType) currentFilters.fuelType = fuelType;
+            if (status) currentFilters.status = status;
+            if (sellerId) currentFilters.sellerId = sellerId;
+
+            currentPage = 1;
+            loadPosts();
+        }
+
+        // Load posts
+        function loadPosts() {
+            showLoading();
+
+            // 构建新的API URL
+            let url = `${BASE_URL}/post/admin/posts?pageNum=${currentPage}&pageSize=10`;
+
+            // 添加筛选 Filter条件
+            const city = document.getElementById('cityFilter').value;
+            const boilerType = document.getElementById('boilerTypeFilter').value;
+            const brand = document.getElementById('brandFilter').value;
+            const fuelType = document.getElementById('fuelTypeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const sellerId = document.getElementById('sellerFilter').value;
+
+            // 调试信息：打印筛选 Filter条件
+            console.log('筛选 Filter条件:', { city, boilerType, brand, fuelType, status, sellerId });
+
+            // 只有当有值时才添加参数
+            if (city) url += `&city=${encodeURIComponent(city)}`;
+            if (boilerType) url += `&boilerType=${encodeURIComponent(boilerType)}`;
+            if (brand) url += `&brand=${encodeURIComponent(brand)}`;
+            if (fuelType) url += `&fuelType=${encodeURIComponent(fuelType)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (sellerId) url += `&sellerId=${encodeURIComponent(sellerId)}`;
+
+            
+            const token = localStorage.getItem('admin_token');
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                console.log('请求URL:', url);
+                console.log('响应状态:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                console.log('接口返回完整数据:', data);
+                if (data.code === 1) {
+                    // 处理不同的返回数据结构
+                    if (Array.isArray(data.data)) {
+                        // 如果直接返回数组
+                        postList = data.data;
+                        console.log('使用直接数组格式，postList长度:', postList.length);
+                    } else if (data.data && data.data.records) {
+                        // 如果返回分页对象，records字段（符合MyBatis-Plus分页格式）
+                        postList = data.data.records;
+                        console.log('使用records字段，postList长度:', postList.length);
+
+                    // 调试：查看 View所有帖子的燃料类型 Fuel Type
+                    console.log('=== 燃料类型 Fuel Type调试信息 ===');
+                    postList.forEach((post, index) => {
+                        console.log(`帖子${index + 1} - ID: ${post.postId}, fuelType: ${post.fuelType}`);
+                    });
+                    console.log('=====================');
+                    } else if (data.data && data.data.content) {
+                        // 如果返回分页对象，content字段
+                        postList = data.data.content;
+                        console.log('使用content字段，postList长度:', postList.length);
+                    } else if (data.data && data.data.posts) {
+                        // 如果返回包含posts字段的对象
+                        postList = data.data.posts;
+                        console.log('使用posts字段，postList长度:', postList.length);
+                    } else if (data.data && data.data.data) {
+                        // 如果有嵌套的data字段
+                        postList = Array.isArray(data.data.data) ? data.data.data : [];
+                        console.log('使用嵌套data字段，postList长度:', postList.length);
+                    } else {
+                        // 默认情况，尝试将data.data转为数组
+                        postList = Array.isArray(data.data) ? data.data : [];
+                        console.log('使用默认处理，postList长度:', postList.length);
+                    }
+
+                    // 如果postList仍然为空，显示调试信息
+                    if (postList.length === 0) {
+                        console.warn('postList为空，可能的返回数据结构：', data);
+                    }
+
+                    // 计算总页数
+                    const totalCount = data.data.total || postList.length;
+                    totalPages = Math.ceil(totalCount / 10) || 1;
+                    currentPage = Math.min(currentPage, totalPages);
+
+                    // 保存 Save totalCount 用于分页显示
+                    window.currentTotalCount = totalCount;
+
+                    displayPosts();
+                    updatePaginationInfo();
+                } else {
+                    console.error('加载帖子失败:', data.msg);
+                    showToast('加载帖子失败：' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('加载帖子失败:', error);
+                showToast('加载帖子失败，请检查网络连接', 'error');
+            });
+        }
+
+        // Display posts in table
+        function displayPosts() {
+            const tbody = document.getElementById('postTableBody');
+            const emptyState = document.getElementById('emptyState');
+
+            if (postList.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = postList.map(post => `
+                <tr>
+                    <td>${post.postId}</td>
+                    <td>${post.boilerName || post.title || '无标题'}</td>
+                    <td>¥${post.price ? parseFloat(post.price).toFixed(2) : '0.00'}</td>
+                    <td>${getCityName(post.city)}</td>
+                    <td>${getBoilerTypeName(post.boilerType)}</td>
+                    <td>${post.brand || '-'}</td>
+                    <td><span class="status-badge ${post.status}">${getStatusName(post.status)}</span></td>
+                    <td>${formatDate(post.publishTime)}</td>
+                    <td>${post.viewCount || 0}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-primary" onclick="viewPostDetail('${post.postId}')">查看详情 View Details</button>
+                            ${post.status !== 'BANNED' && post.status !== 'SOLD' && post.status !== 'DELISTED' ?
+                                `<button class="btn-small btn-ban" onclick="showBanModal('${post.postId}', '${post.boilerName || post.title || '无标题'}', '${post.status}')">封禁</button>` :
+                                "<span class=\"status-note-muted\">已封禁</span>"
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update pagination information
+        function updatePaginationInfo() {
+            const totalCount = window.currentTotalCount || postList.length;
+            document.getElementById('postCountDisplay').innerHTML = `
+                共 ${totalCount} 条记录
+                <div class="pagination-controls">
+                    <span>第 ${currentPage} 页，共 ${totalPages} 页</span>
+                    <button class="btn btn-secondary btn-small" id="prevPageBtn" onclick="changePage(-1)" ${currentPage <= 1 ? 'disabled' : ''}>上一页</button>
+                    <button class="btn btn-secondary btn-small" id="nextPageBtn" onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''}>下一页</button>
+                </div>
+            `;
+        }
+
+        // Change page
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadPosts();
+            }
+        }
+
+        
+        // View post detail
+        function viewPostDetail(postId) {
+            showLoading();
+
+            const token = localStorage.getItem('admin_token');
+
+            fetch(`${BASE_URL}/post/admin/posts/${postId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.code === 1) {
+                    displayPostDetail(data.data);
+                    document.getElementById('viewPostModal').classList.add('show');
+                } else {
+                    showToast('获取帖子详情 Post Details失败：' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('获取帖子详情 Post Details失败:', error);
+                showToast('获取帖子详情 Post Details失败，请检查网络连接', 'error');
+            });
+        }
+
+        // Display post detail
+        function displayPostDetail(post) {
+            const content = document.getElementById('postDetailContent');
+
+            content.innerHTML = `
+                <div class="post-detail-section">
+                    <div class="post-detail-title">基本信息 Basic Information</div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">帖子ID：</span>
+                        <span class="post-detail-value">${post.postId}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">设备名称：</span>
+                        <span class="post-detail-value">${post.boilerName || post.title || '无标题'}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">价格：</span>
+                        <span class="post-detail-value">¥${post.price ? parseFloat(post.price).toFixed(2) : '0.00'}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">状态：</span>
+                        <span class="post-detail-value"><span class="status-badge ${post.status}">${getStatusName(post.status)}</span></span>
+                    </div>
+                </div>
+
+                <div class="post-detail-section">
+                    <div class="post-detail-title">锅炉信息</div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">锅炉类型 Boiler Type：</span>
+                        <span class="post-detail-value">${getBoilerTypeName(post.boilerType)}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">品牌 Brand：</span>
+                        <span class="post-detail-value">${post.brand || '-'}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">吨位：</span>
+                        <span class="post-detail-value">${post.tonnage || '-'}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">燃料类型 Fuel Type：</span>
+                        <span class="post-detail-value">${getFuelTypeName(post.fuelType)}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">所在地 Location：</span>
+                        <span class="post-detail-value">${getCityName(post.city)}</span>
+                    </div>
+                </div>
+
+                <div class="post-detail-section">
+                    <div class="post-detail-title">卖家 Seller信息</div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">卖家 SellerID：</span>
+                        <span class="post-detail-value">${post.sellerId || '-'}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">卖家 Seller名称：</span>
+                        <span class="post-detail-value">${post.sellerName || '-'}</span>
+                    </div>
+                </div>
+
+                <div class="post-detail-section">
+                    <div class="post-detail-title">时间信息</div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">发布时间：</span>
+                        <span class="post-detail-value">${formatDate(post.publishTime)}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">更新时间：</span>
+                        <span class="post-detail-value">${formatDate(post.updateTime)}</span>
+                    </div>
+                    <div class="post-detail-row">
+                        <span class="post-detail-label">浏览量：</span>
+                        <span class="post-detail-value">${post.viewCount || 0}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Close view modal
+        function closeViewModal() {
+            document.getElementById('viewPostModal').classList.remove('show');
+        }
+
+        // Show ban modal
+        function showBanModal(postId, title, currentStatus) {
+            postToBan = postId;
+            document.getElementById('banPostId').value = postId;
+            document.getElementById('banPostTitle').value = title;
+            document.getElementById('banPostCurrentStatus').value = getStatusName(currentStatus);
+            document.getElementById('banReason').value = '';
+
+            document.getElementById('banPostModal').classList.add('show');
+        }
+
+        // Close ban modal
+        function closeBanModal() {
+            document.getElementById('banPostModal').classList.remove('show');
+            postToBan = null;
+        }
+
+        // Confirm ban
+        function confirmBan() {
+            if (!postToBan) return;
+
+            const reason = document.getElementById('banReason').value.trim();
+            if (!reason) {
+                showToast('请输入封禁原因', 'error');
+                return;
+            }
+
+            const token = localStorage.getItem('admin_token');
+            const adminUserId = localStorage.getItem('userId');
+
+            // Use the dedicated admin ban endpoint
+            fetch(`${BASE_URL}/post/${postToBan}/ban?adminUserId=${adminUserId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 1) {
+                    showToast('帖子封禁成功', 'success');
+                    closeBanModal();
+                    loadPosts(); // Refresh the list
+                } else {
+                    showToast('封禁失败：' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('封禁失败:', error);
+                showToast('封禁失败，请检查网络连接', 'error');
+            });
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                window.location.href = window.location.origin + '/login.html';
+            }
+        }
+
+        // Helper functions
+        function getCityName(city) {
+            const cityMap = {
+                'GUANGZHOU': '广州',
+                'BEIJING': '北京',
+                'SHANGHAI': '上海',
+                'SHENZHEN': '深圳'
+            };
+            return cityMap[city] || city || '-';
+        }
+
+        function getBoilerTypeName(type) {
+            const typeMap = {
+                'HOT_WATER': '热水锅炉 Hot Water Boiler',
+                'STEAM': '蒸汽锅炉 Steam Boiler'
+            };
+            return typeMap[type] || type || '-';
+        }
+
+        function getFuelTypeName(type) {
+            const typeMap = {
+                'GAS': '燃气',
+                'OIL': '燃油 Oil',
+                'COAL': '燃煤 Coal',
+                'BIOMASS': '生物质 Biomass',
+                'ELECTRIC': '电 Electric'
+            };
+            return typeMap[type] || type || '-';
+        }
+
+        function getStatusName(status) {
+            const statusMap = {
+                'PUBLISHED': '已发布',
+                'RESERVED': '已预订',
+                'SOLD': '已售出',
+                'DELISTED': '已下架',
+                'BANNED': '已封禁'
+            };
+            return statusMap[status] || status || '-';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showToast(message, type = 'info') {
+            // Remove existing toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const banModal = document.getElementById('banPostModal');
+            const viewModal = document.getElementById('viewPostModal');
+
+            if (event.target === banModal) {
+                closeBanModal();
+            }
+            if (event.target === viewModal) {
+                closeViewModal();
+            }
+        }
+    </script>
+</body>
+</html>

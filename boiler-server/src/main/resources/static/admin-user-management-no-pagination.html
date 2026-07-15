@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员用户管理 Admin User Management - Boiler Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/admin-user-management-no-pagination.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="admin-header-row">
+                <h1>管理员用户管理 Admin User Management</h1>
+                <div class="nav-buttons">
+                    <a href="admin-post-management.html" class="back-btn">→ 前往帖子管理 Go to Post Management</a>
+                </div>
+                <div class="user-info">
+                    <span id="adminUsername">管理员 Admin</span>
+                    <button class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="searchInput">搜索用户 Search Users</label>
+                    <input type="text" id="searchInput" class="filter-input" placeholder="输入用户名 Enter username">
+                </div>
+                <div class="filter-group">
+                    <label for="userTypeFilter">用户类型 User Type</label>
+                    <select id="userTypeFilter" class="filter-select">
+                        <option value="">全部 All</option>
+                        <option value="BUYER">买家 Buyer</option>
+                        <option value="SELLER">卖家 Seller</option>
+                    </select>
+                </div>
+                <div class="filter-group" id="qualificationFilterGroup">
+                    <label for="qualificationFilter">卖家 Seller资质状态</label>
+                    <select id="qualificationFilter" class="filter-select">
+                        <option value="">全部 All</option>
+                        <option value="PENDING">待审核</option>
+                        <option value="APPROVED">已通过</option>
+                        <option value="REJECTED">已驳回</option>
+                    </select>
+                </div>
+                <div class="filter-buttons">
+                    <button class="btn btn-primary" onclick="searchUsers()">查询 Search</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">重置 Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="table-info" id="userCountDisplay">
+                加载中... Loading...
+            </div>
+            <table class="table" id="userTable">
+                <thead>
+                    <tr>
+                        <th>用户 ID</th>
+                        <th>用户名</th>
+                        <th>用户身份类型</th>
+                        <th>联系电话</th>
+                        <th>邮箱</th>
+                        <th>信用分数</th>
+                        <th>卖家资质状态</th>
+                        <th>店铺名称</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Table content will be inserted here -->
+                </tbody>
+            </table>
+            <div class="empty-state u-hidden" id="emptyState">
+                <i>📋</i>
+                <p>暂无用户数据</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal" id="editUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">编辑用户 Edit User</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <div class="form-group">
+                        <label>用户ID</label>
+                        <input type="text" class="form-control" id="editUserId" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>登录 Login用户名 Username</label>
+                        <input type="text" class="form-control" id="editUsername" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>联系电话 Phone</label>
+                        <input type="text" class="form-control" id="editPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱 Email</label>
+                        <input type="email" class="form-control" id="editEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>信用分数</label>
+                        <input type="text" class="form-control" id="editCreditScore" disabled>
+                    </div>
+                    <div class="seller-section u-hidden" id="sellerSection">
+                        <h3>卖家 Seller信息（只读）</h3>
+                        <div class="form-group">
+                            <label>店铺名称 Shop Name</label>
+                            <input type="text" class="form-control" id="editShopName" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>统一信用代码</label>
+                            <input type="text" class="form-control" id="editBusinessLicense" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>法人身份证号 Legal Person ID No.</label>
+                            <input type="text" class="form-control" id="editLegalPersonId" disabled>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">取消 Cancel</button>
+                <button class="btn btn-primary" onclick="saveUser()">保存 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Qualification Audit Modal -->
+    <div class="modal" id="auditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">资质审核 Qualification Review</h2>
+                <button class="modal-close" onclick="closeAuditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="auditForm">
+                    <div class="form-group">
+                        <label>用户ID</label>
+                        <input type="text" class="form-control" id="auditUserId" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>店铺名称 Shop Name</label>
+                        <input type="text" class="form-control" id="auditShopName" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>统一信用代码</label>
+                        <input type="text" class="form-control" id="auditBusinessLicense" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>法人身份证号 Legal Person ID No.</label>
+                        <input type="text" class="form-control" id="auditLegalPersonId" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>资质文件</label>
+                        <div class="qualification-files">
+                            <div class="file-item">
+                                <div class="file-preview">
+                                    <div class="file-info">
+                                        <span class="file-label">营业执照 Business License</span>
+                                        <button type="button" class="btn-view-file" onclick="viewFile('businessLicense')">查看 View</button>
+                                    </div>
+                                    <div class="file-display u-hidden" id="businessLicenseDisplay">
+                                        <img id="businessLicenseImg" class="file-display-image">
+                                        <iframe id="businessLicensePdf" class="file-display-frame"></iframe>
+                                        <a id="businessLicenseLink" target="_blank" class="file-display-link">查看文件 View File</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="file-item">
+                                <div class="file-preview">
+                                    <div class="file-info">
+                                        <span class="file-label">法人身份证 Legal Person ID</span>
+                                        <button type="button" class="btn-view-file" onclick="viewFile('legalPersonId')">查看 View</button>
+                                    </div>
+                                    <div class="file-display u-hidden" id="legalPersonIdDisplay">
+                                        <img id="legalPersonIdImg" class="file-display-image">
+                                        <iframe id="legalPersonIdPdf" class="file-display-frame"></iframe>
+                                        <a id="legalPersonIdLink" target="_blank" class="file-display-link">查看文件 View File</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>审核结果</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="auditApproved" name="auditResult" value="APPROVED" required>
+                                <label for="auditApproved">审核通过</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="auditRejected" name="auditResult" value="REJECTED" required>
+                                <label for="auditRejected">审核驳回</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>审核备注 <span class="required-mark">*</span></label>
+                        <textarea class="form-control" id="auditRemark" rows="3" required placeholder="请输入审核备注"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAuditModal()">取消 Cancel</button>
+                <button class="btn btn-primary" onclick="submitAudit()">提交审核 Submit Review</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal" id="userDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">用户详情</h2>
+                <button class="modal-close" onclick="closeUserDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Basic Information Section -->
+                <div class="form-group">
+                    <label>用户ID</label>
+                    <div id="detailsUserId" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>登录 Login用户名 Username</label>
+                    <div id="detailsUsername" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>用户身份类型</label>
+                    <div id="detailsUserType" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>联系电话 Phone</label>
+                    <div id="detailsPhone" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>邮箱 Email</label>
+                    <div id="detailsEmail" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>信用分数</label>
+                    <div id="detailsCreditScore" class="form-control readonly-field"></div>
+                </div>
+                <div class="form-group">
+                    <label>注册 Register日期</label>
+                    <div id="detailsRegistrationDate" class="form-control readonly-field"></div>
+                </div>
+
+                <!-- Shop Information Section -->
+                <div id="detailsShopSection" class="seller-section u-hidden">
+                    <h3>店铺信息</h3>
+                    <div class="form-group">
+                        <label>店铺名称 Shop Name</label>
+                        <div id="detailsShopName" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>店铺地址 Shop Address</label>
+                        <div id="detailsShopAddress" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>统一信用代码</label>
+                        <div id="detailsBusinessLicense" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>法人身份证号 Legal Person ID No.</label>
+                        <div id="detailsLegalPersonId" class="form-control readonly-field"></div>
+                    </div>
+                </div>
+
+                <!-- Qualification Audit Section -->
+                <div class="seller-section u-hidden" id="detailsQualificationSection">
+                    <h3>资质审核 Qualification Review信息</h3>
+                    <div class="form-group">
+                        <label>资质状态</label>
+                        <div id="detailsQualificationStatus" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>审核备注</label>
+                        <div id="detailsQualificationAuditRemark" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>审核人</label>
+                        <div id="detailsQualificationAuditedBy" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>审核时间</label>
+                        <div id="detailsQualificationAuditTime" class="form-control readonly-field"></div>
+                    </div>
+                </div>
+
+                <!-- Transaction Information Section -->
+                <div class="seller-section u-hidden" id="detailsTransactionSection">
+                    <h3>交易信息</h3>
+                    <div class="form-group">
+                        <label>保证金</label>
+                        <div id="detailsGuaranteeDeposit" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>完成交易数</label>
+                        <div id="detailsCompletedTransactionCount" class="form-control readonly-field"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>好评 Positive率</label>
+                        <div id="detailsPositiveRatingRate" class="form-control readonly-field"></div>
+                    </div>
+                </div>
+
+                <!-- Qualification Files Section -->
+                <div class="seller-section u-hidden" id="detailsQualificationFilesSection">
+                    <h3>资质文件</h3>
+                    <div class="qualification-files">
+                        <div class="file-item">
+                            <div class="file-preview">
+                                <div class="file-info">
+                                    <span class="file-label">营业执照 Business License</span>
+                                    <button type="button" class="btn-view-file" onclick="viewUserFile('businessLicense')">查看 View</button>
+                                </div>
+                                <div class="file-display u-hidden" id="businessLicenseDisplay">
+                                    <img id="businessLicenseImg" class="file-display-image">
+                                    <iframe id="businessLicensePdf" class="file-display-frame"></iframe>
+                                    <a id="businessLicenseLink" target="_blank" class="file-display-link">查看文件 View File</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-preview">
+                                <div class="file-info">
+                                    <span class="file-label">法人身份证 Legal Person ID</span>
+                                    <button type="button" class="btn-view-file" onclick="viewUserFile('legalPersonId')">查看 View</button>
+                                </div>
+                                <div class="file-display u-hidden" id="legalPersonIdDisplay">
+                                    <img id="legalPersonIdImg" class="file-display-image">
+                                    <iframe id="legalPersonIdPdf" class="file-display-frame"></iframe>
+                                    <a id="legalPersonIdLink" target="_blank" class="file-display-link">查看文件 View File</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeUserDetailsModal()">关闭 Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+        let currentUser = null;
+        let userList = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+
+            // Reset all filters to default
+            resetFilters();
+
+            // Hide qualification filter by default
+            document.getElementById('qualificationFilterGroup').style.display = 'none';
+
+            // Load all users without any filters
+            loadUsers();
+
+            // Add enter key support for search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchUsers();
+                }
+            });
+
+            // User type filter change handler
+            document.getElementById('userTypeFilter').addEventListener('change', function() {
+                const qualificationFilterGroup = document.getElementById('qualificationFilterGroup');
+                if (this.value === 'SELLER') {
+                    qualificationFilterGroup.style.display = 'block';
+                } else {
+                    qualificationFilterGroup.style.display = 'none';
+                }
+            });
+        });
+
+        // Check admin authentication
+        function checkAdminAuth() {
+            const token = localStorage.getItem('admin_token');
+            console.log('检查 admin_token:', token ? '存在' : '不存在');
+
+            if (!token) {
+                console.log('没有 admin_token，跳转到登录 Login页');
+                window.location.href = window.location.origin + '/login.html';
+                return;
+            }
+
+            // Verify admin token and get user info
+            fetch(`${BASE_URL}/user/profile/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('管理员 Admin验证返回数据:', data);
+                if (data.code === 1 && data.data && data.data.userType === 'ADMIN') {
+                    currentUser = data.data;
+                    document.getElementById('adminUsername').textContent = data.data.username + ' (管理员 Admin)';
+                    console.log('管理员 Admin验证成功，用户名 Username:', data.data.username);
+                } else {
+                    console.log('不是管理员 Admin用户或验证失败，用户类型 User Type:', data.data?.userType);
+                    alert('您没有管理员 Admin权限，请使用管理员 Admin账号登录 Login');
+                    window.location.href = window.location.origin + '/login.html';
+                }
+            })
+            .catch(error => {
+                console.error('Auth check failed:', error);
+                console.log('管理员 Admin验证出错:', error.message);
+                alert('登录 Login验证失败，请重新登录 Login');
+                window.location.href = window.location.origin + '/login.html';
+            });
+        }
+
+        // Load users (no pagination version)
+        function loadUsers() {
+            console.log('=== loadUsers 开始 (无分页版本) ===');
+
+            // Build URL with filter parameters only
+            const params = new URLSearchParams();
+            const search = document.getElementById('searchInput').value;
+            const userType = document.getElementById('userTypeFilter').value;
+            const qualificationStatus = document.getElementById('qualificationFilter').value;
+
+            // Add filter parameters
+            if (search) params.append('username', search);
+            if (userType) params.append('userType', userType);
+            if (qualificationStatus) params.append('qualificationStatus', qualificationStatus);
+
+            const url = `${BASE_URL}/user/admin/users?${params}`;
+            console.log('请求URL:', url);
+            console.log('请求参数:', {
+                username: search,
+                userType: userType,
+                qualificationStatus: qualificationStatus
+            });
+
+            // Update display status
+            const userCountDisplay = document.getElementById('userCountDisplay');
+            userCountDisplay.textContent = '加载中... Loading...';
+
+            showLoading();
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                }
+            })
+            .then(response => {
+                console.log('响应状态:', response.status, response.statusText);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                console.log('=== loadUsers 处理响应 ===');
+                console.log('接口返回数据:', data);
+
+                if (data.code === 1) {
+                    // Clear existing array
+                    userList.length = 0;
+
+                    // Handle different response formats
+                    let users = [];
+                    if (data.data.content) {
+                        // If pagination format
+                        users = data.data.content;
+                    } else if (Array.isArray(data.data)) {
+                        // If direct array format
+                        users = data.data;
+                    } else if (data.data.users) {
+                        // If users field exists
+                        users = data.data.users;
+                    } else {
+                        console.warn('Unexpected data format:', data.data);
+                        renderTable();
+                        return;
+                    }
+
+                    // Add users to list
+                    users.forEach(user => {
+                        userList.push(user);
+                    });
+
+                    console.log('=== 数据赋值完成 ===');
+                    console.log('userList 长度:', userList.length);
+                    console.log('用户数据示例:', userList.slice(0, 2));
+
+                    // Update qualification filter visibility
+                    const qualificationFilterGroup = document.getElementById('qualificationFilterGroup');
+                    if (userType === 'SELLER') {
+                        qualificationFilterGroup.style.display = 'block';
+                    } else {
+                        qualificationFilterGroup.style.display = 'none';
+                    }
+
+                    renderTable();
+                } else {
+                    console.error('接口返回错误:', data.msg);
+                    alert(data.msg || '加载用户列表失败');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Failed to load users:', error);
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    alert('认证失败，请重新登录 Login');
+                    window.location.href = window.location.origin + '/login.html';
+                } else if (error.message.includes('Network Error')) {
+                    alert('网络连接失败，请检查后端服务是否启动');
+                } else if (error.message.includes('HTTP error')) {
+                    alert(`服务器错误: ${error.message}`);
+                } else {
+                    alert(`加载失败: ${error.message}`);
+                }
+            });
+        }
+
+        // Search users
+        function searchUsers() {
+            console.log('=== searchUsers 被调用 ===');
+            loadUsers();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            console.log('=== resetFilters 被调用 ===');
+            document.getElementById('searchInput').value = '';
+            document.getElementById('userTypeFilter').value = '';
+            document.getElementById('qualificationFilter').value = '';
+
+            // Hide qualification filter
+            document.getElementById('qualificationFilterGroup').style.display = 'none';
+
+            console.log('筛选 Filter条件已重置 Reset，准备加载所有用户');
+            loadUsers();
+        }
+
+        // Render table
+        function renderTable() {
+            console.log('=== renderTable 开始 ===');
+            console.log('userList.length:', userList.length);
+
+            const tbody = document.getElementById('userTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.getElementById('userTable');
+
+            if (userList.length === 0) {
+                console.log('用户列表为空，显示空状态');
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
+                updateUserCountDisplay();
+                return;
+            }
+
+            table.style.display = 'table';
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = userList.map(user => {
+                const userTypeBadge = user.userType ? `<span class="status-badge ${user.userType}">${getUserTypeLabel(user.userType)}</span>` : '<span class="status-badge">未知</span>';
+                const qualificationDisplay = user.userType === 'SELLER' ?
+                    (user.qualificationStatus ? `<span class="status-badge ${user.qualificationStatus}">${getQualificationStatusLabel(user.qualificationStatus)}</span>` : '<span class="status-badge UNVERIFIED">未认证</span>') :
+                    '无';
+                const shopNameDisplay = user.userType === 'SELLER' ? (user.shopName || '无') : '无';
+
+                return `<tr>
+                    <td>${user.userId || '未填写'}</td>
+                    <td>${user.username || '未填写'}</td>
+                    <td>${userTypeBadge}</td>
+                    <td>${user.phone || '未填写'}</td>
+                    <td>${user.email || '未填写'}</td>
+                    <td>${user.creditScore !== null && user.creditScore !== undefined ? user.creditScore : '未填写'}</td>
+                    <td>${qualificationDisplay}</td>
+                    <td>${shopNameDisplay}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-primary" onclick="viewUserDetails('${user.userId || ''}')">查看详情 View Details</button>
+                            <button class="btn-small btn-edit" onclick="editUser('${user.userId || ''}')">编辑用户 Edit User</button>
+                            ${user.userType === 'SELLER' && user.qualificationStatus === 'PENDING' ?
+                                `<button class="btn-small btn-audit" onclick="auditUser('${user.userId || ''}')">资质审核 Qualification Review</button>` :
+                                '<button class="btn-small btn-audit" disabled>资质审核 Qualification Review</button>'}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Update user count display
+            updateUserCountDisplay();
+        }
+
+        // Update user count display
+        function updateUserCountDisplay() {
+            const userCountDisplay = document.getElementById('userCountDisplay');
+            if (userList.length === 0) {
+                userCountDisplay.textContent = '暂无用户数据';
+            } else {
+                const search = document.getElementById('searchInput').value;
+                const userTypeFilter = document.getElementById('userTypeFilter').value;
+                const qualificationFilter = document.getElementById('qualificationFilter').value;
+
+                let displayText = '当前显示：';
+
+                if (search || userTypeFilter || qualificationFilter) {
+                    // 有筛选 Filter条件
+                    let filters = [];
+                    if (search) filters.push(`搜索 Search: "${search}"`);
+                    if (userTypeFilter) filters.push(`类型: ${getUserTypeLabel(userTypeFilter)}`);
+                    if (qualificationFilter) filters.push(`资质: ${getQualificationStatusLabel(qualificationFilter)}`);
+
+                    displayText += filters.join(', ') + `，共 ${userList.length} 条`;
+                } else {
+                    // 默认显示所有用户
+                    displayText += `所有用户，共 ${userList.length} 条`;
+                }
+
+                userCountDisplay.textContent = displayText;
+            }
+        }
+
+        // Get user type label
+        function getUserTypeLabel(type) {
+            const labels = {
+                'BUYER': '买家 Buyer',
+                'SELLER': '卖家 Seller',
+                'ADMIN': '管理员 Admin'
+            };
+            return labels[type] || type;
+        }
+
+        // Get qualification status label
+        function getQualificationStatusLabel(status) {
+            const labels = {
+                'PENDING': '待审核',
+                'APPROVED': '已通过',
+                'REJECTED': '已驳回',
+                'UNVERIFIED': '未认证'
+            };
+            return labels[status] || status;
+        }
+
+        // Edit user
+        function editUser(userId) {
+            showLoading();
+            fetch(`${BASE_URL}/user/admin/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.code === 1 && data.data) {
+                    const user = data.data;
+                    document.getElementById('editUserId').value = user.userId || '';
+                    document.getElementById('editUsername').value = user.username || '';
+                    document.getElementById('editPhone').value = user.phone || '';
+                    document.getElementById('editEmail').value = user.email || '';
+                    document.getElementById('editCreditScore').value = user.creditScore || '';
+
+                    // Show seller section only for sellers
+                    const sellerSection = document.getElementById('sellerSection');
+                    if (user.userType === 'SELLER') {
+                        sellerSection.style.display = 'block';
+                        document.getElementById('editShopName').value = user.shopName || '';
+                        document.getElementById('editBusinessLicense').value = user.businessLicense || '';
+                        document.getElementById('editLegalPersonId').value = user.legalPersonId || '';
+                    } else {
+                        sellerSection.style.display = 'none';
+                    }
+
+                    document.getElementById('editUserModal').classList.add('show');
+                } else {
+                    alert(data.msg || '获取用户信息失败');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Failed to load user:', error);
+                alert('网络错误，请稍后重试 Network error, please try again later');
+            });
+        }
+
+        // Save user
+        function saveUser() {
+            const userId = document.getElementById('editUserId').value;
+            const updateData = {
+                userId: userId,
+                phone: document.getElementById('editPhone').value,
+                email: document.getElementById('editEmail').value
+            };
+
+            if (!updateData.phone || !updateData.email) {
+                alert('手机号 Phone和邮箱 Email不能为空');
+                return;
+            }
+
+            if (confirm('确定要保存 Save用户信息吗？')) {
+                showLoading();
+
+                fetch(`${BASE_URL}/user/admin/users`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify(updateData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    if (data.code === 1) {
+                        alert('用户信息保存 Save成功');
+                        closeEditModal();
+                        loadUsers();
+                    } else {
+                        alert(data.msg || '保存 Save失败');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Failed to save user:', error);
+                    alert('网络错误，请稍后重试 Network error, please try again later');
+                });
+            }
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('editUserModal').classList.remove('show');
+        }
+
+        // Audit user
+        function auditUser(userId) {
+            showLoading();
+            fetch(`${BASE_URL}/user/admin/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.code === 1 && data.data) {
+                    const user = data.data;
+                    document.getElementById('auditUserId').value = user.userId || '';
+                    document.getElementById('auditShopName').value = user.shopName || '';
+                    document.getElementById('auditBusinessLicense').value = user.businessLicense || '';
+                    document.getElementById('auditLegalPersonId').value = user.legalPersonId || '';
+
+                    // Store file URLs for the user
+                    window.currentAuditUser = {
+                        userId: user.userId,
+                        businessLicenseFileUrl: user.businessLicenseFileUrl || '',
+                        legalPersonIdFileUrl: user.legalPersonIdFileUrl || ''
+                    };
+
+                    // Reset form
+                    document.querySelector('input[name="auditResult"][value="APPROVED"]').checked = true;
+                    document.getElementById('auditRemark').value = '';
+
+                    // Hide all file displays initially
+                    hideAllFileDisplays();
+
+                    // Update file status indicators
+                    updateFileStatusIndicators();
+
+                    document.getElementById('auditModal').classList.add('show');
+                } else {
+                    alert(data.msg || '获取用户信息失败');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Failed to load user:', error);
+                alert('网络错误，请稍后重试 Network error, please try again later');
+            });
+        }
+
+        // Submit audit
+        function submitAudit() {
+            const userId = document.getElementById('auditUserId').value;
+            const auditResult = document.querySelector('input[name="auditResult"]:checked').value;
+            const auditRemark = document.getElementById('auditRemark').value.trim();
+
+            if (!auditRemark) {
+                alert('请填写审核备注');
+                return;
+            }
+
+            if (confirm('确定要提交审核 Submit Review结果吗？')) {
+                showLoading();
+
+                fetch(`${BASE_URL}/user/admin/sellers/qualification`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        sellerId: userId,
+                        targetStatus: auditResult,
+                        auditRemark: auditRemark
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    if (data.code === 1) {
+                        alert('审核提交成功');
+                        closeAuditModal();
+                        loadUsers();
+                    } else {
+                        alert(data.msg || '审核提交失败');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Failed to submit audit:', error);
+                    alert('网络错误，请稍后重试 Network error, please try again later');
+                });
+            }
+        }
+
+        // Close audit modal
+        function closeAuditModal() {
+            document.getElementById('auditModal').classList.remove('show');
+            // Hide all file displays when closing modal
+            hideAllFileDisplays();
+        }
+
+        // View file function
+        function viewFile(fileType) {
+            const user = window.currentAuditUser;
+            if (!user || !user.userId) {
+                alert('用户信息未加载，请重新打开审核窗口');
+                return;
+            }
+
+            const fileUrl = fileType === 'businessLicense' ?
+                user.businessLicenseFileUrl :
+                user.legalPersonIdFileUrl;
+
+            if (!fileUrl) {
+                alert('当前用户未上传 Not Uploaded相关文件');
+                return;
+            }
+
+            // Construct full URL
+            const fullUrl = `${BASE_URL}${fileUrl}`;
+            const displayElement = document.getElementById(fileType + 'Display');
+            const imgElement = document.getElementById(fileType + 'Img');
+            const pdfElement = document.getElementById(fileType + 'Pdf');
+            const linkElement = document.getElementById(fileType + 'Link');
+
+            // Hide all elements first
+            imgElement.style.display = 'none';
+            pdfElement.style.display = 'none';
+            linkElement.style.display = 'none';
+
+            // Show the display area
+            displayElement.style.display = 'block';
+
+            // Check file type and display accordingly
+            const fileExtension = fileUrl.split('.').pop().toLowerCase();
+
+            if (['png', 'jpg', 'jpeg'].includes(fileExtension)) {
+                // Image file
+                // 使用addEventListener而不是直接赋值，避免全局污染
+                imgElement.removeEventListener('error', handleImageError);
+                imgElement.removeEventListener('load', handleImageLoad);
+
+                imgElement.src = fullUrl;
+                imgElement.style.display = 'block';
+
+                // 添加事件监听器
+                imgElement.addEventListener('error', handleImageError);
+                imgElement.addEventListener('load', handleImageLoad);
+            } else if (fileExtension === 'pdf') {
+                // PDF file
+                pdfElement.src = fullUrl;
+                pdfElement.style.display = 'block';
+            } else {
+                // Unknown type, show link
+                linkElement.href = fullUrl;
+                linkElement.style.display = 'inline-block';
+            }
+        }
+
+        // 定义全局的图片 Images错误处理函数
+        function handleImageError(event) {
+            const img = event.target;
+            // 只处理我们关心的图片 Images（有特定ID的图片 Images）
+            if (img.id === 'businessLicenseImg' || img.id === 'legalPersonIdImg') {
+                console.error('图片 Images加载失败:', img.src);
+                alert('图片 Images加载失败，请检查文件是否存在或网络连接');
+            }
+        }
+
+        // 定义全局的图片 Images加载成功处理函数
+        function handleImageLoad(event) {
+            const img = event.target;
+            // 只处理我们关心的图片 Images
+            if (img.id === 'businessLicenseImg' || img.id === 'legalPersonIdImg') {
+                console.log('图片 Images加载成功:', img.src);
+            }
+        }
+
+        // Hide all file displays
+        function hideAllFileDisplays() {
+            const fileTypes = ['businessLicense', 'legalPersonId'];
+            fileTypes.forEach(type => {
+                document.getElementById(type + 'Display').style.display = 'none';
+                // Clear sources - 使用 removeAttribute 而不是空字符串，避免浏览器尝试加载当前页面URL
+                document.getElementById(type + 'Img').removeAttribute('src');
+                document.getElementById(type + 'Pdf').removeAttribute('src');
+            });
+        }
+
+        // Update file status indicators
+        function updateFileStatusIndicators() {
+            const user = window.currentAuditUser;
+            if (!user) return;
+
+            const hasBusinessLicense = user.businessLicenseFileUrl && user.businessLicenseFileUrl.trim() !== '';
+            const hasLegalPersonId = user.legalPersonIdFileUrl && user.legalPersonIdFileUrl.trim() !== '';
+
+            // Update business license status
+            const businessLicenseInfo = document.querySelector('[onclick="viewFile(\'businessLicense\')"]').parentElement;
+            if (hasBusinessLicense) {
+                businessLicenseInfo.innerHTML = `
+                    <span class="file-label">营业执照 Business License</span>
+                    <button type="button" class="btn-view-file" onclick="viewFile('businessLicense')">查看 View</button>
+                `;
+            } else {
+                businessLicenseInfo.innerHTML = `
+                    <span class="file-label">营业执照 Business License</span>
+                    <span class="file-missing-note">未上传 Not Uploaded</span>
+                `;
+            }
+
+            // Update legal person ID status
+            const legalPersonInfo = document.querySelector('[onclick="viewFile(\'legalPersonId\')"]').parentElement;
+            if (hasLegalPersonId) {
+                legalPersonInfo.innerHTML = `
+                    <span class="file-label">法人身份证 Legal Person ID</span>
+                    <button type="button" class="btn-view-file" onclick="viewFile('legalPersonId')">查看 View</button>
+                `;
+            } else {
+                legalPersonInfo.innerHTML = `
+                    <span class="file-label">法人身份证 Legal Person ID</span>
+                    <span class="file-missing-note">未上传 Not Uploaded</span>
+                `;
+            }
+        }
+
+        // Show loading
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        // Hide loading
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('admin_token');
+                window.location.href = window.location.origin + '/login.html';
+            }
+        }
+
+        // View user details
+        function viewUserDetails(userId) {
+            showLoading();
+            fetch(`${BASE_URL}/user/admin/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.code === 1 && data.data) {
+                    populateUserDetailsModal(data.data);
+                    document.getElementById('userDetailsModal').classList.add('show');
+                } else {
+                    alert(data.msg || '获取用户详情失败');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Failed to load user details:', error);
+                alert('网络错误，请稍后重试 Network error, please try again later');
+            });
+        }
+
+        // Populate user details modal
+        function populateUserDetailsModal(user) {
+            // Basic information
+            document.getElementById('detailsUserId').textContent = user.userId || '未填写';
+            document.getElementById('detailsUsername').textContent = user.username || '未填写';
+            document.getElementById('detailsUserType').textContent = getUserTypeLabel(user.userType);
+            document.getElementById('detailsPhone').textContent = user.phone || '未填写';
+            document.getElementById('detailsEmail').textContent = user.email || '未填写';
+            document.getElementById('detailsCreditScore').textContent = user.creditScore !== null && user.creditScore !== undefined ? user.creditScore : '未填写';
+            document.getElementById('detailsRegistrationDate').textContent = user.registrationDate ? user.registrationDate.toString() : '未填写';
+
+            // Shop information (only for sellers)
+            const shopSection = document.getElementById('detailsShopSection');
+            if (user.userType === 'SELLER') {
+                shopSection.style.display = 'block';
+                document.getElementById('detailsShopName').textContent = user.shopName || '未填写';
+                document.getElementById('detailsShopAddress').textContent = user.shopAddress || '未填写';
+                document.getElementById('detailsBusinessLicense').textContent = user.businessLicense || '未填写';
+                document.getElementById('detailsLegalPersonId').textContent = user.legalPersonId || '未填写';
+            } else {
+                shopSection.style.display = 'none';
+            }
+
+            // Control section visibility based on user type
+            const qualificationSection = document.getElementById('detailsQualificationSection');
+            const transactionSection = document.getElementById('detailsTransactionSection');
+            const qualificationFilesSection = document.getElementById('detailsQualificationFilesSection');
+
+            if (user.userType === 'SELLER') {
+                // For SELLER: Show qualification audit information
+                document.getElementById('detailsQualificationStatus').textContent = user.qualificationStatus ? getQualificationStatusLabel(user.qualificationStatus) : '未认证';
+                document.getElementById('detailsQualificationAuditRemark').textContent = user.qualificationAuditRemark || '无';
+                document.getElementById('detailsQualificationAuditedBy').textContent = user.qualificationAuditedBy || '无';
+                document.getElementById('detailsQualificationAuditTime').textContent = user.qualificationAuditTime ? user.qualificationAuditTime.toString() : '无';
+
+                // Show qualification section for sellers
+                qualificationSection.style.display = 'block';
+            } else {
+                // Hide qualification section for non-sellers
+                qualificationSection.style.display = 'none';
+            }
+
+            // Hide transaction section for all user types
+            transactionSection.style.display = 'none';
+
+            // Hide qualification files section for all user types
+            qualificationFilesSection.style.display = 'none';
+
+            // File URLs for preview
+            window.currentUserDetails = {
+                userId: user.userId,
+                businessLicenseFileUrl: user.businessLicenseFileUrl || '',
+                legalPersonIdFileUrl: user.legalPersonIdFileUrl || ''
+            };
+
+            // Hide all file displays initially
+            hideAllFileDisplays();
+
+            // Update file status indicators in user details modal
+            updateUserFileStatusIndicators();
+        }
+
+        // Close user details modal
+        function closeUserDetailsModal() {
+            document.getElementById('userDetailsModal').classList.remove('show');
+            hideAllFileDisplays();
+        }
+
+        // Update file status indicators for user details modal
+        function updateUserFileStatusIndicators() {
+            const user = window.currentUserDetails;
+            if (!user) return;
+
+            const hasBusinessLicense = user.businessLicenseFileUrl && user.businessLicenseFileUrl.trim() !== '';
+            const hasLegalPersonId = user.legalPersonIdFileUrl && user.legalPersonIdFileUrl.trim() !== '';
+
+            // Update business license status in user details modal
+            const businessLicenseInfo = document.querySelector('[onclick="viewUserFile(\'businessLicense\')"]').parentElement;
+            if (hasBusinessLicense) {
+                businessLicenseInfo.innerHTML = `
+                    <span class="file-label">营业执照 Business License</span>
+                    <button type="button" class="btn-view-file" onclick="viewUserFile('businessLicense')">查看 View</button>
+                `;
+            } else {
+                businessLicenseInfo.innerHTML = `
+                    <span class="file-label">营业执照 Business License</span>
+                    <span class="file-missing-note">未上传 Not Uploaded</span>
+                `;
+            }
+
+            // Update legal person ID status in user details modal
+            const legalPersonInfo = document.querySelector('[onclick="viewUserFile(\'legalPersonId\')"]').parentElement;
+            if (hasLegalPersonId) {
+                legalPersonInfo.innerHTML = `
+                    <span class="file-label">法人身份证 Legal Person ID</span>
+                    <button type="button" class="btn-view-file" onclick="viewUserFile('legalPersonId')">查看 View</button>
+                `;
+            } else {
+                legalPersonInfo.innerHTML = `
+                    <span class="file-label">法人身份证 Legal Person ID</span>
+                    <span class="file-missing-note">未上传 Not Uploaded</span>
+                `;
+            }
+        }
+
+        // View user file
+        function viewUserFile(fileType) {
+            const user = window.currentUserDetails;
+            if (!user || !user.userId) {
+                alert('用户信息未加载，请重新打开详情窗口');
+                return;
+            }
+
+            const fileUrl = fileType === 'businessLicense' ?
+                user.businessLicenseFileUrl :
+                user.legalPersonIdFileUrl;
+
+            if (!fileUrl) {
+                alert('当前用户未上传 Not Uploaded相关文件');
+                return;
+            }
+
+            const fullUrl = `${BASE_URL}${fileUrl}`;
+            const displayElement = document.getElementById(fileType + 'Display');
+            const imgElement = document.getElementById(fileType + 'Img');
+            const pdfElement = document.getElementById(fileType + 'Pdf');
+            const linkElement = document.getElementById(fileType + 'Link');
+
+            // Hide all elements first
+            imgElement.style.display = 'none';
+            pdfElement.style.display = 'none';
+            linkElement.style.display = 'none';
+
+            // Show the display area
+            displayElement.style.display = 'block';
+
+            // Check file type and display accordingly
+            const fileExtension = fileUrl.split('.').pop().toLowerCase();
+
+            if (['png', 'jpg', 'jpeg'].includes(fileExtension)) {
+                // Image file
+                imgElement.src = fullUrl;
+                imgElement.style.display = 'block';
+            } else if (fileExtension === 'pdf') {
+                // PDF file
+                pdfElement.src = fullUrl;
+                pdfElement.style.display = 'block';
+            } else {
+                // Unknown type, show link
+                linkElement.href = fullUrl;
+                linkElement.style.display = 'inline-block';
+            }
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>

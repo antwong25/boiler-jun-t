@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.boilerserver.mapper.BoilerMapper">
+    <resultMap id="BoilerResultMap" type="org.example.boilerpojo.BoilerEntity">
+        <id property="boilerId" column="boilerId"/>
+        <result property="model" column="model"/>
+        <result property="brand" column="brand"/>
+        <result property="boilerType" column="boilerType"/>
+        <result property="tonnage" column="tonnage"/>
+        <result property="fuelType" column="fuelType"/>
+        <result property="workingPressure" column="workingPressure"/>
+        <result property="noxEmissions" column="noxEmissions"/>
+        <result property="footprintArea" column="footprintArea"/>
+        <result property="manufactureYear" column="manufactureDate"/>
+        <result property="evaporationCapacity" column="evaporationCapacity"/>
+        <result property="ratedThermalPower" column="ratedThermalPower"/>
+        <result property="thermalEfficiency" column="thermalEfficiency"/>
+        <result property="equipmentCondition" column="equipmentCondition"/>
+        <result property="usageHours" column="usageHours"/>
+        <result property="testReport" column="testReport"/>
+        <result property="ratedOutletWaterTemperature" column="ratedOutletWaterTemperature"/>
+    </resultMap>
+
+    <select id="getByBoilerId" resultMap="BoilerResultMap">
+        select * from boiler where boilerId = #{boilerId}
+    </select>
+
+    <insert id="insert" parameterType="org.example.boilerpojo.BoilerEntity">
+        insert into boiler (
+            boilerId,
+            model,
+            brand,
+            boilerType,
+            tonnage,
+            fuelType,
+            workingPressure,
+            noxEmissions,
+            footprintArea,
+            manufactureDate,
+            evaporationCapacity,
+            ratedThermalPower,
+            thermalEfficiency,
+            equipmentCondition,
+            usageHours,
+            testReport,
+            ratedOutletWaterTemperature
+        )
+        values (
+            #{boilerId},
+            #{model},
+            #{brand},
+            #{boilerType},
+            #{tonnage},
+            #{fuelType},
+            #{workingPressure},
+            #{noxEmissions},
+            #{footprintArea},
+            #{manufactureYear},
+            #{evaporationCapacity},
+            #{ratedThermalPower},
+            #{thermalEfficiency},
+            #{equipmentCondition},
+            #{usageHours},
+            #{testReport},
+            #{ratedOutletWaterTemperature}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.boilerpojo.BoilerEntity">
+        update boiler
+        <set>
+            <if test="model != null and model != ''">model = #{model},</if>
+            <if test="brand != null and brand != ''">brand = #{brand},</if>
+            <if test="boilerType != null and boilerType != ''">boilerType = #{boilerType},</if>
+            <if test="tonnage != null">tonnage = #{tonnage},</if>
+            <if test="fuelType != null and fuelType != ''">fuelType = #{fuelType},</if>
+            <if test="workingPressure != null">workingPressure = #{workingPressure},</if>
+            <if test="noxEmissions != null">noxEmissions = #{noxEmissions},</if>
+            <if test="footprintArea != null">footprintArea = #{footprintArea},</if>
+            <if test="manufactureYear != null">manufactureDate = #{manufactureYear},</if>
+            <if test="evaporationCapacity != null">evaporationCapacity = #{evaporationCapacity},</if>
+            <if test="ratedThermalPower != null">ratedThermalPower = #{ratedThermalPower},</if>
+            <if test="thermalEfficiency != null">thermalEfficiency = #{thermalEfficiency},</if>
+            <if test="equipmentCondition != null">equipmentCondition = #{equipmentCondition},</if>
+            <if test="usageHours != null">usageHours = #{usageHours},</if>
+            <if test="testReport != null">testReport = #{testReport},</if>
+            <if test="ratedOutletWaterTemperature != null">ratedOutletWaterTemperature = #{ratedOutletWaterTemperature},</if>
+        </set>
+        where boilerId = #{boilerId}
+    </update>
+
+    <delete id="deleteByBoilerId">
+        delete from boiler where boilerId = #{boilerId}
+    </delete>
+</mapper>

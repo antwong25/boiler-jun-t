@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑信息/资质申请 Edit Info / Qualification - Boiler Platform</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/pages/qualification.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <ul class="nav-container">
+                <li class="nav-item"><a href="home.html" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="boiler-list.html" class="nav-link">Boilers</a></li>
+                <li class="nav-item hidden" id="publishNavItem"><a href="login.html" id="publishLink" class="nav-link">Publish</a></li>
+                <li class="nav-item"><a href="login.html" id="myNavLink" class="nav-link active">My</a></li>
+            </ul>
+            <div class="nav-user-info" id="userInfoBar">
+                <span class="nav-user-name" id="userNameDisplay"></span>
+                <span class="nav-user-type" id="userTypeDisplay"></span>
+                <a href="qualification.html?userId=" id="sellerAuthLink" class="nav-user-link">编辑信息/卖家认证 Edit Info</a>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录 Log Out</button>
+            </div>
+            <div class="nav-guest-actions" id="guestNavActions">
+                <a href="login.html" class="login-text">登录 Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>卖家资质申请 Seller Qualification Application</h1>
+            <p id="userWelcomeText">请填写基本信息并上传资质文件以完成认证 Please fill in the basic information and upload qualification files to complete verification</p>
+            <div class="qualification-user-meta">
+                当前用户： Current User: <span id="currentUserName" class="qualification-user-name"></span>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 基本信息 Basic Information模块 -->
+            <div class="form-section">
+                <h2 class="section-title">基本信息 Basic Information</h2>
+                <div class="form-group">
+                    <label for="shopName">店铺名称 Shop Name *</label>
+                    <input type="text" id="shopName" placeholder="请输入店铺名称 Enter shop name">
+                </div>
+                <div class="form-group">
+                    <label for="businessLicense">营业执照编号 Business License No. *</label>
+                    <input type="text" id="businessLicense" placeholder="请输入营业执照编号 Enter business license number">
+                </div>
+                <div class="form-group">
+                    <label for="legalPersonId">法人身份证号 Legal Person ID No. *</label>
+                    <input type="text" id="legalPersonId" placeholder="请输入法人身份证号 Enter legal person ID number">
+                </div>
+                <div class="form-group">
+                    <label for="shopAddress">店铺地址 Shop Address *</label>
+                    <input type="text" id="shopAddress" placeholder="请输入店铺地址 Enter shop address">
+                </div>
+                <div class="form-group">
+                    <label for="phone">联系电话 Phone *</label>
+                    <input type="text" id="phone" placeholder="请输入联系电话 Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label for="email">电子邮箱 Email *</label>
+                    <input type="email" id="email" placeholder="请输入电子邮箱 Enter email">
+                </div>
+            </div>
+
+            <!-- 新增：基本信息 Basic Information提交按钮 -->
+            <div class="action-row-center">
+                <button type="button" class="submit-btn submit-btn-success submit-btn-fixed" id="saveBasicInfoBtn" onclick="saveBasicInfo()">
+                    保存基本信息 Save Basic Information
+                </button>
+                <div id="basicInfoSuccessMessage" class="basic-info-success">
+                    基本信息保存成功！ Basic information saved successfully!
+                </div>
+            </div>
+
+            <!-- 营业执照 Business License上传模块 -->
+            <div class="form-section">
+                <h2 class="section-title">营业执照 Business License</h2>
+                <div class="file-upload-area" id="businessLicenseArea">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">点击或拖拽文件到此处上传营业执照 Click or drag a file here to upload the business license</div>
+                    <div class="upload-hint">支持 PNG、JPG、JPEG、PDF 格式，最大 10MB Supports PNG, JPG, JPEG, PDF up to 10MB</div>
+                    <input type="file" class="file-input" id="businessLicenseInput" accept=".png,.jpg,.jpeg,.pdf">
+                </div>
+                <div class="file-preview" id="businessLicensePreview">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <div class="file-name" id="businessLicenseFileName"></div>
+                            <div class="file-size" id="businessLicenseFileSize"></div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="upload-btn" onclick="reuploadFile('businessLicense')">重新上传 Re-upload</button>
+                        <button class="remove-file-btn" onclick="removeFile('businessLicense')">删除 Delete</button>
+                    </div>
+                </div>
+                <div class="error-message" id="businessLicenseError"></div>
+            </div>
+
+            <!-- 法人身份证 Legal Person ID上传模块 -->
+            <div class="form-section">
+                <h2 class="section-title">法人身份证 Legal Person ID</h2>
+                <div class="file-upload-area" id="legalPersonIdArea">
+                    <div class="upload-icon">🪪</div>
+                    <div class="upload-text">点击或拖拽文件到此处上传法人身份证 Click or drag a file here to upload the legal person ID</div>
+                    <div class="upload-hint">支持 PNG、JPG、JPEG、PDF 格式，最大 10MB Supports PNG, JPG, JPEG, PDF up to 10MB</div>
+                    <input type="file" class="file-input" id="legalPersonIdInput" accept=".png,.jpg,.jpeg,.pdf">
+                </div>
+                <div class="file-preview" id="legalPersonIdPreview">
+                    <div class="file-info">
+                        <div class="file-icon">🪪</div>
+                        <div>
+                            <div class="file-name" id="legalPersonIdFileName"></div>
+                            <div class="file-size" id="legalPersonIdFileSize"></div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="upload-btn" onclick="reuploadFile('legalPersonId')">重新上传 Re-upload</button>
+                        <button class="remove-file-btn" onclick="removeFile('legalPersonId')">删除 Delete</button>
+                    </div>
+                </div>
+                <div class="error-message" id="legalPersonIdError"></div>
+            </div>
+
+            <!-- 卖家 Seller认证状态显示区域 -->
+            <div class="certification-status certification-status-block u-hidden" id="certificationStatus">
+                <div class="certification-header">
+                    <h3 class="status-heading">
+                        <span id="statusIcon" class="status-icon"></span>
+                        <span id="statusText" class="status-text"></span>
+                    </h3>
+                    <div id="statusDetails" class="status-details">
+                        <!-- 状态详情将动态插入 -->
+                    </div>
+                </div>
+            </div>
+
+            <button class="submit-btn" id="submitBtn" onclick="submitQualification()">提交资质申请 Submit Qualification Application</button>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在上传资质文件，请稍候... Uploading qualification files, please wait...</p>
+            </div>
+            <div class="error-message show" id="submitError"></div>
+            <div class="success-message show" id="submitSuccess"></div>
+
+            <a href="home.html" class="back-link">← 返回首页 Back Home</a>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const BASE_URL = (window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : '';
+        const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.pdf'];
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        // 文件存储
+        let businessLicenseFile = null;
+        let legalPersonIdFile = null;
+
+        // 获取JWT Token
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function applyGuestNavigation() {
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+
+            if (userInfoBar) {
+                userInfoBar.classList.remove('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'flex';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.add('hidden');
+            }
+            if (publishLink) {
+                publishLink.href = 'login.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = 'login.html';
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = '';
+            }
+        }
+
+        function applyLoggedInNavigation(user) {
+            const userId = user.userId || localStorage.getItem('userId');
+            const username = user.username || localStorage.getItem('username') || '用户';
+            const userType = user.userType || localStorage.getItem('userType') || '';
+            const isSeller = userType === 'SELLER';
+
+            const userInfoBar = document.getElementById('userInfoBar');
+            const guestNavActions = document.getElementById('guestNavActions');
+            const publishNavItem = document.getElementById('publishNavItem');
+            const publishLink = document.getElementById('publishLink');
+            const myNavLink = document.getElementById('myNavLink');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userTypeDisplay = document.getElementById('userTypeDisplay');
+            const sellerAuthLink = document.getElementById('sellerAuthLink');
+
+            if (userInfoBar) {
+                userInfoBar.classList.add('visible');
+            }
+            if (guestNavActions) {
+                guestNavActions.style.display = 'none';
+            }
+            if (publishNavItem) {
+                publishNavItem.classList.toggle('hidden', !isSeller);
+            }
+            if (publishLink) {
+                publishLink.href = 'publish.html';
+            }
+            if (myNavLink) {
+                myNavLink.href = userId ? `userDetail.html?userId=${encodeURIComponent(userId)}` : 'userDetail.html';
+            }
+            if (userNameDisplay) {
+                userNameDisplay.textContent = username;
+            }
+            if (userTypeDisplay) {
+                userTypeDisplay.textContent = userType === 'SELLER' ? '(卖家 Seller)' :
+                    userType === 'BUYER' ? '(买家 Buyer)' : '';
+            }
+            if (sellerAuthLink) {
+                sellerAuthLink.href = userId ? `qualification.html?userId=${encodeURIComponent(userId)}` : 'qualification.html';
+            }
+        }
+
+        // 检查登录 Login状态
+        function checkLoginStatus() {
+            const token = getToken();
+            if (!token) {
+                applyGuestNavigation();
+                alert('请先登录 Please log in first');
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // 页面加载时检查登录 Login
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkLoginStatus()) {
+                return;
+            }
+
+            applyLoggedInNavigation({
+                userId: localStorage.getItem('userId'),
+                username: localStorage.getItem('username') || '用户',
+                userType: localStorage.getItem('userType') || ''
+            });
+
+            setupFileUploadEvents();
+
+            // 显示当前用户信息
+            const username = localStorage.getItem('username');
+            if (username) {
+                document.getElementById('currentUserName').textContent = username;
+                document.getElementById('userWelcomeText').textContent = `${username}，请填写基本信息并上传资质文件以完成认证 Please fill in the basic information and upload qualification files to complete verification`;
+            }
+
+            // 首先获取用户类型 User Type，设置显示模式
+            loadUserProfile();
+
+            // 然后根据用户类型 User Type加载相应数据
+            // 用户类型 User Type设置后会在 showBuyerMode 或 showSellerMode 中调用相应的加载函数
+        });
+
+        // 检查是否为新卖家 Seller（没有上传过文件）
+        function isNewSeller(data) {
+            return !data.businessLicenseFileUrl && !data.legalPersonIdFileUrl;
+        }
+
+        // 加载用户基本信息 Basic Information（获取用户类型 User Type）
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${BASE_URL}/user/profile/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+                const data = await response.json();
+                console.log('用户基本信息 Basic InformationAPI返回数据:', data);
+                if (data.code === 1 && data.data) {
+                    const userType = data.data.userType;
+                    console.log('当前用户类型 User Type:', userType);
+
+                    // 保存 Save用户类型 User Type到 localStorage
+                    localStorage.setItem('userType', userType);
+                    if (data.data.username) {
+                        localStorage.setItem('username', data.data.username);
+                    }
+                    applyLoggedInNavigation(data.data);
+
+                    // 根据用户类型 User Type设置页面显示模式
+                    if (userType === 'BUYER') {
+                        showBuyerMode();
+                        // 买家 Buyer只加载基本信息 Basic Information
+                        loadBuyerInfo();
+                    } else if (userType === 'SELLER') {
+                        showSellerMode();
+                        // 卖家 Seller加载完整信息
+                        loadSellerProfile();
+                        loadCertificationStatus();
+                    }
+                }
+            } catch (error) {
+                console.error('加载用户基本信息 Basic Information失败:', error);
+                // 默认显示卖家 Seller模式
+                showSellerMode();
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？ Log out now?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('redirectUrl');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 显示买家 Buyer模式（只显示基本信息 Basic Information）
+        function showBuyerMode() {
+            // 隐藏卖家 Seller专用字段
+            const sellerFields = ['shopName', 'businessLicense', 'legalPersonId', 'shopAddress'];
+            sellerFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.closest('.form-group').style.display = 'none';
+                }
+            });
+
+            // 隐藏文件上传模块
+            const fileSections = document.querySelectorAll('.form-section');
+            if (fileSections.length >= 2) {
+                fileSections[1].style.display = 'none';  // 营业执照 Business License上传
+                fileSections[2].style.display = 'none';  // 法人身份证 Legal Person ID上传
+            }
+
+            // 隐藏认证状态显示区域
+            const certificationStatus = document.getElementById('certificationStatus');
+            if (certificationStatus) {
+                certificationStatus.style.display = 'none';
+            }
+
+            // 隐藏提交资质申请 Submit Qualification Application按钮
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.style.display = 'none';
+            }
+
+            // 调整保存基本信息 Save Basic Information按钮样式
+            const saveBtn = document.getElementById('saveBasicInfoBtn');
+            if (saveBtn) {
+                saveBtn.parentElement.style.textAlign = 'center';
+                saveBtn.style.width = '100%';
+                saveBtn.style.marginBottom = '20px';
+                saveBtn.style.backgroundColor = '#28a745';
+            }
+        }
+
+        // 显示卖家 Seller模式（显示完整功能）
+        function showSellerMode() {
+            // 显示所有字段
+            const allFields = ['shopName', 'businessLicense', 'legalPersonId', 'shopAddress', 'phone', 'email'];
+            allFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    element.closest('.form-group').style.display = 'block';
+                }
+            });
+
+            // 显示文件上传模块
+            const fileSections = document.querySelectorAll('.form-section');
+            if (fileSections.length >= 3) {
+                fileSections[1].style.display = 'block';  // 营业执照 Business License上传
+                fileSections[2].style.display = 'block';  // 法人身份证 Legal Person ID上传
+            }
+
+            // 显示认证状态显示区域
+            const certificationStatus = document.getElementById('certificationStatus');
+            if (certificationStatus) {
+                certificationStatus.style.display = 'block';
+            }
+
+            // 显示提交资质申请 Submit Qualification Application按钮
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.style.display = 'block';
+            }
+
+            // 恢复按钮样式
+            const saveBtn = document.getElementById('saveBasicInfoBtn');
+            if (saveBtn) {
+                saveBtn.parentElement.style.textAlign = 'center';
+                saveBtn.style.width = '200px';
+                saveBtn.style.marginBottom = '0';
+                saveBtn.style.backgroundColor = '#4a90e2';
+            }
+        }
+
+        // 加载买家 Buyer基本信息 Basic Information
+        async function loadBuyerInfo() {
+            try {
+                const response = await fetch(`${BASE_URL}/user/profile/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.code === 1 && data.data) {
+                    // 保存 Save原始值
+                    originalValues = {
+                        phone: data.data.phone || '',
+                        email: data.data.email || ''
+                    };
+
+                    // 只填充 phone 和 email 字段
+                    if (data.data.phone) {
+                        document.getElementById('phone').value = data.data.phone;
+                    }
+                    if (data.data.email) {
+                        document.getElementById('email').value = data.data.email;
+                    }
+                }
+            } catch (error) {
+                console.error('加载买家 Buyer信息失败:', error);
+            }
+        }
+
+        // 加载卖家 Seller资料
+        async function loadSellerProfile() {
+            try {
+                const response = await fetch(`${BASE_URL}/user/seller-profile/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                const data = await response.json();
+
+                // 调试信息：显示API返回的完整数据
+                console.log('API返回数据:', data);
+
+                if (data.code === 1 && data.data) {
+                    const qualificationStatus = data.data.qualificationStatus;
+                    console.log('当前用户状态:', qualificationStatus);
+
+                    // 审核状态已在 showCertificationStatus 中显示
+
+                    // 显示已上传的文件
+                    if (data.data.businessLicenseFileUrl || data.data.legalPersonIdFileUrl) {
+                        showUploadedFiles(data.data);
+                    }
+
+                    // 填充基本信息 Basic Information
+                    if (data.data.shopName) {
+                        document.getElementById('shopName').value = data.data.shopName;
+                    }
+                    if (data.data.businessLicense) {
+                        document.getElementById('businessLicense').value = data.data.businessLicense;
+                    }
+                    if (data.data.legalPersonId) {
+                        document.getElementById('legalPersonId').value = data.data.legalPersonId;
+                    }
+                    if (data.data.shopAddress) {
+                        document.getElementById('shopAddress').value = data.data.shopAddress;
+                    }
+                    // 保存 Save原始值
+                    originalValues = {
+                        shopName: data.data.shopName || '',
+                        businessLicense: data.data.businessLicense || '',
+                        legalPersonId: data.data.legalPersonId || '',
+                        shopAddress: data.data.shopAddress || '',
+                        phone: data.data.phone || '',
+                        email: data.data.email || ''
+                    };
+
+                    if (data.data.phone) {
+                        document.getElementById('phone').value = data.data.phone;
+                    }
+                    if (data.data.email) {
+                        document.getElementById('email').value = data.data.email;
+                    }
+
+                    // 根据审核状态设置提交按钮
+                    updateSubmitButton(qualificationStatus);
+                }
+            } catch (error) {
+                console.error('加载卖家 Seller资料失败:', error);
+            }
+        }
+
+        // 获取卖家 Seller资料用于验证
+        async function getSellerProfileForValidation() {
+            try {
+                const response = await fetch(`${BASE_URL}/user/seller-profile/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+                const data = await response.json();
+                return data.code === 1 ? data.data : {};
+            } catch (error) {
+                console.error('获取卖家 Seller资料失败:', error);
+                return {};
+            }
+        }
+
+        // 加载和显示认证状态
+        async function loadCertificationStatus() {
+            try {
+                const response = await fetch(`${BASE_URL}/user/seller-profile/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                const data = await response.json();
+                console.log('认证状态API返回数据:', data);
+                if (data.code === 1 && data.data) {
+                    console.log('准备显示认证状态，审核备注:', data.data.qualificationAuditRemark);
+                    showCertificationStatus(data.data);
+                }
+            } catch (error) {
+                console.error('加载认证状态失败:', error);
+            }
+        }
+
+        // 显示认证状态
+        function showCertificationStatus(data) {
+            const statusEl = document.getElementById('certificationStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            const statusDetails = document.getElementById('statusDetails');
+
+            if (!data) {
+                statusEl.style.display = 'none';
+                return;
+            }
+
+            // 状态映射
+            const statusMap = {
+                'UNVERIFIED': {
+                    text: '未认证',
+                    icon: '🔵',
+                    color: '#2196f3',
+                    description: '您还没有进行卖家 Seller认证，请填写信息并上传资质文件',
+                    action: '开始认证'
+                },
+                'PENDING': {
+                    text: '审核中',
+                    icon: '⏳',
+                    color: '#ffc107',
+                    description: '您的资质正在审核中，请耐心等待',
+                    action: '继续等待'
+                },
+                'APPROVED': {
+                    text: '已认证',
+                    icon: '✅',
+                    color: '#28a745',
+                    description: '恭喜！您已通过卖家 Seller认证，可以正常开展业务',
+                    action: '已认证'
+                },
+                'REJECTED': {
+                    text: '认证失败',
+                    icon: '❌',
+                    color: '#dc3545',
+                    description: data.qualificationAuditRemark || '您的认证申请未通过，请检查信息后重新提交',
+                    action: '重新提交'
+                }
+            };
+
+            // 确定状态，如果没有qualificatioStatus则使用UNVERIFIED
+            const currentStatus = data.qualificationStatus || 'UNVERIFIED';
+            const status = statusMap[currentStatus];
+
+            // 更新图标和文本
+            statusIcon.textContent = status.icon;
+            statusText.textContent = status.text;
+
+            // 设置状态样式
+            statusEl.className = `certification-status ${currentStatus.toLowerCase()}`;
+
+            // 构建详情内容
+            let detailsHtml = `
+                <p class="status-description">${status.description}</p>
+            `;
+
+            // 显示店铺名称 Shop Name
+            if (data.shopName) {
+                detailsHtml += `<p class="status-shop-name"><strong>店铺名称 Shop Name：</strong>${data.shopName}</p>`;
+            }
+
+            // 显示审核备注（如果是REJECTED或APPROVED状态且有备注）
+            if (data.qualificationStatus !== 'PENDING' && data.qualificationAuditRemark) {
+                let remarkClass = '';
+                if (data.qualificationStatus === 'APPROVED') {
+                    remarkClass = 'status-remark-box-approved';
+                } else if (data.qualificationStatus === 'REJECTED') {
+                    remarkClass = 'status-remark-box-rejected';
+                }
+
+                detailsHtml += `<div class="status-remark-box ${remarkClass}">
+                    <p class="status-remark-text">
+                        <strong>审核备注：</strong>${data.qualificationAuditRemark}
+                    </p>
+                </div>`;
+            }
+
+            // 显示认证时间（如果是APPROVED状态）
+            if (data.qualificationStatus === 'APPROVED' && data.auditTime) {
+                detailsHtml += `<p class="status-audit-time"><strong>认证时间：</strong>${formatAuditTime(data.auditTime)}</p>`;
+            }
+
+            statusDetails.innerHTML = detailsHtml;
+
+            // 显示状态区域
+            statusEl.style.display = 'block';
+        }
+
+        
+        // 更新提交按钮
+        function updateSubmitButton(status) {
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (status === 'APPROVED') {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '重新提交申请';
+            } else if (status === 'REJECTED') {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '重新提交申请';
+            } else if (status === 'PENDING') {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '重新提交申请';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '提交资质申请 Submit Qualification Application';
+            }
+        }
+
+        // 显示已上传的文件
+        function showUploadedFiles(data) {
+            if (data.businessLicenseFileUrl) {
+                const fileName = '营业执照 Business License文件';
+                const fileSize = '已上传';
+                showFilePreview('businessLicense', fileName, fileSize, true);
+                document.getElementById('businessLicenseInput').disabled = true;
+
+                // 设置文件类型标识，用于重新上传 Re-upload
+                document.getElementById('businessLicenseArea').setAttribute('data-has-file', 'true');
+            }
+
+            if (data.legalPersonIdFileUrl) {
+                const fileName = '法人身份证 Legal Person ID文件';
+                const fileSize = '已上传';
+                showFilePreview('legalPersonId', fileName, fileSize, true);
+                document.getElementById('legalPersonIdInput').disabled = true;
+
+                // 设置文件类型标识，用于重新上传 Re-upload
+                document.getElementById('legalPersonIdArea').setAttribute('data-has-file', 'true');
+            }
+        }
+
+        // 设置文件上传事件
+        function setupFileUploadEvents() {
+            // 营业执照 Business License
+            const businessLicenseArea = document.getElementById('businessLicenseArea');
+            const businessLicenseInput = document.getElementById('businessLicenseInput');
+
+            setupFileAreaEvents(businessLicenseArea, businessLicenseInput, 'businessLicense');
+
+            // 法人身份证 Legal Person ID
+            const legalPersonIdArea = document.getElementById('legalPersonIdArea');
+            const legalPersonIdInput = document.getElementById('legalPersonIdInput');
+
+            setupFileAreaEvents(legalPersonIdArea, legalPersonIdInput, 'legalPersonId');
+        }
+
+        // 设置文件区域事件
+        function setupFileAreaEvents(area, input, fileType) {
+            // 拖拽事件
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0], fileType);
+                }
+            });
+
+            // 点击上传
+            input.addEventListener('change', (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0], fileType);
+                }
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(file, fileType) {
+            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            // 验证文件扩展名
+            if (!ALLOWED_EXTENSIONS.includes(extension)) {
+                showError(fileType, `文件格式不支持，请上传 ${ALLOWED_EXTENSIONS.join(', ')} 格式的文件`);
+                return;
+            }
+
+            // 验证文件大小
+            if (file.size > MAX_FILE_SIZE) {
+                showError(fileType, '文件大小超过 10MB，请重新选择');
+                return;
+            }
+
+            // 清除错误
+            clearError(fileType);
+
+            // 存储文件
+            if (fileType === 'businessLicense') {
+                businessLicenseFile = file;
+            } else {
+                legalPersonIdFile = file;
+            }
+
+            // 显示预览
+            showFilePreview(fileType, file.name, formatFileSize(file.size));
+        }
+
+        // 显示文件预览
+        function showFilePreview(fileType, fileName, fileSize, isUploaded = false) {
+            const preview = document.getElementById(`${fileType}Preview`);
+            const fileNameEl = document.getElementById(`${fileType}FileName`);
+            const fileSizeEl = document.getElementById(`${fileType}FileSize`);
+            const area = document.getElementById(`${fileType}Area`);
+
+            fileNameEl.textContent = fileName;
+            fileSizeEl.textContent = fileSize;
+
+            if (isUploaded) {
+                preview.querySelector('.remove-file-btn').style.display = 'block';
+            } else {
+                preview.querySelector('.remove-file-btn').style.display = 'block';
+            }
+
+            preview.classList.add('show');
+            area.style.display = 'none';
+        }
+
+        // 获取字段标签
+        function getFieldLabel(field) {
+            const labels = {
+                shopName: '店铺名称 Shop Name',
+                businessLicense: '营业执照编号 Business License No.',
+                legalPersonId: '法人身份证号 Legal Person ID No.',
+                shopAddress: '店铺地址 Shop Address',
+                phone: '联系电话 Phone',
+                email: '电子邮箱 Email'
+            };
+            return labels[field] || field;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 检查哪些字段发生了变化
+        function getChangedFields() {
+            // 获取当前表单值
+            const currentValues = {
+                shopName: document.getElementById('shopName').value.trim(),
+                businessLicense: document.getElementById('businessLicense').value.trim(),
+                legalPersonId: document.getElementById('legalPersonId').value.trim(),
+                shopAddress: document.getElementById('shopAddress').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim()
+            };
+
+            // 只卖家 Seller的相关变量需要获取历史数据
+            const changedFields = {};
+
+            // 检查每个字段是否有变化
+            for (const [key, value] of Object.entries(currentValues)) {
+                if (value !== originalValues[key]) {
+                    changedFields[key] = value;
+                }
+            }
+
+            return changedFields;
+        }
+
+        // 保存 Save原始值的变量
+        let originalValues = {};
+
+        // 删除 Delete文件
+        function removeFile(fileType) {
+            if (fileType === 'businessLicense') {
+                businessLicenseFile = null;
+                document.getElementById('businessLicenseInput').value = '';
+                document.getElementById('businessLicenseInput').disabled = false;
+            } else {
+                legalPersonIdFile = null;
+                document.getElementById('legalPersonIdInput').value = '';
+                document.getElementById('legalPersonIdInput').disabled = false;
+            }
+
+            const preview = document.getElementById(`${fileType}Preview`);
+            const area = document.getElementById(`${fileType}Area`);
+
+            preview.classList.remove('show');
+            area.style.display = 'block';
+        }
+
+        // 重新上传 Re-upload文件
+        function reuploadFile(fileType) {
+            // 隐藏预览，显示上传区域
+            const preview = document.getElementById(`${fileType}Preview`);
+            const area = document.getElementById(`${fileType}Area`);
+
+            preview.classList.remove('show');
+            area.style.display = 'block';
+
+            // 重置 Reset文件输入
+            const fileInput = document.getElementById(`${fileType}Input`);
+            fileInput.value = '';
+            fileInput.disabled = false;
+
+            // 清空对应的文件变量
+            if (fileType === 'businessLicense') {
+                businessLicenseFile = null;
+            } else {
+                legalPersonIdFile = null;
+            }
+        }
+
+        // 格式化审核时间
+        function formatAuditTime(auditTime) {
+            if (!auditTime) return '';
+
+            const date = new Date(auditTime);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+            if (diffHours < 1) {
+                return '刚刚 Just now';
+            } else if (diffHours < 24) {
+                return `${diffHours}小时前`;
+            } else {
+                const diffDays = Math.floor(diffHours / 24);
+                if (diffDays < 7) {
+                    return `${diffDays}天前`;
+                } else {
+                    return date.toLocaleDateString('zh-CN');
+                }
+            }
+        }
+
+        // 显示错误
+        function showError(fileType, message) {
+            const errorEl = document.getElementById(`${fileType}Error`);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        // 清除错误
+        function clearError(fileType) {
+            const errorEl = document.getElementById(`${fileType}Error`);
+            errorEl.classList.remove('show');
+        }
+
+        // 保存基本信息 Save Basic Information
+        async function saveBasicInfo() {
+            // 清除之前的错误和成功消息
+            document.getElementById('submitError').classList.remove('show');
+            document.getElementById('submitSuccess').classList.remove('show');
+            document.getElementById('basicInfoSuccessMessage').classList.remove('show');
+
+            // 获取当前表单值
+            const shopName = document.getElementById('shopName').value.trim();
+            const businessLicense = document.getElementById('businessLicense').value.trim();
+            const legalPersonId = document.getElementById('legalPersonId').value.trim();
+            const shopAddress = document.getElementById('shopAddress').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // 验证基本信息 Basic Information - 根据用户类型 User Type验证不同字段
+            let requiredFields = [];
+
+            // 检查用户类型 User Type
+            const userType = localStorage.getItem('userType') || 'SELLER'; // 默认为卖家 Seller
+
+            if (userType === 'BUYER') {
+                // 买家 Buyer：phone必填，email选填
+                requiredFields = ['phone'];
+            } else {
+                // 卖家 Seller：email选填，其余必填
+                requiredFields = ['shopName', 'businessLicense', 'legalPersonId', 'shopAddress', 'phone'];
+            }
+
+            // 检查必填字段
+            for (const field of requiredFields) {
+                const value = eval(field); // 动态获取变量值
+                if (!value) {
+                    document.getElementById('submitError').textContent = `请填写${getFieldLabel(field)}`;
+                    document.getElementById('submitError').classList.add('show');
+                    return;
+                }
+            }
+
+            // 禁用按钮，防止重复提交
+            const saveBtn = document.getElementById('saveBasicInfoBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存 Save中...';
+
+            try {
+                // 检查哪些字段发生了变化
+                const changedFields = getChangedFields();
+                console.log('发生变化的字段:', changedFields);
+
+                // 定义 response 和 data 变量
+                let response, data;
+
+                // 根据用户类型 User Type决定调用哪个接口
+                const userType = localStorage.getItem('userType') || 'SELLER';
+
+                if (userType === 'BUYER') {
+                    // 买家 Buyer模式：只更新 phone 和 email 到 /user/profile 接口
+                    response = await fetch(`${BASE_URL}/user/profile`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getToken()}`
+                        },
+                        body: JSON.stringify({
+                            phone: phone,
+                            email: email
+                        })
+                    });
+                    data = await response.json();
+                } else {
+                    // 卖家 Seller模式：保持原有逻辑
+                    if (Object.keys(changedFields).length > 0 &&
+                        Object.keys(changedFields).every(field => ['phone', 'email'].includes(field))) {
+
+                        // 只更新 profile 接口，不影响卖家 Seller认证状态
+                        response = await fetch(`${BASE_URL}/user/profile`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${getToken()}`
+                            },
+                            body: JSON.stringify({
+                                phone: phone,
+                                email: email
+                            })
+                        });
+                        data = await response.json();
+                    } else {
+                        // 更新 seller-profile 接口
+                        response = await fetch(`${BASE_URL}/user/seller-profile`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${getToken()}`
+                            },
+                            body: JSON.stringify({
+                                shopName: shopName,
+                                businessLicense: businessLicense,
+                                legalPersonId: legalPersonId,
+                                shopAddress: shopAddress,
+                                phone: phone,
+                                email: email
+                            })
+                        });
+                        data = await response.json();
+                    }
+                }
+
+                if (data.code === 1) {
+                    // 显示基本信息 Basic Information模块内的成功消息
+                    document.getElementById('basicInfoSuccessMessage').classList.add('show');
+
+                    // 2秒后隐藏成功消息并重新加载数据
+                    setTimeout(() => {
+                        // 根据用户类型 User Type重新加载对应的数据
+                        const userType = localStorage.getItem('userType') || 'SELLER';
+                        if (userType === 'BUYER') {
+                            loadBuyerInfo();
+                        } else {
+                            loadSellerProfile();
+                            loadCertificationStatus();
+                        }
+                        document.getElementById('basicInfoSuccessMessage').classList.remove('show');
+                    }, 2000);
+
+                } else {
+                    throw new Error(data.msg || '保存 Save失败');
+                }
+
+            } catch (error) {
+                document.getElementById('submitError').textContent = error.message || '保存 Save失败，请重试';
+                document.getElementById('submitError').classList.add('show');
+            } finally {
+                // 重新启用按钮
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存基本信息 Save Basic Information';
+            }
+        }
+
+        // 提交资质申请 Submit Qualification Application
+        async function submitQualification() {
+            // 检查用户类型 User Type，只有卖家 Seller可以提交
+            const userType = localStorage.getItem('userType') || 'SELLER';
+            if (userType !== 'SELLER') {
+                document.getElementById('submitError').textContent = '只有卖家 Seller可以提交资质申请 Submit Qualification Application';
+                document.getElementById('submitError').classList.add('show');
+                return;
+            }
+
+            // 清除之前的错误
+            document.getElementById('submitError').classList.remove('show');
+            document.getElementById('submitSuccess').classList.remove('show');
+
+            // 获取基本信息 Basic Information
+            const shopName = document.getElementById('shopName').value.trim();
+            const businessLicense = document.getElementById('businessLicense').value.trim();
+            const legalPersonId = document.getElementById('legalPersonId').value.trim();
+            const shopAddress = document.getElementById('shopAddress').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // 验证基本信息 Basic Information（email选填）
+            if (!shopName || !businessLicense || !legalPersonId || !shopAddress || !phone) {
+                document.getElementById('submitError').textContent = '请填写所有带*的必填字段';
+                document.getElementById('submitError').classList.add('show');
+                return;
+            }
+
+            // 获取当前卖家 Seller信息，检查文件上传记录
+            let serverProfile = {};
+            try {
+                serverProfile = await getSellerProfileForValidation();
+            } catch (error) {
+                console.error('获取卖家 Seller信息失败:', error);
+            }
+
+            // 判断文件是否已存在：服务端有记录 或 本地有新上传
+            const hasBusinessLicense = !!serverProfile.businessLicenseFileUrl || !!businessLicenseFile;
+            const hasLegalPersonId = !!serverProfile.legalPersonIdFileUrl || !!legalPersonIdFile;
+
+            // 文件上传条件：两个文件都必须存在
+            if (!hasBusinessLicense && !hasLegalPersonId) {
+                document.getElementById('submitError').textContent = '请上传营业执照 Business License文件和法人身份证 Legal Person ID文件';
+                document.getElementById('submitError').classList.add('show');
+                return;
+            }
+            if (!hasBusinessLicense) {
+                document.getElementById('submitError').textContent = '请上传营业执照 Business License文件';
+                document.getElementById('submitError').classList.add('show');
+                return;
+            }
+            if (!hasLegalPersonId) {
+                document.getElementById('submitError').textContent = '请上传法人身份证 Legal Person ID文件';
+                document.getElementById('submitError').classList.add('show');
+                return;
+            }
+
+            // 显示加载状态
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // 1. 提交全部 All基本信息 Basic Information到 seller-profile 接口
+                const response = await fetch(`${BASE_URL}/user/seller-profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({
+                        shopName: shopName,
+                        businessLicense: businessLicense,
+                        legalPersonId: legalPersonId,
+                        shopAddress: shopAddress,
+                        phone: phone,
+                        email: email
+                    })
+                });
+
+                const profileData = await response.json();
+                if (profileData.code !== 1) {
+                    throw new Error(profileData.msg || '保存基本信息 Save Basic Information失败');
+                }
+
+                // 2. 上传文件（仅有新选文件时才上传）
+                const uploadPromises = [];
+
+                if (businessLicenseFile) {
+                    uploadPromises.push(uploadFile('businessLicense', businessLicenseFile));
+                }
+
+                if (legalPersonIdFile) {
+                    uploadPromises.push(uploadFile('legalPersonIdFile', legalPersonIdFile));
+                }
+
+                await Promise.all(uploadPromises);
+
+                // 3. 显示成功消息并重新加载
+                document.getElementById('submitSuccess').textContent = '资质申请提交成功！状态已更新';
+                setTimeout(() => {
+                    loadSellerProfile();
+                    loadCertificationStatus();
+                    document.getElementById('submitSuccess').classList.remove('show');
+                }, 1000);
+
+            } catch (error) {
+                document.getElementById('submitError').textContent = error.message || '提交失败，请重试';
+                document.getElementById('submitError').classList.add('show');
+            } finally {
+                // 隐藏加载状态
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        // 上传单个文件
+        async function uploadFile(fileType, file) {
+            // 将前端使用的文件类型映射为后端要求的文件类型
+            const fileTypeMap = {
+                'businessLicense': 'BUSINESS_LICENSE',
+                'legalPersonIdFile': 'LEGAL_PERSON_ID'
+            };
+
+            const backendFileType = fileTypeMap[fileType] || fileType;
+
+            const formData = new FormData();
+            formData.append('fileType', backendFileType);
+            formData.append('file', file);
+
+            const response = await fetch(`${BASE_URL}/user/seller-profile/files`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.code !== 1) {
+                throw new Error(`${fileType}上传失败: ${data.msg}`);
+            }
+            return data;
+        }
+    </script>
+</body>
+</html>
